@@ -18,3 +18,14 @@ BOARD_GAMES = [
         ]
     }
 ]
+
+DETERMINE_BOARD_GAME_PROMPT_TEMPLATE = (
+    "You will be given a question and must determine which board game the question refers to from a list.\n"
+    "You must answer with the name of the board game exactly as it appears in the list.\n"
+    "If you think a board game is mentioned, but it is not on the list, respond with: 'I'm afraid I don't know the rules for <board_game>' where <board_game> is the name of the board game.\n"
+    "If you're certain the question does NOT specify a board game, respond with: 'So I can give you the most accurate answer, which board game is this question about?'.\n"
+    "The list is:\n"
+    "<BOARD_GAME_LIST>\n"
+    "The question is:\n"
+    "<QUESTION>"
+).replace("<BOARD_GAME_LIST>", "\n".join([f'- {board_game["name"]}' for board_game in BOARD_GAMES]))
