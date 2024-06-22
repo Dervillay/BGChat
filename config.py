@@ -1,4 +1,5 @@
-RULEBOOK_DOWNLOAD_PATH = "./rulebooks"
+RULEBOOKS_PATH = "./rulebooks"
+DATABASE_PATH = "./database.json"
 
 BOARD_GAMES = [
     {
