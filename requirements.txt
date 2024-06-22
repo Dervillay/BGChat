@@ -1,0 +1,5 @@
+openai==1.35.3
+pypdf==4.2.0
+Requests==2.32.3
+tinydb==4.8.0
+tqdm==4.62.3
