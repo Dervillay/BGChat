@@ -1,5 +1,7 @@
 RULEBOOKS_PATH = "./rulebooks"
 DATABASE_PATH = "./database.json"
+BOLD_START = "\033[1m"
+BOLD_END = "\033[0m"
 
 BOARD_GAMES = [
     {
