@@ -2,21 +2,43 @@ import os
 import requests
 from tqdm import tqdm
 from tinydb import TinyDB
+from tinydb.table import Document
 from pypdf import PdfReader
+from sentence_transformers import SentenceTransformer
+from utils import print_bold
 from config import (
     RULEBOOKS_PATH,
     BOARD_GAMES,
     DOWNLOAD_BLOCK_SIZE,
     DATABASE_PATH,
-    BOLD_START,
-    BOLD_END
+    EMBEDDING_MODEL_TO_USE,
+    EMBEDDING_MODEL_PATH,
 )
+
+
+db = None
+model = None
+
+
+def download_embedding_model():
+    if not os.path.isdir(EMBEDDING_MODEL_PATH):
+        os.mkdir(EMBEDDING_MODEL_PATH)
+
+    print_bold("Downloading embedding model...")
+    if os.listdir(EMBEDDING_MODEL_PATH):
+        print("Detected an existing embedding model. Doing nothing")
+    else:
+        global model
+        model = SentenceTransformer(EMBEDDING_MODEL_TO_USE, trust_remote_code=True)
+        model.save(EMBEDDING_MODEL_PATH)
+    print()
+
 
 def download_rulebooks():
     if not os.path.exists(RULEBOOKS_PATH):
         os.mkdir(RULEBOOKS_PATH)
 
-    print(f"{BOLD_START}Downloading rulebooks...{BOLD_END}")
+    print_bold("Downloading rulebooks...")
     for board_game in BOARD_GAMES:
         for rulebook in board_game["rulebooks"]:
             filename = f'{board_game["name"]} - {rulebook["name"]}.pdf'
@@ -47,11 +69,13 @@ def download_rulebooks():
     print()
 
 
-def extract_and_store_rulebook_text():
+def extract_and_embed_rulebook_text():
+    global db
+    global model
     db = TinyDB(DATABASE_PATH)
     rulebooks = os.listdir(RULEBOOKS_PATH)
 
-    print(f"{BOLD_START}Extracting text from rulebooks...{BOLD_END}")
+    print_bold("Extracting and encoding text from rulebooks...")
     for rulebook in rulebooks:
         if rulebook not in db.tables():
             table = db.table(rulebook)
@@ -59,18 +83,23 @@ def extract_and_store_rulebook_text():
 
             with tqdm(
                 total=len(reader.pages),
-                desc=f'Processing "{rulebook}"',
+                desc=f'Extracting text from "{rulebook}"',
                 unit=" pages"
             ) as progress_bar:
                 for page_num, page in enumerate(reader.pages, start=1):
                     text = page.extract_text()
-                    table.insert({"page_num": page_num, "text": text})
+                    table.insert(
+                        Document({"text": text}, doc_id=page_num)
+                    )
                     progress_bar.update(1)
+
+            # TODO: Embed text for rulebook
         else:
             print(f'"{rulebook}" has already been processed')
     print()
 
 
 if __name__ == "__main__":
+    download_embedding_model()
     download_rulebooks()
-    extract_and_store_rulebook_text()
+    extract_and_embed_rulebook_text()
