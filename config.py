@@ -19,13 +19,21 @@ BOARD_GAMES = [
     }
 ]
 
+DOWNLOAD_BLOCK_SIZE = 1024
+UNKNOWN = "Unknown"
+NO_BOARD_GAME_SPECIFIED = "No Board Game Specified"
+
 DETERMINE_BOARD_GAME_PROMPT_TEMPLATE = (
     "You will be given a question and must determine which board game the question refers to from a list.\n"
     "You must answer with the name of the board game exactly as it appears in the list.\n"
-    "If you think a board game is mentioned, but it is not on the list, respond with: 'I'm afraid I don't know the rules for <board_game>' where <board_game> is the name of the board game.\n"
-    "If you're certain the question does NOT specify a board game, respond with: 'So I can give you the most accurate answer, which board game is this question about?'.\n"
+    f"If the question is asking for the rules of any game that is not in the list, respond with: '{UNKNOWN}'\n"
+    "For example, if the question is 'In <board game>, who goes first?', if <board game> is not in the list, then respond with '{UNKNOWN_RESPONSE}'."
+    f"Only if you're absolutely certain that the question does NOT specify a board game, respond with: '{NO_BOARD_GAME_SPECIFIED}'.\n"
     "The list is:\n"
     "<BOARD_GAME_LIST>\n"
     "The question is:\n"
     "<QUESTION>"
-).replace("<BOARD_GAME_LIST>", "\n".join([f'- {board_game["name"]}' for board_game in BOARD_GAMES]))
+).replace(
+    "<BOARD_GAME_LIST>",
+    "\n".join([f'- {board_game["name"]}' for board_game in BOARD_GAMES])
+)
