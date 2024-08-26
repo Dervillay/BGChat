@@ -1,7 +1,13 @@
 RULEBOOKS_PATH = "./rulebooks"
 DATABASE_PATH = "./database.json"
+EMBEDDING_MODEL_PATH = "./embedding_model"
 BOLD_START = "\033[1m"
 BOLD_END = "\033[0m"
+DOWNLOAD_BLOCK_SIZE = 1024
+EMBEDDING_MODEL_TO_USE = "Alibaba-NLP/gte-large-en-v1.5"
+
+UNKNOWN = "Unknown"
+NO_BOARD_GAME_SPECIFIED = "No Board Game Specified"
 
 BOARD_GAMES = [
     {
@@ -18,10 +24,6 @@ BOARD_GAMES = [
         ]
     }
 ]
-
-DOWNLOAD_BLOCK_SIZE = 1024
-UNKNOWN = "Unknown"
-NO_BOARD_GAME_SPECIFIED = "No Board Game Specified"
 
 DETERMINE_BOARD_GAME_PROMPT_TEMPLATE = (
     "You will be given a question and must determine which board game the question refers to from a list.\n"
