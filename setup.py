@@ -26,12 +26,11 @@ def download_embedding_model():
     if not os.path.isdir(EMBEDDING_MODEL_PATH):
         os.mkdir(EMBEDDING_MODEL_PATH)
 
-    print_bold(f'Downloading embedding model...')
+    print_bold("Downloading embedding model...")
     if os.listdir(EMBEDDING_MODEL_PATH):
-        print("Detected an existing embedding model. Loading from local storage")
-        model = SentenceTransformer(EMBEDDING_MODEL_PATH, trust_remote_code=True)
+        print("Detected an existing embedding model")
     else:
-        model = SentenceTransformer(EMBEDDING_MODEL_TO_USE, trust_remote_code=True)
+        model = SentenceTransformer(EMBEDDING_MODEL_TO_USE)
         model.save(EMBEDDING_MODEL_PATH)
     print()
 
@@ -71,14 +70,28 @@ def download_rulebooks():
     print()
 
 
-def initialise_db():
+def initialise_database():
     global db
     global query
+
+    print_bold("Initialising local database to store rulebook text and embeddings...")
+    if os.path.isdir(DATABASE_PATH):
+        print("Detected an existing database")
+
+    # Creates a database if one doesn't already exist, or loads it if it does
     db = TinyDB(DATABASE_PATH)
     query = Query()
+    print()
+
+def initialise_embedding_model():
+    global model
+
+    print_bold("Loading embedding model from local storage...")
+    model = SentenceTransformer(EMBEDDING_MODEL_PATH)
+    print()
 
 
-def extract_text_from_rulebooks():
+def extract_rulebook_text():
     global db
     rulebooks = os.listdir(RULEBOOKS_PATH)
 
@@ -102,7 +115,7 @@ def extract_text_from_rulebooks():
     print()
 
 
-def encode_text_from_rulebooks():
+def encode_rulebook_text():
     global db
     global model
 
@@ -113,10 +126,16 @@ def encode_text_from_rulebooks():
             pages_sorted = sorted(pages.all(), key=lambda k: k["page_num"])
 
             print(f'Encoding text for "{rulebook}"')
-            text_to_encode = [page["text"] for page in pages_sorted]
-            embeddings = model.encode(text_to_encode, show_progress_bar=True)
+            # e5-large-v2 is trained to encode queries and passages for semantic search,
+            # which requires prepending "query" or "passage" to the text we want to encode
+            text_to_encode = [f'passage: {page["text"]}' for page in pages_sorted]
+            embeddings = model.encode(
+                text_to_encode,
+                normalize_embeddings=True,
+                show_progress_bar=True
+            )
             for i, embedding in enumerate(embeddings, start=1):
-                pages.update({"embedding": embedding}, query.page_num == i)
+                pages.update({"embedding": embedding.tolist()}, query.page_num == i)
         else:
             print(f'"{rulebook}" has already been embedded')
     print()
@@ -125,6 +144,8 @@ def encode_text_from_rulebooks():
 if __name__ == "__main__":
     download_embedding_model()
     download_rulebooks()
-    initialise_db()
-    extract_text_from_rulebooks()
-    encode_text_from_rulebooks()
+    initialise_database()
+    extract_rulebook_text()
+    initialise_embedding_model()
+    # TODO: Chunk text
+    encode_rulebook_text()
