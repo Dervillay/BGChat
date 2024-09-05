@@ -4,7 +4,7 @@ EMBEDDING_MODEL_PATH = "./embedding_model"
 BOLD_START = "\033[1m"
 BOLD_END = "\033[0m"
 DOWNLOAD_BLOCK_SIZE = 1024
-EMBEDDING_MODEL_TO_USE = "Alibaba-NLP/gte-large-en-v1.5"
+EMBEDDING_MODEL_TO_USE = "intfloat/e5-large-v2"
 
 UNKNOWN = "Unknown"
 NO_BOARD_GAME_SPECIFIED = "No Board Game Specified"
