@@ -18,21 +18,7 @@ from config import (
 db = None
 query = None
 model = None
-
-
-def download_embedding_model():
-    global model
-
-    if not os.path.isdir(EMBEDDING_MODEL_PATH):
-        os.mkdir(EMBEDDING_MODEL_PATH)
-
-    print_bold("Downloading embedding model...")
-    if os.listdir(EMBEDDING_MODEL_PATH):
-        print("Detected an existing embedding model")
-    else:
-        model = SentenceTransformer(EMBEDDING_MODEL_TO_USE)
-        model.save(EMBEDDING_MODEL_PATH)
-    print()
+chars_per_chunk = None
 
 
 def download_rulebooks():
@@ -70,6 +56,36 @@ def download_rulebooks():
     print()
 
 
+def download_embedding_model():
+    global model
+
+    if not os.path.isdir(EMBEDDING_MODEL_PATH):
+        os.mkdir(EMBEDDING_MODEL_PATH)
+
+    print_bold("Downloading embedding model...")
+    if os.listdir(EMBEDDING_MODEL_PATH):
+        print("Detected an existing embedding model")
+    else:
+        model = SentenceTransformer(EMBEDDING_MODEL_TO_USE)
+        model.save(EMBEDDING_MODEL_PATH)
+    print()
+
+
+def initialise_embedding_model():
+    global model
+    global chars_per_chunk
+
+    print_bold("Initialising embedding model...")
+    model = SentenceTransformer(EMBEDDING_MODEL_PATH)
+
+    # Assuming each token is ~4 characters long, we aim to make chunks
+    # ~95% of the model's max input size. 95% is chosen to account for 
+    # variance in the average token length, ensuring chunks are never
+    # bigger than the model's context window
+    chars_per_chunk = int(0.95 * 4 * model.tokenizer.model_max_length)
+    print()
+
+
 def initialise_database():
     global db
     global query
@@ -83,35 +99,62 @@ def initialise_database():
     query = Query()
     print()
 
-def initialise_embedding_model():
-    global model
 
-    print_bold("Loading embedding model from local storage...")
-    model = SentenceTransformer(EMBEDDING_MODEL_PATH)
-    print()
-
-
-def extract_rulebook_text():
+def extract_and_chunk_rulebook_text():
     global db
+    global model
+    global chars_per_chunk
     rulebooks = os.listdir(RULEBOOKS_PATH)
 
-    print_bold("Extracting text from rulebooks...")
+    print_bold("Extracting and chunking text from rulebooks...")
     for rulebook in rulebooks:
         if rulebook not in db.tables():
             table = db.table(rulebook)
             reader = PdfReader(f"{RULEBOOKS_PATH}/{rulebook}")
 
+            print(f'Processing "{rulebook}"...')
             with tqdm(
                 total=len(reader.pages),
-                desc=f'Extracting text from "{rulebook}"',
+                desc="Extracting text",
                 unit=" pages"
             ) as progress_bar:
                 for page_num, page in enumerate(reader.pages, start=1):
                     text = page.extract_text()
-                    table.insert({"page_num": page_num, "text": text})
+                    table.insert({"page_num": page_num, "text": text, "num_chars": len(text)})
+                    progress_bar.update(1)
+
+            with tqdm(
+                total=len(reader.pages),
+                desc="Chunking text",
+                unit=" pages"
+            ) as progress_bar:
+                full_rulebook_text = "".join([page["text"] for page in table])
+                num_chars_in_page = {page["page_num"]: page["num_chars"] for page in table}
+
+                idx = 0
+                curr_page_num = 0
+                start_of_next_page = 0
+
+                while idx < len(full_rulebook_text):
+                    curr_page_num += 1
+                    start_of_next_page += num_chars_in_page[curr_page_num]
+
+                    curr_chunk_num = 0
+                    curr_page_chunks = {}
+
+                    while idx < start_of_next_page:
+                        curr_page_chunks[curr_chunk_num] = full_rulebook_text[idx : idx + chars_per_chunk]
+                        idx += chars_per_chunk // 2
+                        curr_chunk_num += 1
+                    table.update({"chunks": curr_page_chunks}, query["page_num"] == curr_page_num)
+
+                    # When we finish chunking a page, set idx to the start of the next page,
+                    # since the final chunk almost always overflows, causing idx to be well into the next page
+                    idx = start_of_next_page
                     progress_bar.update(1)
         else:
             print(f'"{rulebook}" has already been processed')
+        print()
     print()
 
 
@@ -142,10 +185,9 @@ def encode_rulebook_text():
 
 
 if __name__ == "__main__":
-    download_embedding_model()
     download_rulebooks()
-    initialise_database()
-    extract_rulebook_text()
+    download_embedding_model()
     initialise_embedding_model()
-    # TODO: Chunk text
+    initialise_database()
+    extract_and_chunk_rulebook_text()
     encode_rulebook_text()
