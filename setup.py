@@ -109,10 +109,10 @@ def extract_and_chunk_rulebook_text():
     print_bold("Extracting and chunking text from rulebooks...")
     for rulebook in rulebooks:
         if rulebook not in db.tables():
-            table = db.table(rulebook)
+            pages = db.table(rulebook)
             reader = PdfReader(f"{RULEBOOKS_PATH}/{rulebook}")
 
-            print(f'Processing "{rulebook}"...')
+            print(f'Processing "{rulebook}"')
             with tqdm(
                 total=len(reader.pages),
                 desc="Extracting text",
@@ -120,7 +120,7 @@ def extract_and_chunk_rulebook_text():
             ) as progress_bar:
                 for page_num, page in enumerate(reader.pages, start=1):
                     text = page.extract_text()
-                    table.insert({"page_num": page_num, "text": text, "num_chars": len(text)})
+                    pages.insert({"page_num": page_num, "text": text, "num_chars": len(text)})
                     progress_bar.update(1)
 
             with tqdm(
@@ -128,8 +128,8 @@ def extract_and_chunk_rulebook_text():
                 desc="Chunking text",
                 unit=" pages"
             ) as progress_bar:
-                full_rulebook_text = "".join([page["text"] for page in table])
-                num_chars_in_page = {page["page_num"]: page["num_chars"] for page in table}
+                full_rulebook_text = "".join([page["text"] for page in pages])
+                num_chars_in_page = {page["page_num"]: page["num_chars"] for page in pages}
 
                 idx = 0
                 curr_page_num = 0
@@ -146,39 +146,44 @@ def extract_and_chunk_rulebook_text():
                         curr_page_chunks[curr_chunk_num] = full_rulebook_text[idx : idx + chars_per_chunk]
                         idx += chars_per_chunk // 2
                         curr_chunk_num += 1
-                    table.update({"chunks": curr_page_chunks}, query["page_num"] == curr_page_num)
+                    pages.update({"chunks": curr_page_chunks}, query["page_num"] == curr_page_num)
 
                     # When we finish chunking a page, set idx to the start of the next page,
-                    # since the final chunk almost always overflows, causing idx to be well into the next page
+                    # since the final chunk of a page almost always overflows, causing idx to be well into the next one
                     idx = start_of_next_page
                     progress_bar.update(1)
         else:
             print(f'"{rulebook}" has already been processed')
         print()
-    print()
 
 
-def encode_rulebook_text():
+def encode_chunked_text():
     global db
     global model
 
-    print_bold("Encoding text from rulebooks...")
+    print_bold("Encoding chunked text from rulebooks...")
     for rulebook in db.tables():
-        if "embedding" not in rulebook:
+        if "embedded_chunks" not in rulebook:
             pages = db.table(rulebook)
-            pages_sorted = sorted(pages.all(), key=lambda k: k["page_num"])
 
-            print(f'Encoding text for "{rulebook}"')
-            # e5-large-v2 is trained to encode queries and passages for semantic search,
-            # which requires prepending "query" or "passage" to the text we want to encode
-            text_to_encode = [f'passage: {page["text"]}' for page in pages_sorted]
-            embeddings = model.encode(
-                text_to_encode,
-                normalize_embeddings=True,
-                show_progress_bar=True
-            )
-            for i, embedding in enumerate(embeddings, start=1):
-                pages.update({"embedding": embedding.tolist()}, query.page_num == i)
+            with tqdm(
+                total=len(pages),
+                desc=f'Processing "{rulebook}"',
+                unit=" pages"
+            ) as progress_bar:
+                for page in pages:
+                    chunks_to_encode = page["chunks"]
+                    # Sort chunk IDs into ascending order to ensure generated encodings are in the correct order too
+                    sorted_chunk_ids = sorted(chunks_to_encode.keys())
+                    
+                    # e5-large-v2 is trained to encode queries and passages for semantic search,
+                    # which requires prepending "query" or "passage" to the text we want to encode
+                    text_to_encode = [f'passage: {chunks_to_encode[chunk_id]}' for chunk_id in sorted_chunk_ids]
+                    chunk_embeddings = model.encode(text_to_encode, normalize_embeddings=True)
+                    chunk_embeddings_with_ids = {idx: embedding.tolist() for idx, embedding in enumerate(chunk_embeddings)}
+
+                    pages.update({"chunk_embeddings": chunk_embeddings_with_ids}, query["page_num"] == page["page_num"])
+                    progress_bar.update(1)
         else:
             print(f'"{rulebook}" has already been embedded')
     print()
@@ -190,4 +195,4 @@ if __name__ == "__main__":
     initialise_embedding_model()
     initialise_database()
     extract_and_chunk_rulebook_text()
-    encode_rulebook_text()
+    encode_chunked_text()
