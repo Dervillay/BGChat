@@ -22,6 +22,19 @@ BOARD_GAMES = [
                 "download_url": "https://cdn.1j1ju.com/medias/c1/6f/d7-gloomhaven-jaws-of-the-lion-rulebook.pdf",
             },
         ]
+    },
+    {
+        "name": "Root",
+        "rulebooks": [
+            {
+                "name": "Law of Root",
+                "download_url": "https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_of_Root_Sep_5_2024.pdf?v=1729175648",
+            },
+            {
+                "name": "Learning to Play",
+                "download_url": "https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Learn_to_Play_web_Oct_15_2020.pdf?v=1603389572",
+            }
+        ]
     }
 ]
 
