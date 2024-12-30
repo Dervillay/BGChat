@@ -83,7 +83,7 @@ def initialise_embedding_model():
     # variance in the average token length, ensuring chunks are never
     # bigger than the model's context window
     chars_per_chunk = int(0.95 * 4 * model.tokenizer.model_max_length)
-    print()
+    print("Done\n")
 
 
 def initialise_database():
@@ -92,12 +92,12 @@ def initialise_database():
 
     print_bold("Initialising local database to store rulebook text and embeddings...")
     if os.path.isdir(DATABASE_PATH):
-        print("Detected an existing database")
+        print("Detected an existing database. Loading...")
 
     # Creates a database if one doesn't already exist, or loads it if it does
     db = TinyDB(DATABASE_PATH)
     query = Query()
-    print()
+    print("Done\n")
 
 
 def extract_and_chunk_rulebook_text():
@@ -116,7 +116,7 @@ def extract_and_chunk_rulebook_text():
             with tqdm(
                 total=len(reader.pages),
                 desc="Extracting text",
-                unit=" pages"
+                unit="page"
             ) as progress_bar:
                 for page_num, page in enumerate(reader.pages, start=1):
                     text = page.extract_text()
@@ -126,17 +126,16 @@ def extract_and_chunk_rulebook_text():
             with tqdm(
                 total=len(reader.pages),
                 desc="Chunking text",
-                unit=" pages"
+                unit="page"
             ) as progress_bar:
                 full_rulebook_text = "".join([page["text"] for page in pages])
                 num_chars_in_page = {page["page_num"]: page["num_chars"] for page in pages}
 
                 idx = 0
-                curr_page_num = 0
+                curr_page_num = 1
                 start_of_next_page = 0
 
                 while idx < len(full_rulebook_text):
-                    curr_page_num += 1
                     start_of_next_page += num_chars_in_page[curr_page_num]
 
                     curr_chunk_num = 0
@@ -151,10 +150,11 @@ def extract_and_chunk_rulebook_text():
                     # When we finish chunking a page, set idx to the start of the next page,
                     # since the final chunk of a page almost always overflows, causing idx to be well into the next one
                     idx = start_of_next_page
+                    curr_page_num += 1
                     progress_bar.update(1)
         else:
             print(f'"{rulebook}" has already been processed')
-        print()
+    print()
 
 
 def encode_chunked_text():
@@ -163,13 +163,17 @@ def encode_chunked_text():
 
     print_bold("Encoding chunked text from rulebooks...")
     for rulebook in db.tables():
-        if "embedded_chunks" not in rulebook:
-            pages = db.table(rulebook)
+        pages = db.table(rulebook)
+        pages_have_embeddings = [
+            page.get("chunk_embeddings", None) is not None
+            for page in pages
+        ]
 
+        if not all(pages_have_embeddings):
             with tqdm(
                 total=len(pages),
                 desc=f'Processing "{rulebook}"',
-                unit=" pages"
+                unit="page"
             ) as progress_bar:
                 for page in pages:
                     chunks_to_encode = page["chunks"]
@@ -178,7 +182,7 @@ def encode_chunked_text():
                     
                     # e5-large-v2 is trained to encode queries and passages for semantic search,
                     # which requires prepending "query" or "passage" to the text we want to encode
-                    text_to_encode = [f'passage: {chunks_to_encode[chunk_id]}' for chunk_id in sorted_chunk_ids]
+                    text_to_encode = [f"passage: {chunks_to_encode[chunk_id]}" for chunk_id in sorted_chunk_ids]
                     chunk_embeddings = model.encode(text_to_encode, normalize_embeddings=True)
                     chunk_embeddings_with_ids = {idx: embedding.tolist() for idx, embedding in enumerate(chunk_embeddings)}
 
