@@ -5,9 +5,10 @@ BOLD_START = "\033[1m"
 BOLD_END = "\033[0m"
 DOWNLOAD_BLOCK_SIZE = 1024
 EMBEDDING_MODEL_TO_USE = "intfloat/e5-large-v2"
+OPENAI_MODEL_TO_USE = "gpt-4o-mini"
 
-UNKNOWN = "Unknown"
-NO_BOARD_GAME_SPECIFIED = "No Board Game Specified"
+UNKNOWN = "UNKNOWN"
+NO_BOARD_GAME_SPECIFIED = "NO BOARD GAME SPECIFIED"
 
 BOARD_GAMES = [
     {
@@ -37,18 +38,17 @@ BOARD_GAMES = [
         ]
     }
 ]
+BOARD_GAMES_STRING_LIST = "\n".join([f"- {board_game['name']}" for board_game in BOARD_GAMES])
 
-DETERMINE_BOARD_GAME_PROMPT_TEMPLATE = (
-    "You will be given a question and must determine which board game the question refers to from a list.\n"
-    "You must answer with the name of the board game exactly as it appears in the list.\n"
-    f"If the question is asking for the rules of any game that is not in the list, respond with: '{UNKNOWN}'\n"
-    "For example, if the question is 'In <board game>, who goes first?', if <board game> is not in the list, then respond with '{UNKNOWN_RESPONSE}'."
-    f"Only if you're absolutely certain that the question does NOT specify a board game, respond with: '{NO_BOARD_GAME_SPECIFIED}'.\n"
-    "The list is:\n"
-    "<BOARD_GAME_LIST>\n"
-    "The question is:\n"
-    "<QUESTION>"
-).replace(
-    "<BOARD_GAME_LIST>",
-    "\n".join([f'- {board_game["name"]}' for board_game in BOARD_GAMES])
-)
+DETERMINE_BOARD_GAME_PROMPT_TEMPLATE = f"""
+You will be given a list of board games and a question, where you must determine which board game in the list the question is about.
+You must answer with the name of the board game exactly as it appears in the list.
+If the question is asking about a board game that is not in the list, respond with "{UNKNOWN}".
+Only if you're absolutely certain that the question does NOT specify a board game, respond with "{NO_BOARD_GAME_SPECIFIED}".
+
+The list is:
+{BOARD_GAMES_STRING_LIST}
+
+The question is:
+<QUESTION>
+"""
