@@ -5,10 +5,10 @@ BOLD_START = "\033[1m"
 BOLD_END = "\033[0m"
 DOWNLOAD_BLOCK_SIZE = 1024
 EMBEDDING_MODEL_TO_USE = "intfloat/e5-large-v2"
+NORMALIZE_EMBEDDINGS = True
 OPENAI_MODEL_TO_USE = "gpt-4o-mini"
 
 UNKNOWN = "UNKNOWN"
-NO_BOARD_GAME_SPECIFIED = "NO BOARD GAME SPECIFIED"
 
 BOARD_GAMES = [
     {
@@ -43,8 +43,7 @@ BOARD_GAMES_STRING_LIST = "\n".join([f"- {board_game['name']}" for board_game in
 DETERMINE_BOARD_GAME_PROMPT_TEMPLATE = f"""
 You will be given a list of board games and a question, where you must determine which board game in the list the question is about.
 You must answer with the name of the board game exactly as it appears in the list.
-If the question is asking about a board game that is not in the list, respond with "{UNKNOWN}".
-Only if you're absolutely certain that the question does NOT specify a board game, respond with "{NO_BOARD_GAME_SPECIFIED}".
+If the question is about a board game that isn't in the list, or the question isn't related to board games at all, respond with "{UNKNOWN}".
 
 The list is:
 {BOARD_GAMES_STRING_LIST}
