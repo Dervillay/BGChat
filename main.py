@@ -1,16 +1,20 @@
 import openai
+import json
 import numpy as np
+from typing import List
+from sentence_transformers import SentenceTransformer
+from tinydb import TinyDB, where
 from config import (
     DETERMINE_BOARD_GAME_PROMPT_TEMPLATE,
+    EXPLAIN_RULES_PROMPT_TEMPLATE,
     EMBEDDING_MODEL_PATH,
     DATABASE_PATH,
     OPENAI_MODEL_TO_USE,
     NORMALIZE_EMBEDDINGS,
-    BOARD_GAMES
+    BOARD_GAMES,
+    UNKNOWN,
+    UNKNOWN_BOARD_GAME_RESPONSE,
 )
-from typing import List
-from sentence_transformers import SentenceTransformer
-from tinydb import TinyDB, where
 
 # TODO: Refactor this into its own module
 class BoardBrain:
@@ -27,6 +31,7 @@ class BoardBrain:
         self.__rulebook_pages = self.__embedding_db.table("rulebook_pages")
         self.__embedding_model = SentenceTransformer(embedding_model_path)
         self.__openai_client = openai.OpenAI()
+        self.selected_board_game = None
         self.messages = []
 
     def __construct_messages(
@@ -79,6 +84,9 @@ class BoardBrain:
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
 
+    def set_selected_board_game(self, selected_board_game):
+        self.selected_board_game = selected_board_game
+
     def determine_board_game(
         self,
         question: str
@@ -86,13 +94,20 @@ class BoardBrain:
         messages = self.__construct_messages(
             DETERMINE_BOARD_GAME_PROMPT_TEMPLATE.replace("<QUESTION>", question)
         )
-        return self.__call_openai_model(messages)
+        board_game = self.__call_openai_model(messages)
+
+        if board_game in BOARD_GAMES:
+            self.set_selected_board_game(board_game)
+        elif board_game == UNKNOWN:
+            return UNKNOWN_BOARD_GAME_RESPONSE
+
+        return self.selected_board_game
     
-    def get_relevant_rulebook_pages(
+    def get_relevant_rulebook_extracts(
         self,
         board_game_name: str,
         question: str,
-        n: int = 5
+        n: int = 5,
     ):
         question_embedding = self.__embed_question(question)
         pages = self.__rulebook_pages.search(
@@ -122,6 +137,20 @@ class BoardBrain:
         )
 
         return results[:n]
+    
+    def explain_rules(
+        self,
+        question: str,
+        rulebook_extracts: List
+    ):
+        rulebook_extracts_as_string = "\n".join([json.dumps(extract) for extract in rulebook_extracts])
+        messages = self.__construct_messages(
+            EXPLAIN_RULES_PROMPT_TEMPLATE
+            .replace("<BOARD_GAME>", self.selected_board_game)
+            .replace("<RULEBOOK_TEXTS>", rulebook_extracts_as_string)
+            .replace("<QUESTION>", question)
+        )
+        return self.__call_openai_model(messages)
 
 
 def main():
@@ -133,12 +162,12 @@ def main():
     )
 
     question = input(">")
+    # TODO: Handle failing to determine board games
     selected_board_game = board_brain.determine_board_game(question)
-    rulebook_pages = board_brain.get_relevant_rulebook_pages("Root", question)
-
-    # test_rulebook = "Gloomhaven: Jaws of the Lion - Glossary.pdf"
-    # pages = db.table(test_rulebook)
-    # TODO: Test embedding scores are high for relevant passages
+    rulebook_extracts = board_brain.get_relevant_rulebook_extracts(selected_board_game, question)
+    response = board_brain.explain_rules(question, rulebook_extracts)
+    print(f"Selected board game: {selected_board_game}")
+    print(f"Response: {response}")
 
     # TODO:
     # Load embedding model from local storage
