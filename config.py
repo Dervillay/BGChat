@@ -7,6 +7,7 @@ DOWNLOAD_BLOCK_SIZE = 1024
 EMBEDDING_MODEL_TO_USE = "intfloat/e5-large-v2"
 NORMALIZE_EMBEDDINGS = True
 OPENAI_MODEL_TO_USE = "gpt-4o-mini"
+DICTIONARY_REGEX_PATTERN = r"{[^{}]*(?:{[^{}]*})*[^{}]*}"
 
 UNKNOWN = "UNKNOWN"
 
@@ -15,11 +16,11 @@ BOARD_GAMES = [
         "name": "Gloomhaven: Jaws of the Lion",
         "rulebooks": [
             {
-                "name": "Learn to Play Guide",
+                "name": "Glossary",
                 "download_url": "https://comparajogos-forum.s3.dualstack.sa-east-1.amazonaws.com/uploads/original/2X/e/e6fb769d1c8b7730e40cbe95d93c641ed83638c0.pdf"
             },
             {
-                "name": "Glossary",
+                "name": "Learn to Play Guide",
                 "download_url": "https://cdn.1j1ju.com/medias/c1/6f/d7-gloomhaven-jaws-of-the-lion-rulebook.pdf",
             },
         ]
@@ -59,10 +60,11 @@ The question is:
 
 EXPLAIN_RULES_PROMPT_TEMPLATE = f"""
 You are an intellectually honest assistant that helps users understand the rules for different board games.
-You will be given several JSON objects containing text extracts from rulebooks for a board game. You will also be given a question about the rules of this board game.
+You will be given several dictionary objects representing text extracts from rulebooks for a board game. You will also be given a question about the rules of this board game.
 You must answer this question using only the information contained in the 'text' field of these JSON objects.
 Only consider an extract's text value if it is directly relevant to the question asked.
-You may quote relevant rulebook text in your response, but must cite its source using the following format: {{"rulebook_name":<rulebook_name>, "page_num":<page_num>}}.
+You may quote relevant rulebook text in your response, but must cite its source using the following dictionary format: 
+{{"rulebook_name": <rulebook_name>, "page_num": <page_num>}}
 
 If the rulebook extracts are not sufficient for you to confidently answer the question: tell the user that you couldn't find this information in any of the rulebooks.
 If you aren't certain of the answer but think you have a reasonable interpretation of the rules: give your interpretation, but step through your reasoning and make it clear that
