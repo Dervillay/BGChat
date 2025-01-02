@@ -1,7 +1,11 @@
 import openai
 import json
+import ast
+import os
 import numpy as np
+import regex as re
 from typing import List
+from urllib.parse import quote
 from sentence_transformers import SentenceTransformer
 from tinydb import TinyDB, where
 from config import (
@@ -14,6 +18,8 @@ from config import (
     BOARD_GAMES,
     UNKNOWN,
     UNKNOWN_BOARD_GAME_RESPONSE,
+    RULEBOOKS_PATH,
+    DICTIONARY_REGEX_PATTERN,
 )
 
 # TODO: Refactor this into its own module
@@ -25,13 +31,14 @@ class BoardBrain:
         embedding_database_path: str,    
         normalize_embeddings: bool,
     ):
+        self.selected_board_game = None
+        self.known_board_games = [board_game["name"] for board_game in BOARD_GAMES]
         self.__openai_model_to_use = open_ai_model_to_use
         self.__normalize_embeddings = normalize_embeddings
         self.__embedding_db = TinyDB(embedding_database_path)
         self.__rulebook_pages = self.__embedding_db.table("rulebook_pages")
         self.__embedding_model = SentenceTransformer(embedding_model_path)
         self.__openai_client = openai.OpenAI()
-        self.selected_board_game = None
         self.messages = []
 
     def __construct_messages(
@@ -84,6 +91,34 @@ class BoardBrain:
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
 
+    def __construct_rulebook_link(
+        self,
+        citation: dict,
+    ):
+        rulebook_name = citation.get("rulebook_name")
+        page_num = citation.get("page_num")
+
+        if not rulebook_name or not page_num:
+            print(f"WARN: Malformed citation detected:\n{json.dumps(citation)}")
+            return
+
+        path = os.path.abspath(f"{RULEBOOKS_PATH}/{self.selected_board_game}/{rulebook_name}.pdf")
+        encoded_path = quote(path)
+
+        return f"file:///{encoded_path}#page={page_num}"
+
+    def __parse_citations(self, text: str):    
+        def replace_citation_dict_with_link(match):
+            dict_str = match.group(0)
+            dict_obj = ast.literal_eval(dict_str)
+            return self.__construct_rulebook_link(dict_obj)
+
+        return re.sub(
+            DICTIONARY_REGEX_PATTERN,
+            replace_citation_dict_with_link,
+            text
+        )
+
     def set_selected_board_game(self, selected_board_game):
         self.selected_board_game = selected_board_game
 
@@ -94,12 +129,14 @@ class BoardBrain:
         messages = self.__construct_messages(
             DETERMINE_BOARD_GAME_PROMPT_TEMPLATE.replace("<QUESTION>", question)
         )
-        board_game = self.__call_openai_model(messages)
+        response = self.__call_openai_model(messages)
 
-        if board_game in BOARD_GAMES:
-            self.set_selected_board_game(board_game)
-        elif board_game == UNKNOWN:
+        if response in self.known_board_games:
+            self.set_selected_board_game(response)
+        elif response == UNKNOWN:
             return UNKNOWN_BOARD_GAME_RESPONSE
+        else:
+            raise ValueError(f"Received an unexpected response when attempting to determine board game: {response}")
 
         return self.selected_board_game
     
@@ -147,10 +184,11 @@ class BoardBrain:
         messages = self.__construct_messages(
             EXPLAIN_RULES_PROMPT_TEMPLATE
             .replace("<BOARD_GAME>", self.selected_board_game)
-            .replace("<RULEBOOK_TEXTS>", rulebook_extracts_as_string)
+            .replace("<RULEBOOK_EXTRACTS>", rulebook_extracts_as_string)
             .replace("<QUESTION>", question)
         )
-        return self.__call_openai_model(messages)
+        response = self.__call_openai_model(messages)
+        return self.__parse_citations(response)
 
 
 def main():
@@ -162,20 +200,11 @@ def main():
     )
 
     question = input(">")
-    # TODO: Handle failing to determine board games
     selected_board_game = board_brain.determine_board_game(question)
     rulebook_extracts = board_brain.get_relevant_rulebook_extracts(selected_board_game, question)
     response = board_brain.explain_rules(question, rulebook_extracts)
-    print(f"Selected board game: {selected_board_game}")
+    print(f"\n\nSelected board game: {selected_board_game}")
     print(f"Response: {response}")
-
-    # TODO:
-    # Load embedding model from local storage
-    # Embed question
-    # Iterate through all rulebook page embeddings to find highest match with question
-    # Ask LLM if question can be answered using page contents
-    # If yes, provide summarised explanation, rulebook name, page number, and link to preview that page of the rulebook
-    # If no, return response that it doesn't appear to be answered by the rules, and provide link to google results to see if it's discussed on a forum
 
 
 if __name__ == "__main__":
