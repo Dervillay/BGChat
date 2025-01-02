@@ -4,34 +4,35 @@ from tqdm import tqdm
 from tinydb import TinyDB, where
 from pypdf import PdfReader
 from sentence_transformers import SentenceTransformer
-from utils import print_bold
-from config import (
-    RULEBOOKS_PATH,
+from config.board_brain_config import (
     BOARD_GAMES,
-    DOWNLOAD_BLOCK_SIZE,
-    DATABASE_PATH,
     EMBEDDING_MODEL_TO_USE,
-    EMBEDDING_MODEL_PATH,
-    NORMALIZE_EMBEDDINGS,
 )
 
+# Filepath consts - changing these will break logic elsewhere
+RULEBOOKS_PATH = "./resources/rulebooks"
+EMBEDDING_MODEL_PATH = "./resources/embedding_model"
+DATABASE_PATH = "./backend/app/database.json"
+
+DOWNLOAD_BLOCK_SIZE = 1024
 
 db = None
 model = None
 chars_per_chunk = None
 
 
+def print_bold(text):
+    print(f"\033[1m{text}\033[0m")
+
+
 def download_rulebooks():
-    if not os.path.exists(RULEBOOKS_PATH):
-        os.mkdir(RULEBOOKS_PATH)
+    os.makedirs(RULEBOOKS_PATH, exist_ok=True)
 
     print_bold("Downloading rulebooks for board games...")
     for board_game in BOARD_GAMES:
-
         print_bold(f'\n{board_game["name"]}')
         board_game_rulebooks_path = f'{RULEBOOKS_PATH}/{board_game["name"]}'
-        if not os.path.exists(board_game_rulebooks_path):
-            os.mkdir(board_game_rulebooks_path)
+        os.makedirs(board_game_rulebooks_path, exist_ok=True)
 
         for rulebook in board_game["rulebooks"]:
             rulebook_path = f'{board_game_rulebooks_path}/{rulebook["name"]}.pdf'
@@ -62,8 +63,7 @@ def download_rulebooks():
 def download_embedding_model():
     global model
 
-    if not os.path.isdir(EMBEDDING_MODEL_PATH):
-        os.mkdir(EMBEDDING_MODEL_PATH)
+    os.makedirs(EMBEDDING_MODEL_PATH, exist_ok=True)
 
     print_bold("Downloading embedding model...")
     if os.listdir(EMBEDDING_MODEL_PATH):
@@ -200,7 +200,7 @@ def process_and_store_rulebook_text():
                         # e5-large-v2 is trained to encode queries and passages for semantic search,
                         # which requires prepending "query" or "passage" to the text we want to encode
                         text_to_encode = [f'passage: {chunks[chunk_id]["text"]}' for chunk_id in sorted_chunk_ids]
-                        chunk_embeddings = model.encode(text_to_encode, normalize_embeddings=NORMALIZE_EMBEDDINGS)
+                        chunk_embeddings = model.encode(text_to_encode, normalize_embeddings=True)
 
                         for idx, chunk_id in enumerate(sorted_chunk_ids):
                             chunks[chunk_id]["embedding"] = chunk_embeddings[idx].tolist()
