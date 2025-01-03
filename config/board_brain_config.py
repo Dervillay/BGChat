@@ -1,3 +1,8 @@
+# All paths are relative to the project's root
+RULEBOOKS_PATH = "./resources/rulebooks"
+EMBEDDING_MODEL_PATH = "./resources/embedding_model"
+DATABASE_PATH = "./backend/app/database.json"
+
 OPENAI_MODEL_TO_USE = "gpt-4o-mini"
 EMBEDDING_MODEL_TO_USE = "intfloat/e5-large-v2"
 

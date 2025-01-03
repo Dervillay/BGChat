@@ -10,17 +10,15 @@ from urllib.parse import quote
 from sentence_transformers import SentenceTransformer
 from tinydb import TinyDB, where
 
-# Adjust relative path to be able to import config
-sys.path.append(
-    os.path.abspath(
-        os.path.join(
-            os.path.dirname(__file__),
-            '../../'
-        )
-    )
-)
+
+# Add project root to sys.path to allow importing config
+project_root_abs_path = os.path.abspath(os.path.join(__file__, "../../../"))
+sys.path.append(project_root_abs_path)
 
 from config.board_brain_config import (
+    RULEBOOKS_PATH,
+    EMBEDDING_MODEL_PATH,
+    DATABASE_PATH,
     OPENAI_MODEL_TO_USE,
     BOARD_GAMES,
     SYSTEM_PROMPT,
@@ -35,9 +33,9 @@ from config.board_brain_config import (
 class BoardBrain:
     def __init__(
         self,
-        rulebooks_path: str,
-        embedding_model_path: str,
-        embedding_database_path: str,    
+        rulebooks_path: str = os.path.join(project_root_abs_path, RULEBOOKS_PATH),
+        embedding_model_path: str = os.path.join(project_root_abs_path, EMBEDDING_MODEL_PATH),
+        embedding_database_path: str = os.path.join(project_root_abs_path, DATABASE_PATH),
     ):
         self.selected_board_game: str = None
         self.known_board_games: List[str] = [board_game["name"] for board_game in BOARD_GAMES]

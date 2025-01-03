@@ -5,14 +5,12 @@ from tinydb import TinyDB, where
 from pypdf import PdfReader
 from sentence_transformers import SentenceTransformer
 from config.board_brain_config import (
+    RULEBOOKS_PATH,
+    EMBEDDING_MODEL_PATH,
+    DATABASE_PATH,
     BOARD_GAMES,
     EMBEDDING_MODEL_TO_USE,
 )
-
-# Filepath consts - changing these will break logic elsewhere
-RULEBOOKS_PATH = "./resources/rulebooks"
-EMBEDDING_MODEL_PATH = "./resources/embedding_model"
-DATABASE_PATH = "./backend/app/database.json"
 
 DOWNLOAD_BLOCK_SIZE = 1024
 
