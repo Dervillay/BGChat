@@ -1,3 +1,4 @@
 __pycache__
 resources
 backend/app/database.json
+frontend/node_modules

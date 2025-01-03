@@ -73,6 +73,59 @@ def determine_board_game():
             'details': str(e)
         }), 500
 
+@board_brain_bp.route('/known-board-games', methods=['GET'])
+def get_known_board_games():
+    """
+    Endpoint to get list of known board games
+    
+    Returns:
+    {
+        "response": ["Monopoly", "Catan", ...]
+    }
+    """
+    try:
+        logger.info(f"Getting known board games")
+        return jsonify({
+            'response': board_brain.known_board_games
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in determine_board_game: {str(e)}")
+        return jsonify({
+            'error': 'An unexpected error occurred',
+            'details': str(e)
+        }), 500
+
+@board_brain_bp.route('/set-selected-board-game', methods=['POST'])
+def set_selected_board_game():
+    """
+    Endpoint to set selected board game
+
+    Expected request format:
+    {
+        "selected_board_game": "board game name"
+    }
+    
+    Returns:
+    {
+        "success": True/False
+    }
+    """
+    try:
+        data = request.get_json()
+        logger.info(f'Setting selected board game to: {data["selected_board_game"]}')
+        board_brain.set_selected_board_game(data["selected_board_game"])
+        return jsonify({
+            'success': True
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in set selected board game: {str(e)}")
+        return jsonify({
+            'error': 'An unexpected error occurred',
+            'details': str(e)
+        }), 500
+
 @board_brain_bp.route('/ask', methods=['POST'])
 @validate_message
 def ask():
@@ -101,16 +154,17 @@ def ask():
             if response not in board_brain.known_board_games:
                 return jsonify({
                     'response': response,
-                }), 400
+                })
         
         response = board_brain.ask_question(user_message)
-        
+
         return jsonify({
             'response': response
         })
         
     except Exception as e:
         logger.error(f"Error in ask endpoint: {str(e)}")
+
         return jsonify({
             'error': 'An unexpected error occurred',
             'details': str(e)
