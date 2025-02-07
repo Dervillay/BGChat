@@ -10,9 +10,8 @@ const ChatBot = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Handle getting known board games
   const handleGetKnownBoardGames = async () => {
-    if (knownBoardGames.length) return;
+    if (knownBoardGames.length > 0) return;
 
     try {
       const response = await fetch('/api/known-board-games', { method: 'GET' });
@@ -33,12 +32,10 @@ const ChatBot = () => {
     const userMessage = input.trim();
     setInput('');
     setIsLoading(true);
-
-    // Add user message to chat
     setMessages(prev => [...prev, { text: userMessage, isUser: true }]);
 
     try {
-      const askResponse = await fetch('/api/ask', {
+      const askResponse = await fetch('/api/ask-question', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userMessage }),
@@ -60,7 +57,6 @@ const ChatBot = () => {
     }
   };
 
-  // Handle the selection of a board game from the dropdown
   const handleBoardGameSelect = async (e) => {
     try {
       const selectedBoardGame = e.target.value;
@@ -106,7 +102,16 @@ const ChatBot = () => {
       </VStack>
 
       {/* Input container */}
-      <Box position="fixed" bottom={0} left={0} right={0} p={4} bg={useColorModeValue('white', 'gray.800')} borderTop="1px" borderColor={useColorModeValue('gray.200', 'gray.600')}>
+      <Box 
+        position="fixed"
+        bottom={0}
+        left={0}
+        right={0}
+        p={4}
+        bg={useColorModeValue('white', 'gray.800')}
+        borderTop="1px"
+        borderColor={useColorModeValue('gray.200', 'gray.600')}
+      >
         <Container maxW="container.lg">
           <Flex>
             <Input

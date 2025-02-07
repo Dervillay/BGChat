@@ -126,7 +126,7 @@ def set_selected_board_game():
             'details': str(e)
         }), 500
 
-@board_brain_bp.route('/ask', methods=['POST'])
+@board_brain_bp.route('/ask-question', methods=['POST'])
 @validate_message
 def ask():
     """
