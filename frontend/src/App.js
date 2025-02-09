@@ -1,6 +1,6 @@
 import "./App.css";
 import { ChakraProvider } from "@chakra-ui/react";
-import ChatBot from "./components/ChatBot";
+import ChatBot from "./components/ChatBot.tsx";
 
 function App() {
 	return (

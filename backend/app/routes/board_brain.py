@@ -96,6 +96,16 @@ def get_known_board_games():
             'details': str(e)
         }), 500
 
+@board_brain_bp.route('/selected-board-game', methods=['GET'])
+def get_selected_board_game():
+    """
+    Endpoint to get currently selected board game
+    """
+    return jsonify({
+        'response': board_brain.selected_board_game
+    })
+
+
 @board_brain_bp.route('/set-selected-board-game', methods=['POST'])
 def set_selected_board_game():
     """
