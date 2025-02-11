@@ -3,12 +3,12 @@ import { Input, InputGroup, InputRightElement, IconButton, Spinner, Container } 
 import { FaArrowUp } from "react-icons/fa";
 
 interface ChatInputProps {
-	value: string;
+	inputValue: string;
 	isLoading: boolean;
 	selectedBoardGame: string;
-	onSend: () => void;
-	onChange: (e: ChangeEvent<HTMLInputElement>) => void;
-	onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
+	setInputValue: (value: string) => void;
+	setIsLoading: (loading: boolean) => void;
+	onMessageSend: (message: string) => void;
 }
 
 const adjustTextareaHeight = (e: ChangeEvent<HTMLInputElement>) => {
@@ -17,48 +17,57 @@ const adjustTextareaHeight = (e: ChangeEvent<HTMLInputElement>) => {
 	textarea.style.height = `${textarea.scrollHeight}px`;
 };
 
-export const ChatInput: FC<ChatInputProps> = ({ value, isLoading, selectedBoardGame, onSend, onChange, onKeyDown }) => {
+export const ChatInput: FC<ChatInputProps> = ({
+	inputValue,
+	isLoading,
+	selectedBoardGame,
+	setInputValue,
+	setIsLoading,
+	onMessageSend,
+}) => {
+	const handleSend = async () => {
+		if (!inputValue.trim()) return;
+
+		const message = inputValue.trim();
+		setInputValue("");
+		setIsLoading(true);
+		onMessageSend(message);
+	};
+
+	const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
+		if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+			e.preventDefault();
+			handleSend();
+		}
+	};
+
+	const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+		setInputValue(e.target.value);
+		adjustTextareaHeight(e);
+	};
+
 	return (
 		<Container maxW="48rem" position="fixed" bottom="1rem" left="50%" transform="translateX(-50%)">
-			<InputGroup alignItems="flex-end">
+			<InputGroup>
 				<Input
-					value={value}
-					onChange={onChange}
-					onKeyDown={onKeyDown}
+					as="textarea"
+					value={inputValue}
+					onChange={handleChange}
+					onKeyDown={handleKeyPress}
+					onInput={adjustTextareaHeight}
 					placeholder={`Ask about the rules for ${selectedBoardGame || "a board game"}`}
 					disabled={isLoading}
-					as="textarea"
-					resize="none"
-					border="1px solid"
-					borderColor="gray.200"
-					borderRadius="1.5rem"
-					textColor="gray.800"
-					boxShadow="0 0.125rem 0.25rem rgba(0, 0, 0, 0.1)"
-					verticalAlign="top"
-					minH="5rem"
-					maxH="15rem"
-					h="auto"
-					overflowY="auto"
-					p="1rem"
-					pr="3.5rem"
-					_hover={{
-						boxShadow: "0 0.125rem 0.25rem rgba(0, 0, 0, 0.15)",
-					}}
-					_focus={{
-						boxShadow: "0 0.1875rem 0.375rem rgba(0, 0, 0, 0.2)",
-						outline: undefined,
-						borderColor: "gray.200",
-					}}
+					variant="chat"
 					position="relative"
 				/>
 				<InputRightElement h="100%" position="absolute">
 					<IconButton
 						icon={isLoading ? <Spinner /> : <FaArrowUp />}
-						onClick={onSend}
+						onClick={handleSend}
 						bg="black"
 						color="white"
-						_hover={{ bg: value.trim() ? "blackAlpha.600" : "black" }}
-						disabled={!value.trim() || isLoading}
+						_hover={{ bg: inputValue.trim() ? "blackAlpha.600" : "black" }}
+						disabled={!inputValue.trim() || isLoading}
 						aria-label="Send message"
 						size="sm"
 						borderRadius="full"
