@@ -2,12 +2,12 @@ import React from "react";
 import ReactMarkdown from "react-markdown";
 import { Box, Container, Flex } from "@chakra-ui/react";
 
-interface MessageProps {
+interface ChatMessageProps {
 	message: string;
 	isUser: boolean;
 }
 
-export const Message: React.FC<MessageProps> = ({ message, isUser }) => {
+export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isUser }) => {
 	return (
 		<Container maxW="48rem">
 			<Flex justifyContent={isUser ? "flex-end" : "flex-start"}>

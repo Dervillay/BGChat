@@ -1,5 +1,3 @@
-import { border } from "@chakra-ui/react";
-
 export const Input = {
   baseStyle: {
     field: {

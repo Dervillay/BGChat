@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Box, Container, VStack, useColorModeValue, Select } from "@chakra-ui/react";
-import { Message } from "./Message.tsx";
+import { Box, Container, VStack } from "@chakra-ui/react";
+import { ChatMessage } from "./ChatMessage.tsx";
 import { ChatInput } from "./ChatInput.tsx";
+import { BoardGameSelect } from "./BoardGameSelect.tsx";
 
 interface MessageData {
 	text: string;
@@ -41,7 +42,7 @@ const ChatBot = () => {
 		handleGetKnownBoardGames();
 	}, []);
 
-	const handleBoardGameSelect = async (e) => {
+	const handleSelectBoardGame = async (e) => {
 		const game = e.target.value;
 		try {
 			const response = await fetch("/api/set-selected-board-game", {
@@ -87,26 +88,17 @@ const ChatBot = () => {
 	return (
 		<Box h="100vh" display="flex" flexDirection="column">
 			<Box position="fixed" top="1rem" right="1rem" zIndex={1}>
-				<Select
-					value={selectedBoardGame}
-					onChange={handleBoardGameSelect}
-					borderRadius="1.5rem"
-					placeholder="Select a board game"
-					bg={useColorModeValue("white", "gray.800")}
-					borderColor={useColorModeValue("gray.200", "gray.600")}
-				>
-					{knownBoardGames.map((game, index) => (
-						<option key={index} value={game}>
-							{game}
-						</option>
-					))}
-				</Select>
+				<BoardGameSelect
+					selectedBoardGame={selectedBoardGame}
+					knownBoardGames={knownBoardGames}
+					onSelectBoardGame={handleSelectBoardGame}
+				/>
 			</Box>
 
 			<Container flex="1" display="flex">
 				<VStack flex="1" overflowY="auto" spacing={2}>
 					{messages.map((message, index) => (
-						<Message key={index} message={message.text} isUser={message.isUser} />
+						<ChatMessage key={index} message={message.text} isUser={message.isUser} />
 					))}
 				</VStack>
 			</Container>
