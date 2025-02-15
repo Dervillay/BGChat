@@ -11,12 +11,6 @@ interface ChatInputProps {
 	onMessageSend: (message: string) => void;
 }
 
-const adjustTextareaHeight = (e: ChangeEvent<HTMLInputElement>) => {
-	const textarea = e.target;
-	textarea.style.height = "auto";
-	textarea.style.height = `${textarea.scrollHeight}px`;
-};
-
 export const ChatInput: FC<ChatInputProps> = ({
 	inputValue,
 	isLoading,
@@ -26,9 +20,10 @@ export const ChatInput: FC<ChatInputProps> = ({
 	onMessageSend,
 }) => {
 	const handleSend = async () => {
-		if (!inputValue.trim()) return;
-
 		const message = inputValue.trim();
+
+		if (!message) return;
+
 		setInputValue("");
 		setIsLoading(true);
 		onMessageSend(message);
@@ -42,8 +37,9 @@ export const ChatInput: FC<ChatInputProps> = ({
 	};
 
 	const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+		e.target.style.height = "auto";
+		e.target.style.height = `${e.target.scrollHeight}px`;
 		setInputValue(e.target.value);
-		adjustTextareaHeight(e);
 	};
 
 	return (
@@ -54,26 +50,24 @@ export const ChatInput: FC<ChatInputProps> = ({
 					value={inputValue}
 					onChange={handleChange}
 					onKeyDown={handleKeyPress}
-					onInput={adjustTextareaHeight}
 					placeholder={`Ask about the rules for ${selectedBoardGame || "a board game"}`}
 					disabled={isLoading}
+					pt="1rem"
+					pl="1rem"
+					pr="3.5rem"
+					pb="1rem"
 					variant="chat"
-					position="relative"
 				/>
 				<InputRightElement h="100%" position="absolute">
 					<IconButton
 						icon={isLoading ? <Spinner /> : <FaArrowUp />}
 						onClick={handleSend}
-						bg="black"
-						color="white"
-						_hover={{ bg: inputValue.trim() ? "blackAlpha.600" : "black" }}
 						disabled={!inputValue.trim() || isLoading}
 						aria-label="Send message"
-						size="sm"
-						borderRadius="full"
 						position="absolute"
 						bottom="1rem"
 						right="1rem"
+						variant="send"
 					/>
 				</InputRightElement>
 			</InputGroup>

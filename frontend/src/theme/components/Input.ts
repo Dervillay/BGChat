@@ -1,3 +1,5 @@
+import { border } from "@chakra-ui/react";
+
 export const Input = {
   baseStyle: {
     field: {
@@ -12,11 +14,17 @@ export const Input = {
       maxH: "15rem",
       h: "auto",
       overflowY: "auto",
-      p: "1rem",
-      pr: "3.5rem",
-      paddingTop: "1rem",
       lineHeight: "normal",
-      alignSelf: "flex-start"
+      "&::-webkit-scrollbar": {
+        width: "0.45rem",
+      },
+      "&::-webkit-scrollbar-track": {
+        margin: "1.25rem",
+      },
+      "&::-webkit-scrollbar-thumb": {
+        borderRadius: "1.5rem",
+        backgroundColor: "rgba(0,0,0,0.4)",
+      }
     }
   },
   variants: {
