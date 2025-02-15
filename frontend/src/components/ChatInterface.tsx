@@ -9,7 +9,7 @@ interface MessageData {
 	isUser: boolean;
 }
 
-const ChatBot = () => {
+const ChatInterface = () => {
 	const [knownBoardGames, setKnownBoardGames] = useState<string[]>([]);
 	const [selectedBoardGame, setSelectedBoardGame] = useState<string>("");
 	const [messages, setMessages] = useState<MessageData[]>([]);
@@ -115,4 +115,4 @@ const ChatBot = () => {
 	);
 };
 
-export default ChatBot;
+export default ChatInterface;
