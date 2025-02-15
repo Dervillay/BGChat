@@ -1,5 +1,5 @@
 import React, { FC, ChangeEvent, KeyboardEvent } from "react";
-import { Input, InputGroup, InputRightElement, IconButton, Spinner, Container } from "@chakra-ui/react";
+import { Input, InputGroup, InputRightElement, IconButton, Spinner } from "@chakra-ui/react";
 import { FaArrowUp } from "react-icons/fa";
 
 interface ChatInputProps {
@@ -21,9 +21,7 @@ export const ChatInput: FC<ChatInputProps> = ({
 }) => {
 	const handleSend = async () => {
 		const message = inputValue.trim();
-
 		if (!message) return;
-
 		setInputValue("");
 		setIsLoading(true);
 		onMessageSend(message);
@@ -43,34 +41,32 @@ export const ChatInput: FC<ChatInputProps> = ({
 	};
 
 	return (
-		<Container maxW="48rem" position="fixed" bottom="1rem" left="50%" transform="translateX(-50%)">
-			<InputGroup>
-				<Input
-					as="textarea"
-					value={inputValue}
-					onChange={handleChange}
-					onKeyDown={handleKeyPress}
-					placeholder={`Ask about the rules for ${selectedBoardGame || "a board game"}`}
-					disabled={isLoading}
-					pt="1rem"
-					pl="1rem"
-					pr="3.5rem"
-					pb="1rem"
-					variant="chat"
+		<InputGroup>
+			<Input
+				as="textarea"
+				value={inputValue}
+				onChange={handleChange}
+				onKeyDown={handleKeyPress}
+				placeholder={`Ask about the rules for ${selectedBoardGame || "a board game"}`}
+				disabled={isLoading}
+				pt="1rem"
+				pl="1rem"
+				pr="3.5rem"
+				pb="1rem"
+				variant="chat"
+			/>
+			<InputRightElement h="100%" position="absolute">
+				<IconButton
+					icon={isLoading ? <Spinner /> : <FaArrowUp />}
+					onClick={handleSend}
+					disabled={!inputValue.trim() || isLoading}
+					aria-label="Send message"
+					position="absolute"
+					bottom="1rem"
+					right="1rem"
+					variant="send"
 				/>
-				<InputRightElement h="100%" position="absolute">
-					<IconButton
-						icon={isLoading ? <Spinner /> : <FaArrowUp />}
-						onClick={handleSend}
-						disabled={!inputValue.trim() || isLoading}
-						aria-label="Send message"
-						position="absolute"
-						bottom="1rem"
-						right="1rem"
-						variant="send"
-					/>
-				</InputRightElement>
-			</InputGroup>
-		</Container>
+			</InputRightElement>
+		</InputGroup>
 	);
 };

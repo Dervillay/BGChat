@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Box, Container, VStack } from "@chakra-ui/react";
+import { Box, Container, VStack, Text } from "@chakra-ui/react";
 import { ChatMessage } from "./ChatMessage.tsx";
 import { ChatInput } from "./ChatInput.tsx";
 import { BoardGameSelect } from "./BoardGameSelect.tsx";
@@ -16,9 +16,11 @@ const ChatInterface = () => {
 	const [inputValue, setInputValue] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 
-	const handleGetKnownBoardGames = async () => {
-		if (knownBoardGames.length) return;
+	useEffect(() => {
+		handleGetKnownBoardGames();
+	}, []);
 
+	const handleGetKnownBoardGames = async () => {
 		try {
 			const response = await fetch("/api/known-board-games", { method: "GET" });
 			const data = await response.json();
@@ -38,11 +40,7 @@ const ChatInterface = () => {
 		}
 	};
 
-	useEffect(() => {
-		handleGetKnownBoardGames();
-	}, []);
-
-	const handleSelectBoardGame = async (e) => {
+	const handleSelectBoardGame = async (e: React.ChangeEvent<HTMLSelectElement>) => {
 		const game = e.target.value;
 		try {
 			const response = await fetch("/api/set-selected-board-game", {
@@ -87,15 +85,32 @@ const ChatInterface = () => {
 
 	return (
 		<Box h="100vh" display="flex" flexDirection="column">
-			<Box position="fixed" top="1rem" right="1rem" zIndex={1}>
-				<BoardGameSelect
-					selectedBoardGame={selectedBoardGame}
-					knownBoardGames={knownBoardGames}
-					onSelectBoardGame={handleSelectBoardGame}
-				/>
+			<Box
+				position="fixed"
+				top={0}
+				left={0}
+				right={0}
+				h="4rem"
+				bgGradient="linear(to bottom, rgba(255, 255, 255, 1) 50%, rgba(255, 255, 255, 0) 100%)"
+				display="flex"
+				alignItems="center"
+				justifyContent="space-between"
+				px={5}
+				zIndex={1}
+			>
+				<Text bgGradient="linear(to-l, #7928CA, #FF0080)" bgClip="text" fontSize="4xl" fontWeight="extrabold">
+					BGChat
+				</Text>
+				<Box>
+					<BoardGameSelect
+						selectedBoardGame={selectedBoardGame}
+						knownBoardGames={knownBoardGames}
+						onSelectBoardGame={handleSelectBoardGame}
+					/>
+				</Box>
 			</Box>
 
-			<Container flex="1" display="flex">
+			<Container flex="1" display="flex" mt="4rem">
 				<VStack flex="1" overflowY="auto" spacing={2}>
 					{messages.map((message, index) => (
 						<ChatMessage key={index} message={message.text} isUser={message.isUser} />
@@ -103,14 +118,16 @@ const ChatInterface = () => {
 				</VStack>
 			</Container>
 
-			<ChatInput
-				inputValue={inputValue}
-				isLoading={isLoading}
-				selectedBoardGame={selectedBoardGame}
-				setInputValue={setInputValue}
-				setIsLoading={setIsLoading}
-				onMessageSend={handleMessageSend}
-			/>
+			<Container maxW="48rem" position="fixed" bottom="1rem" left="50%" transform="translateX(-50%)">
+				<ChatInput
+					inputValue={inputValue}
+					isLoading={isLoading}
+					selectedBoardGame={selectedBoardGame}
+					setInputValue={setInputValue}
+					setIsLoading={setIsLoading}
+					onMessageSend={handleMessageSend}
+				/>
+			</Container>
 		</Box>
 	);
 };
