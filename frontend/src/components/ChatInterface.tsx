@@ -4,15 +4,15 @@ import { ChatMessage } from "./ChatMessage.tsx";
 import { ChatInput } from "./ChatInput.tsx";
 import { BoardGameSelect } from "./BoardGameSelect.tsx";
 
-interface MessageData {
-	text: string;
-	isUser: boolean;
+interface Message {
+	content: string;
+	role: "user" | "assistant";
 }
 
 const ChatInterface = () => {
 	const [knownBoardGames, setKnownBoardGames] = useState<string[]>([]);
 	const [selectedBoardGame, setSelectedBoardGame] = useState<string>("");
-	const [messages, setMessages] = useState<MessageData[]>([]);
+	const [messages, setMessages] = useState<Message[]>([]);
 	const [inputValue, setInputValue] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 
@@ -26,7 +26,7 @@ const ChatInterface = () => {
 			const data = await response.json();
 			setKnownBoardGames(data.response);
 		} catch {
-			setMessages((prev) => [...prev, { text: "Failed to load known board games", isUser: false }]);
+			setMessages((prev) => [...prev, { content: "Failed to load known board games", role: "assistant" }]);
 		}
 	};
 
@@ -36,13 +36,15 @@ const ChatInterface = () => {
 			const data = await response.json();
 			setSelectedBoardGame(data.response);
 		} catch {
-			setMessages((prev) => [...prev, { text: "Failed to load selected board game", isUser: false }]);
+			setMessages((prev) => [...prev, { content: "Failed to load selected board game", role: "assistant" }]);
 		}
 	};
 
 	const handleSelectBoardGame = async (e: React.ChangeEvent<HTMLSelectElement>) => {
 		const game = e.target.value;
+		setIsLoading(true);
 		try {
+			// First, set the selected game
 			const response = await fetch("/api/set-selected-board-game", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -52,31 +54,46 @@ const ChatInterface = () => {
 
 			if (data.success) {
 				setSelectedBoardGame(game);
+
+				const response = await fetch(`/api/chat-history`, {
+					method: "GET",
+				});
+				const data = await response.json();
+				setMessages(data.response);
 			}
-		} catch {
-			setMessages((prev) => [...prev, { text: "Failed to select board game", isUser: false }]);
+		} catch (error) {
+			setMessages((prev) => [
+				...prev,
+				{
+					content: "Failed to switch board game. Please try again.",
+					role: "assistant",
+				},
+			]);
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
-	const handleMessageSend = async (message: string) => {
-		setMessages((prev) => [...prev, { text: message, isUser: true }]);
+	const handleSendMessage = async (message: string) => {
+		setMessages((prev) => [...prev, { content: message, role: "user" }]);
 
 		try {
 			const response = await fetch("/api/ask-question", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ message }),
+				body: JSON.stringify({ question: message }),
 			});
 			const data = await response.json();
 
 			if (!selectedBoardGame) {
 				await handleGetSelectedBoardGame();
 			}
-			setMessages((prev) => [...prev, { text: data.response, isUser: false }]);
+
+			setMessages((prev) => [...prev, { content: data.response, role: "assistant" }]);
 		} catch {
 			setMessages((prev) => [
 				...prev,
-				{ text: "Sorry, I'm having trouble connecting to the server.", isUser: false },
+				{ content: "Sorry, I'm having trouble connecting to the server.", role: "assistant" },
 			]);
 		} finally {
 			setIsLoading(false);
@@ -113,7 +130,7 @@ const ChatInterface = () => {
 			<Container flex="1" display="flex" mt="4rem">
 				<VStack flex="1" overflowY="auto" spacing={2}>
 					{messages.map((message, index) => (
-						<ChatMessage key={index} message={message.text} isUser={message.isUser} />
+						<ChatMessage key={index} content={message.content} role={message.role} />
 					))}
 				</VStack>
 			</Container>
@@ -125,7 +142,7 @@ const ChatInterface = () => {
 					selectedBoardGame={selectedBoardGame}
 					setInputValue={setInputValue}
 					setIsLoading={setIsLoading}
-					onMessageSend={handleMessageSend}
+					onMessageSend={handleSendMessage}
 				/>
 			</Container>
 		</Box>
