@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Box, Container, VStack, Text } from "@chakra-ui/react";
 import { ChatMessage } from "./ChatMessage.tsx";
 import { ChatInput } from "./ChatInput.tsx";
@@ -10,6 +10,7 @@ interface Message {
 }
 
 const ChatInterface = () => {
+	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const [knownBoardGames, setKnownBoardGames] = useState<string[]>([]);
 	const [selectedBoardGame, setSelectedBoardGame] = useState<string>("");
 	const [messages, setMessages] = useState<Message[]>([]);
@@ -44,7 +45,6 @@ const ChatInterface = () => {
 		const game = e.target.value;
 		setIsLoading(true);
 		try {
-			// First, set the selected game
 			const response = await fetch("/api/set-selected-board-game", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -54,7 +54,6 @@ const ChatInterface = () => {
 
 			if (data.success) {
 				setSelectedBoardGame(game);
-
 				const response = await fetch(`/api/chat-history`, {
 					method: "GET",
 				});
@@ -100,6 +99,10 @@ const ChatInterface = () => {
 		}
 	};
 
+	useEffect(() => {
+		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+	}, [messages]);
+
 	return (
 		<Box h="100vh" display="flex" flexDirection="column">
 			<Box
@@ -127,11 +130,12 @@ const ChatInterface = () => {
 				</Box>
 			</Box>
 
-			<Container flex="1" display="flex" mt="4rem">
-				<VStack flex="1" overflowY="auto" spacing={2}>
+			<Container maxW="48rem" flex="1" display="flex" mt="4rem">
+				<VStack flex="1" overflowY="auto" spacing={4} w="100%" pb="5.5rem">
 					{messages.map((message, index) => (
 						<ChatMessage key={index} content={message.content} role={message.role} />
 					))}
+					<div ref={messagesEndRef} />
 				</VStack>
 			</Container>
 
