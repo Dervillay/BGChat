@@ -5,11 +5,9 @@ import os
 import sys
 import numpy as np
 import regex as re
-from typing import List
 from urllib.parse import quote
 from sentence_transformers import SentenceTransformer
 from tinydb import TinyDB, where
-
 
 # Add project root to sys.path to allow importing config
 project_root_abs_path = os.path.abspath(os.path.join(__file__, "../../../"))
@@ -38,25 +36,13 @@ class BoardBrain:
         embedding_database_path: str = os.path.join(project_root_abs_path, DATABASE_PATH),
     ):
         self.selected_board_game: str = None
-        self.known_board_games: List[str] = [board_game["name"] for board_game in BOARD_GAMES]
+        self.known_board_games: list[str] = [board_game["name"] for board_game in BOARD_GAMES]
         self.message_history = {board_game["name"]: [] for board_game in BOARD_GAMES}
         self.__rulebooks_path = rulebooks_path
         self.__embedding_db = TinyDB(embedding_database_path)
         self.__rulebook_pages = self.__embedding_db.table("rulebook_pages")
         self.__embedding_model = SentenceTransformer(embedding_model_path)
         self.__openai_client = openai.OpenAI()
-
-
-    def __construct_messages(
-        self,
-        question: str,
-        prev_messages: List[dict] = []
-    ):
-        message = {
-            "role": "user",
-            "content": question,
-        }
-        return prev_messages + [message]
 
 
     def __embed_question(
@@ -72,7 +58,7 @@ class BoardBrain:
 
     def __call_openai_model(
         self,
-        messages: List[dict],
+        messages: list[dict],
         return_all_metadata: bool = False,
     ):
         try:
@@ -168,14 +154,24 @@ class BoardBrain:
         self.selected_board_game = selected_board_game
 
 
+    def get_message_history(
+            self,
+            board_game_name: str
+        ):
+        if board_game_name not in self.known_board_games:
+            return []
+        return self.message_history[board_game_name]
+
+
     def determine_board_game(
         self,
         question: str
     ):
-        messages = self.__construct_messages(
-            DETERMINE_BOARD_GAME_PROMPT_TEMPLATE.replace("<QUESTION>", question)
-        )
-        response = self.__call_openai_model(messages)
+        message = {
+            "content": DETERMINE_BOARD_GAME_PROMPT_TEMPLATE.replace("<QUESTION>", question),
+            "role": "user",
+        }
+        response = self.__call_openai_model([message])
 
         if response in self.known_board_games:
             self.set_selected_board_game(response)
@@ -201,20 +197,27 @@ class BoardBrain:
             .replace("<RULEBOOK_EXTRACTS>", rulebook_extracts_as_string)
             .replace("<QUESTION>", question)
         )
+        self.message_history[self.selected_board_game].append({
+            "content": question,
+            "role": "user",
+        })
 
         # If this is the first question about this board game, include the system prompt
         # otherwise, pass previous messages to the model so it retains context
-        previous_messages_for_selected_board_game = self.message_history[self.selected_board_game]
-        if len(previous_messages_for_selected_board_game) == 0:
-            messages = self.__construct_messages(SYSTEM_PROMPT + prompt)
+        if len(self.message_history[self.selected_board_game]) == 0:
+            messages = [{"content": SYSTEM_PROMPT + prompt, "role": "user"}]
         else:
-            messages = self.__construct_messages(prompt, previous_messages_for_selected_board_game)
-
+            messages = self.message_history[self.selected_board_game] + [{"content": prompt, "role": "user"}]
         response_with_metadata = self.__call_openai_model(messages, return_all_metadata=True)
 
         # Parse the response and store it in message history
         response_message = response_with_metadata.choices[0].message
         response_message.content = self.__parse_citations(response_message.content)
-        self.message_history[self.selected_board_game].append(response_message)
+        self.message_history[self.selected_board_game].append(
+            {
+                "content": response_message.content,
+                "role": "assistant",
+            }
+        )
 
         return response_message.content
