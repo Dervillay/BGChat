@@ -1,6 +1,6 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
-import { Text, Box, Container, Flex } from "@chakra-ui/react";
+import { Text, Box, Container, Flex, Circle, Link } from "@chakra-ui/react";
 import ChakraUIRenderer from "chakra-ui-markdown-renderer";
 
 interface ChatMessageProps {
@@ -9,14 +9,38 @@ interface ChatMessageProps {
 }
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({ content, role }) => {
+	const renderTextWithCitations = (text: string) => {
+		if (role === "user") return text;
+
+		const urlPattern = /(file:\/\/\/(?:[^"\s<>]*[^"\s<>.])?)/g;
+		const urls: string[] = text.match(urlPattern) || [];
+		const parts: string[] = text.split(urlPattern);
+
+		return parts.map((part, index) => {
+			if (urls.includes(part)) {
+				return (
+					<Link key={index} href={part} isExternal display="inline-flex" alignItems="center" mx="1">
+						<Circle
+							size="20px"
+							fontSize="xs"
+							bg="blackAlpha.900"
+							color="white"
+							_hover={{ bg: "blackAlpha.700" }}
+						>
+							{urls.indexOf(part) + 1}
+						</Circle>
+					</Link>
+				);
+			}
+			return part;
+		});
+	};
+
 	const markdown = {
-		p: (props) => {
-			const { children } = props;
-			const isLastParagraph =
-				props.node.position.end.offset === props.node.position.start.offset + content.length;
+		p: () => {
 			return (
-				<Text my={isLastParagraph ? 0 : 3} lineHeight={1.7}>
-					{children}
+				<Text my={role === "assistant" ? 3 : 0} lineHeight={1.7}>
+					{renderTextWithCitations(content)}
 				</Text>
 			);
 		},

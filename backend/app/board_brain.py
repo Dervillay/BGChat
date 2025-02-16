@@ -155,7 +155,7 @@ class BoardBrain:
         path = os.path.abspath(f"{self.__rulebooks_path}/{self.selected_board_game}/{rulebook_name}.pdf")
         encoded_path = quote(path)
 
-        return f"file:///{encoded_path}#page={page_num}"
+        return f"file://{encoded_path}#page={page_num}"
 
 
     def __parse_citations(
