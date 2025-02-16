@@ -9,7 +9,7 @@ board_brain = BoardBrain()
 
 logger = logging.getLogger(__name__)
 
-def validate_message(f):
+def validate_question(f):
     """
     Decorator to validate incoming message requests.
     Ensures requests have required JSON format and message field.
@@ -22,28 +22,28 @@ def validate_message(f):
             }), 415
         
         data = request.get_json()
-        if not data or 'message' not in data:
+        if not data or 'question' not in data:
             return jsonify({
-                'error': 'Request must include a message field'
+                'error': 'Request must include a question field'
             }), 400
             
-        if not isinstance(data['message'], str) or not data['message'].strip():
+        if not isinstance(data['question'], str) or not data['question'].strip():
             return jsonify({
-                'error': 'Message must be a non-empty string'
+                'error': 'Question must be a non-empty string'
             }), 400
             
         return f(*args, **kwargs)
     return decorated_function
 
 @board_brain_bp.route('/determine-board-game', methods=['POST'])
-@validate_message
+@validate_question
 def determine_board_game():
     """
     Endpoint to determine which board game the user is asking about.
     
     Expected request format:
     {
-        "message": "Can you help me with Monopoly rules?"
+        "question": "Can you help me with Monopoly rules?"
     }
     
     Returns:
@@ -54,11 +54,11 @@ def determine_board_game():
     """
     try:
         data = request.get_json()
-        user_message = data['message'].strip()
+        question = data['question'].strip()
         
-        logger.info(f"Determining board game for message: {user_message}")
+        logger.info(f"Determining board game for question: {question}")
         
-        response = board_brain.determine_board_game(user_message)
+        response = board_brain.determine_board_game(question)
         success = response in board_brain.known_board_games
         
         return jsonify({
@@ -105,7 +105,6 @@ def get_selected_board_game():
         'response': board_brain.selected_board_game
     })
 
-
 @board_brain_bp.route('/set-selected-board-game', methods=['POST'])
 def set_selected_board_game():
     """
@@ -136,15 +135,39 @@ def set_selected_board_game():
             'details': str(e)
         }), 500
 
+@board_brain_bp.route('/chat-history', methods=['GET'])
+def get_chat_history():
+    """
+    Endpoint to get chat history for the currently selected board game
+
+    Returns:
+    {
+        "response": [
+            {"role": "user", "content": "How many houses can I put on Park Place?"},
+            {"role": "assistant", "content": "You can put 4 houses on Park Place."}
+        ]
+    }
+    """
+    try:
+        return jsonify({
+            'response': board_brain.get_message_history(board_brain.selected_board_game)
+        })
+    except Exception as e:
+        logger.error(f"Error getting chat history for {board_brain.selected_board_game}: {str(e)}")
+        return jsonify({
+            'error': 'An unexpected error occurred',
+            'details': str(e)
+        }), 500
+
 @board_brain_bp.route('/ask-question', methods=['POST'])
-@validate_message
+@validate_question
 def ask():
     """
     Endpoint to ask questions about board games.
     
     Expected request format:
     {
-        "message": "How many houses can I put on Park Place?"
+        "question": "How many houses can I put on Park Place?"
     }
     
     Returns:
@@ -154,19 +177,20 @@ def ask():
     """
     try:
         data = request.get_json()
-        user_message = data['message'].strip()
+        question = data['question'].strip()
         
-        logger.info(f"Received question: {user_message}")
+        logger.info(f"Received question: {question}")
         
+        # TODO: Refactor this logic into the BoardBrain class
         if board_brain.selected_board_game is None:
-            response = board_brain.determine_board_game(user_message)
+            response = board_brain.determine_board_game(question)
             
             if response not in board_brain.known_board_games:
                 return jsonify({
                     'response': response,
                 })
         
-        response = board_brain.ask_question(user_message)
+        response = board_brain.ask_question(question)
 
         return jsonify({
             'response': response
