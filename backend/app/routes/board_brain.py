@@ -35,43 +35,6 @@ def validate_question(f):
         return f(*args, **kwargs)
     return decorated_function
 
-@board_brain_bp.route('/determine-board-game', methods=['POST'])
-@validate_question
-def determine_board_game():
-    """
-    Endpoint to determine which board game the user is asking about.
-    
-    Expected request format:
-    {
-        "question": "Can you help me with Monopoly rules?"
-    }
-    
-    Returns:
-    {
-        "success": true/false,
-        "response": "Monopoly"/"Sorry, I was unable to determine..."
-    }
-    """
-    try:
-        data = request.get_json()
-        question = data['question'].strip()
-        
-        logger.info(f"Determining board game for question: {question}")
-        
-        response = board_brain.determine_board_game(question)
-        success = response in board_brain.known_board_games
-        
-        return jsonify({
-            'success': success,
-            'response': response
-        })
-        
-    except Exception as e:
-        logger.error(f"Error in determine_board_game: {str(e)}")
-        return jsonify({
-            'error': 'An unexpected error occurred',
-            'details': str(e)
-        }), 500
 
 @board_brain_bp.route('/known-board-games', methods=['GET'])
 def get_known_board_games():
@@ -90,7 +53,7 @@ def get_known_board_games():
         })
         
     except Exception as e:
-        logger.error(f"Error in determine_board_game: {str(e)}")
+        logger.error(f"Error in get_known_board_games: {str(e)}")
         return jsonify({
             'error': 'An unexpected error occurred',
             'details': str(e)
@@ -150,7 +113,7 @@ def get_chat_history():
     """
     try:
         return jsonify({
-            'response': board_brain.get_message_history(board_brain.selected_board_game)
+            'response': board_brain.get_user_facing_message_history(board_brain.selected_board_game)
         })
     except Exception as e:
         logger.error(f"Error getting chat history for {board_brain.selected_board_game}: {str(e)}")
@@ -161,7 +124,7 @@ def get_chat_history():
 
 @board_brain_bp.route('/ask-question', methods=['POST'])
 @validate_question
-def ask():
+def ask_question():
     """
     Endpoint to ask questions about board games.
     
@@ -177,19 +140,8 @@ def ask():
     """
     try:
         data = request.get_json()
-        question = data['question'].strip()
-        
+        question = data['question']
         logger.info(f"Received question: {question}")
-        
-        # TODO: Refactor this logic into the BoardBrain class
-        if board_brain.selected_board_game is None:
-            response = board_brain.determine_board_game(question)
-            
-            if response not in board_brain.known_board_games:
-                return jsonify({
-                    'response': response,
-                })
-        
         response = board_brain.ask_question(question)
 
         return jsonify({
@@ -197,7 +149,7 @@ def ask():
         })
         
     except Exception as e:
-        logger.error(f"Error in ask endpoint: {str(e)}")
+        logger.error(f"Error in ask_question: {str(e)}")
 
         return jsonify({
             'error': 'An unexpected error occurred',

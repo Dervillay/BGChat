@@ -72,13 +72,17 @@ The question is:
 <QUESTION>
 """
 
+THE_BOARD_GAME_IS_STRING = "The board game is:"
+THE_RULEBOOK_TEXTS_ARE_STRING = "The rulebook texts are:"
+USER_QUESTION_STRING = "The question is:"
+
 EXPLAIN_RULES_PROMPT_TEMPLATE = f"""
-The board game is:
+{THE_BOARD_GAME_IS_STRING}
 <SELECTED_BOARD_GAME>
 
-The rulebook texts are:
+{THE_RULEBOOK_TEXTS_ARE_STRING}
 <RULEBOOK_EXTRACTS>
 
-The question is:
+{USER_QUESTION_STRING}
 <QUESTION>
 """

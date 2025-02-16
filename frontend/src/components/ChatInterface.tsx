@@ -74,6 +74,7 @@ const ChatInterface = () => {
 	};
 
 	const handleSendMessage = async (message: string) => {
+		setIsLoading(true);
 		setMessages((prev) => [...prev, { content: message, role: "user" }]);
 
 		try {
@@ -87,7 +88,7 @@ const ChatInterface = () => {
 			if (!selectedBoardGame) {
 				await handleGetSelectedBoardGame();
 			}
-
+			// TODO: Figure out how to return full message rather than creating a new object
 			setMessages((prev) => [...prev, { content: data.response, role: "assistant" }]);
 		} catch {
 			setMessages((prev) => [

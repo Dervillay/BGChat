@@ -25,6 +25,9 @@ from config.board_brain_config import (
     UNKNOWN_VALUE,
     UNKNOWN_BOARD_GAME_RESPONSE,
     CITATION_REGEX_PATTERN,
+    USER_QUESTION_STRING,
+    THE_BOARD_GAME_IS_STRING,
+    THE_RULEBOOK_TEXTS_ARE_STRING,
 )
 
 
@@ -37,7 +40,7 @@ class BoardBrain:
     ):
         self.selected_board_game: str = None
         self.known_board_games: list[str] = [board_game["name"] for board_game in BOARD_GAMES]
-        self.message_history = {board_game["name"]: [] for board_game in BOARD_GAMES}
+        self.__messages = {board_game["name"]: [] for board_game in BOARD_GAMES}
         self.__rulebooks_path = rulebooks_path
         self.__embedding_db = TinyDB(embedding_database_path)
         self.__rulebook_pages = self.__embedding_db.table("rulebook_pages")
@@ -84,6 +87,24 @@ class BoardBrain:
 
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
+
+    
+    def __determine_board_game(
+        self,
+        question: str
+    ):
+        message = {
+            "content": DETERMINE_BOARD_GAME_PROMPT_TEMPLATE.replace("<QUESTION>", question),
+            "role": "user",
+        }
+        response = self.__call_openai_model([message])
+
+        if response in self.known_board_games:
+            return response
+        elif response == UNKNOWN_VALUE:
+            return UNKNOWN_BOARD_GAME_RESPONSE
+        else:
+            raise ValueError(f"Received an unexpected response when attempting to determine board game: {response}")
 
 
     def __get_relevant_rulebook_extracts(
@@ -137,7 +158,10 @@ class BoardBrain:
         return f"file:///{encoded_path}#page={page_num}"
 
 
-    def __parse_citations(self, text: str):
+    def __parse_citations(
+            self,
+            text: str
+        ):
         def replace_citation_with_link(match):
             citation_str = match.group(0)
             citation_dict = ast.literal_eval(citation_str)
@@ -150,74 +174,89 @@ class BoardBrain:
         )
 
 
-    def set_selected_board_game(self, selected_board_game):
+    def __convert_to_user_facing_message(
+            self,
+            message: dict,
+        ):
+        content = message["content"]
+        if message["role"] == "user":
+
+            if content.startswith(SYSTEM_PROMPT):
+                content = content[len(SYSTEM_PROMPT):]
+
+            if (
+                THE_BOARD_GAME_IS_STRING in content and
+                THE_RULEBOOK_TEXTS_ARE_STRING in content and
+                USER_QUESTION_STRING in content
+            ):
+                content = content.split(USER_QUESTION_STRING)[1].strip()
+
+            return {"content": content, "role": "user"}
+
+        elif message["role"] == "assistant":
+            return {"content": self.__parse_citations(content), "role": "assistant"}
+
+
+    def set_selected_board_game(
+            self,
+            selected_board_game
+        ):
         self.selected_board_game = selected_board_game
 
 
-    def get_message_history(
+    def get_user_facing_message_history(
             self,
             board_game_name: str
         ):
         if board_game_name not in self.known_board_games:
             return []
-        return self.message_history[board_game_name]
 
-
-    def determine_board_game(
-        self,
-        question: str
-    ):
-        message = {
-            "content": DETERMINE_BOARD_GAME_PROMPT_TEMPLATE.replace("<QUESTION>", question),
-            "role": "user",
-        }
-        response = self.__call_openai_model([message])
-
-        if response in self.known_board_games:
-            self.set_selected_board_game(response)
-        elif response == UNKNOWN_VALUE:
-            return UNKNOWN_BOARD_GAME_RESPONSE
-        else:
-            raise ValueError(f"Received an unexpected response when attempting to determine board game: {response}")
-
-        return self.selected_board_game
+        return [
+            self.__convert_to_user_facing_message(message)
+            for message in self.__messages[board_game_name]
+        ]
 
 
     def ask_question(
         self,
         question: str,
     ):
-        # Get N most relevant chunks of rulebook text for the selected board game
+        # If the user hasn't selected a board game manually, determine which board game the question is about.
+        # Return the response if we can't determine one
+        if self.selected_board_game is None:
+            maybe_board_game = self.__determine_board_game(question)
+            if maybe_board_game not in self.known_board_games:
+                return maybe_board_game
+
+        # Get N most relevant chunks of rulebook text for the selected board game and construct a prompt
+        # with these extracts in them
         rulebook_extracts = self.__get_relevant_rulebook_extracts(question)
         rulebook_extracts_as_string = "\n".join([json.dumps(extract) for extract in rulebook_extracts])
-
         prompt = (
             EXPLAIN_RULES_PROMPT_TEMPLATE
             .replace("<SELECTED_BOARD_GAME>", self.selected_board_game)
             .replace("<RULEBOOK_EXTRACTS>", rulebook_extracts_as_string)
             .replace("<QUESTION>", question)
         )
-        self.message_history[self.selected_board_game].append({
-            "content": question,
-            "role": "user",
-        })
 
-        # If this is the first question about this board game, include the system prompt
-        # otherwise, pass previous messages to the model so it retains context
-        if len(self.message_history[self.selected_board_game]) == 0:
-            messages = [{"content": SYSTEM_PROMPT + prompt, "role": "user"}]
-        else:
-            messages = self.message_history[self.selected_board_game] + [{"content": prompt, "role": "user"}]
-        response_with_metadata = self.__call_openai_model(messages, return_all_metadata=True)
+        # Prepend the system prompt if this is the first question about this board game
+        if len(self.__messages[self.selected_board_game]) == 0:
+            prompt = SYSTEM_PROMPT + prompt
 
-        # Parse the response and store it in message history
-        response_message = response_with_metadata.choices[0].message
-        response_message.content = self.__parse_citations(response_message.content)
-        self.message_history[self.selected_board_game].append(
+        self.__messages[self.selected_board_game].append({"content": prompt, "role": "user"})
+
+        response_with_metadata = self.__call_openai_model(
+            self.__messages[self.selected_board_game],
+            return_all_metadata=True
+        )
+
+        self.__messages[self.selected_board_game].append(
             {
-                "content": response_message.content,
+                "content": response_with_metadata.choices[0].message.content,
                 "role": "assistant",
             }
         )
 
-        return response_message.content
+        return self.__convert_to_user_facing_message(
+            self.__messages[self.selected_board_game][-1]
+        )["content"]
