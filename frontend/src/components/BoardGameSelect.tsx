@@ -16,7 +16,7 @@ export const BoardGameSelect: FC<BoardGameSelectProps> = ({
 		<Select
 			value={selectedBoardGame}
 			onChange={onSelectBoardGame}
-			placeholder="Select a board game"
+			placeholder={selectedBoardGame ? undefined : "Select a board game"}
 			variant="select"
 		>
 			{knownBoardGames.map((game, index) => (
