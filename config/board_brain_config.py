@@ -57,7 +57,7 @@ If you directly quote rulebook text in your response, you must cite its source i
 
 If the rulebook text is not sufficient for you to confidently answer the question: tell the user that you couldn't find this information in any of the rulebooks.
 If you aren't certain of the answer but think you have a reasonable interpretation of the rules: give your interpretation, but step through your reasoning and make it clear that
-this is only an interpretation.
+this is only an interpretation. You must answer in markdown format.
 """
 
 DETERMINE_BOARD_GAME_PROMPT_TEMPLATE = f"""
