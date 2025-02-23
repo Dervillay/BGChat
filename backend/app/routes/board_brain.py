@@ -1,5 +1,6 @@
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, send_from_directory
 from app.board_brain import BoardBrain
+from app.config.paths import RULEBOOKS_PATH
 from functools import wraps
 import logging
 
@@ -155,6 +156,10 @@ def ask_question():
             'error': 'An unexpected error occurred',
             'details': str(e)
         }), 500
+
+@board_brain_bp.route('/pdfs/<path:filename>')
+def serve_pdf(filename):
+    return send_from_directory(RULEBOOKS_PATH, filename)
 
 @board_brain_bp.errorhandler(404)
 def not_found(e):

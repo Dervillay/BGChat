@@ -1,40 +1,5 @@
-# All paths are relative to the project's root
-RULEBOOKS_PATH = "./resources/rulebooks"
-EMBEDDING_MODEL_PATH = "./resources/embedding_model"
-DATABASE_PATH = "./backend/app/database.json"
-
-OPENAI_MODEL_TO_USE = "gpt-4o-mini"
-EMBEDDING_MODEL_TO_USE = "intfloat/e5-large-v2"
-
-BOARD_GAMES = [
-    {
-        "name": "Gloomhaven: Jaws of the Lion",
-        "rulebooks": [
-            {
-                "name": "Glossary",
-                "download_url": "https://comparajogos-forum.s3.dualstack.sa-east-1.amazonaws.com/uploads/original/2X/e/e6fb769d1c8b7730e40cbe95d93c641ed83638c0.pdf"
-            },
-            {
-                "name": "Learn to Play Guide",
-                "download_url": "https://cdn.1j1ju.com/medias/c1/6f/d7-gloomhaven-jaws-of-the-lion-rulebook.pdf",
-            },
-        ]
-    },
-    {
-        "name": "Root",
-        "rulebooks": [
-            {
-                "name": "Law of Root",
-                "download_url": "https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_of_Root_Sep_5_2024.pdf?v=1729175648",
-            },
-            {
-                "name": "Learning to Play",
-                "download_url": "https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Learn_to_Play_web_Oct_15_2020.pdf?v=1603389572",
-            }
-        ]
-    }
-]
-BOARD_GAMES_STRING_LIST = "\n".join([f"- {board_game['name']}" for board_game in BOARD_GAMES])
+# Constants and templates for AI prompts
+from .board_games import BOARD_GAMES_STRING_LIST
 
 CITATION_REGEX_PATTERN = r"{[^{}]*(?:{[^{}]*})*[^{}]*}"
 UNKNOWN_VALUE = "UNKNOWN"
@@ -85,4 +50,4 @@ EXPLAIN_RULES_PROMPT_TEMPLATE = f"""
 
 {USER_QUESTION_STRING}
 <QUESTION>
-"""
+""" 

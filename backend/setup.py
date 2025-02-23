@@ -4,13 +4,10 @@ from tqdm import tqdm
 from tinydb import TinyDB, where
 from pypdf import PdfReader
 from sentence_transformers import SentenceTransformer
-from config.board_brain_config import (
-    RULEBOOKS_PATH,
-    EMBEDDING_MODEL_PATH,
-    DATABASE_PATH,
-    BOARD_GAMES,
-    EMBEDDING_MODEL_TO_USE,
-)
+
+from app.config.paths import RULEBOOKS_PATH, EMBEDDING_MODEL_PATH, DATABASE_PATH
+from app.config.models import EMBEDDING_MODEL_TO_USE
+from app.config.board_games import BOARD_GAMES
 
 DOWNLOAD_BLOCK_SIZE = 1024
 

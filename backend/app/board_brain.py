@@ -1,24 +1,15 @@
 import openai
 import json
 import ast
-import os
-import sys
 import numpy as np
 import regex as re
-from urllib.parse import quote
 from sentence_transformers import SentenceTransformer
 from tinydb import TinyDB, where
 
-# Add project root to sys.path to allow importing config
-project_root_abs_path = os.path.abspath(os.path.join(__file__, "../../../"))
-sys.path.append(project_root_abs_path)
-
-from config.board_brain_config import (
-    RULEBOOKS_PATH,
-    EMBEDDING_MODEL_PATH,
-    DATABASE_PATH,
-    OPENAI_MODEL_TO_USE,
-    BOARD_GAMES,
+from app.config.paths import RULEBOOKS_PATH, EMBEDDING_MODEL_PATH, DATABASE_PATH
+from app.config.models import OPENAI_MODEL_TO_USE
+from app.config.board_games import BOARD_GAMES
+from app.config.prompts import (
     SYSTEM_PROMPT,
     DETERMINE_BOARD_GAME_PROMPT_TEMPLATE,
     EXPLAIN_RULES_PROMPT_TEMPLATE,
@@ -34,14 +25,12 @@ from config.board_brain_config import (
 class BoardBrain:
     def __init__(
         self,
-        rulebooks_path: str = os.path.join(project_root_abs_path, RULEBOOKS_PATH),
-        embedding_model_path: str = os.path.join(project_root_abs_path, EMBEDDING_MODEL_PATH),
-        embedding_database_path: str = os.path.join(project_root_abs_path, DATABASE_PATH),
+        embedding_model_path: str = EMBEDDING_MODEL_PATH,
+        embedding_database_path: str = DATABASE_PATH,
     ):
         self.selected_board_game: str = None
         self.known_board_games: list[str] = [board_game["name"] for board_game in BOARD_GAMES]
         self.__messages = {board_game["name"]: [] for board_game in BOARD_GAMES}
-        self.__rulebooks_path = rulebooks_path
         self.__embedding_db = TinyDB(embedding_database_path)
         self.__rulebook_pages = self.__embedding_db.table("rulebook_pages")
         self.__embedding_model = SentenceTransformer(embedding_model_path)
@@ -152,10 +141,7 @@ class BoardBrain:
             print(f"WARN: Malformed citation detected:\n{json.dumps(citation)}")
             return
 
-        path = os.path.abspath(f"{self.__rulebooks_path}/{self.selected_board_game}/{rulebook_name}.pdf")
-        encoded_path = quote(path)
-
-        return f"file://{encoded_path}#page={page_num}"
+        return f"{self.selected_board_game}/{rulebook_name}.pdf#page={page_num}"
 
 
     def __parse_citations(
@@ -227,6 +213,7 @@ class BoardBrain:
             maybe_board_game = self.__determine_board_game(question)
             if maybe_board_game not in self.known_board_games:
                 return maybe_board_game
+            self.selected_board_game = maybe_board_game
 
         # Get N most relevant chunks of rulebook text for the selected board game and construct a prompt
         # with these extracts in them
