@@ -1,49 +1,51 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
-import { Text, Box, Container, Flex, Circle, Link } from "@chakra-ui/react";
+import { Text, Box, Container, Flex } from "@chakra-ui/react";
 import ChakraUIRenderer from "chakra-ui-markdown-renderer";
+import { ShimmeringLink } from "./ShimmeringLink.tsx";
 
 interface ChatMessageProps {
 	content: string;
 	role: "user" | "assistant";
 }
 
+interface Citation {
+	rulebook_name: string;
+	page_num: number;
+	link: string;
+}
+
 export const ChatMessage: React.FC<ChatMessageProps> = ({ content, role }) => {
-	const renderTextWithCitations = (text: string) => {
-		if (role === "user") return text;
-
-		const urlPattern = /(file:\/\/\/(?:[^"\s<>]*[^"\s<>.])?)/g;
-		const urls: string[] = text.match(urlPattern) || [];
-		const parts: string[] = text.split(urlPattern);
-
-		return parts.map((part, index) => {
-			if (urls.includes(part)) {
-				return (
-					<Link key={index} href={part} isExternal display="inline-flex" alignItems="center" mx="1">
-						<Circle
-							size="20px"
-							fontSize="xs"
-							bg="blackAlpha.900"
-							color="white"
-							_hover={{ bg: "blackAlpha.700" }}
-						>
-							{urls.indexOf(part) + 1}
-						</Circle>
-					</Link>
-				);
-			}
-			return part;
-		});
+	const markdown = {
+		p: (props: { children: React.ReactNode }) => (
+			<Text my={role === "assistant" ? 3 : 0} lineHeight={1.7}>
+				{props.children}
+			</Text>
+		),
+		a: (props: { href?: string; children: React.ReactNode }) => (
+			<ShimmeringLink href={props.href}>{props.children}</ShimmeringLink>
+		),
 	};
 
-	const markdown = {
-		p: () => {
-			return (
-				<Text my={role === "assistant" ? 3 : 0} lineHeight={1.7}>
-					{renderTextWithCitations(content)}
-				</Text>
-			);
-		},
+	const processMarkdown = (text: string) => {
+		if (role === "user") return text;
+
+		const citationPattern = /{[^}]*"link":[^}]*}/g;
+		const citations = text.match(citationPattern) || [];
+		const parts = text.split(citationPattern);
+
+		let processedText = parts.reduce((acc, part, index) => {
+			const citation = citations[index - 1];
+			if (citation) {
+				const citationObj: Citation = JSON.parse(citation);
+				const displayText = `${citationObj.rulebook_name}, Page ${citationObj.page_num}`;
+				const link = `${process.env.REACT_APP_BACKEND_URL}/pdfs/${citationObj.link}`;
+				return acc + `[${displayText}](${link})` + part;
+			}
+			return acc + part;
+		}, "");
+
+		return processedText;
 	};
 
 	return (
@@ -51,14 +53,12 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ content, role }) => {
 			<Flex justifyContent={role === "user" ? "flex-end" : "flex-start"}>
 				{role === "user" ? (
 					<Box maxW="70%" bg="gray.800" color="white" px={5} py={2.5} borderRadius="1.5rem">
-						<ReactMarkdown components={ChakraUIRenderer(markdown)} skipHtml>
-							{content}
-						</ReactMarkdown>
+						<ReactMarkdown components={ChakraUIRenderer(markdown)}>{content}</ReactMarkdown>
 					</Box>
 				) : (
 					<Box maxW="100%">
-						<ReactMarkdown components={ChakraUIRenderer(markdown)} skipHtml>
-							{content}
+						<ReactMarkdown components={ChakraUIRenderer(markdown)}>
+							{processMarkdown(content)}
 						</ReactMarkdown>
 					</Box>
 				)}

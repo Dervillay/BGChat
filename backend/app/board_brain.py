@@ -5,8 +5,9 @@ import numpy as np
 import regex as re
 from sentence_transformers import SentenceTransformer
 from tinydb import TinyDB, where
+from urllib.parse import quote
 
-from app.config.paths import RULEBOOKS_PATH, EMBEDDING_MODEL_PATH, DATABASE_PATH
+from app.config.paths import EMBEDDING_MODEL_PATH, DATABASE_PATH
 from app.config.models import OPENAI_MODEL_TO_USE
 from app.config.board_games import BOARD_GAMES
 from app.config.prompts import (
@@ -141,21 +142,22 @@ class BoardBrain:
             print(f"WARN: Malformed citation detected:\n{json.dumps(citation)}")
             return
 
-        return f"{self.selected_board_game}/{rulebook_name}.pdf#page={page_num}"
+        return f"{quote(f'{self.selected_board_game}/{rulebook_name}.pdf')}#page={page_num}"
 
 
     def __parse_citations(
             self,
             text: str
         ):
-        def replace_citation_with_link(match):
+        def add_link_to_citation(match):
             citation_str = match.group(0)
             citation_dict = ast.literal_eval(citation_str)
-            return self.__construct_rulebook_link(citation_dict)
+            citation_dict["link"] = self.__construct_rulebook_link(citation_dict)
+            return json.dumps(citation_dict)
 
         return re.sub(
             CITATION_REGEX_PATTERN,
-            replace_citation_with_link,
+            add_link_to_citation,
             text,
         )
 
@@ -229,21 +231,14 @@ class BoardBrain:
         # Prepend the system prompt if this is the first question about this board game
         if len(self.__messages[self.selected_board_game]) == 0:
             prompt = SYSTEM_PROMPT + prompt
-
+    
         self.__messages[self.selected_board_game].append({"content": prompt, "role": "user"})
 
-        response_with_metadata = self.__call_openai_model(
-            self.__messages[self.selected_board_game],
-            return_all_metadata=True
+        response = self.__call_openai_model(
+            self.__messages[self.selected_board_game]
         )
+        response_as_message = {"content": response, "role": "assistant"} 
 
-        self.__messages[self.selected_board_game].append(
-            {
-                "content": response_with_metadata.choices[0].message.content,
-                "role": "assistant",
-            }
-        )
+        self.__messages[self.selected_board_game].append(response_as_message)
 
-        return self.__convert_to_user_facing_message(
-            self.__messages[self.selected_board_game][-1]
-        )["content"]
+        return self.__convert_to_user_facing_message(response_as_message)["content"]

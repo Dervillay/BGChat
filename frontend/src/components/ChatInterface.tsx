@@ -23,7 +23,7 @@ const ChatInterface = () => {
 
 	const handleGetKnownBoardGames = async () => {
 		try {
-			const response = await fetch("/api/known-board-games", { method: "GET" });
+			const response = await fetch("/known-board-games", { method: "GET" });
 			const data = await response.json();
 			setKnownBoardGames(data.response);
 		} catch {
@@ -33,7 +33,7 @@ const ChatInterface = () => {
 
 	const handleGetSelectedBoardGame = async () => {
 		try {
-			const response = await fetch("/api/selected-board-game", { method: "GET" });
+			const response = await fetch("/selected-board-game", { method: "GET" });
 			const data = await response.json();
 			setSelectedBoardGame(data.response);
 		} catch {
@@ -45,7 +45,7 @@ const ChatInterface = () => {
 		const game = e.target.value;
 		setIsLoading(true);
 		try {
-			const response = await fetch("/api/set-selected-board-game", {
+			const response = await fetch("/set-selected-board-game", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ selected_board_game: game }),
@@ -54,7 +54,7 @@ const ChatInterface = () => {
 
 			if (data.success) {
 				setSelectedBoardGame(game);
-				const response = await fetch(`/api/chat-history`, {
+				const response = await fetch(`/chat-history`, {
 					method: "GET",
 				});
 				const data = await response.json();
@@ -78,7 +78,7 @@ const ChatInterface = () => {
 		setMessages((prev) => [...prev, { content: message, role: "user" }]);
 
 		try {
-			const response = await fetch("/api/ask-question", {
+			const response = await fetch("/ask-question", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ question: message }),

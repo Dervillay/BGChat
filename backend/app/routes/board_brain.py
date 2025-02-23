@@ -1,14 +1,16 @@
-from flask import Blueprint, request, jsonify, send_from_directory
+from flask import Blueprint, request, jsonify, send_from_directory, current_app
 from app.board_brain import BoardBrain
 from app.config.paths import RULEBOOKS_PATH
 from functools import wraps
 import logging
+import os
 
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 board_brain_bp = Blueprint('board_brain', __name__)
 board_brain = BoardBrain()
-
-logger = logging.getLogger(__name__)
 
 def validate_question(f):
     """
@@ -157,9 +159,24 @@ def ask_question():
             'details': str(e)
         }), 500
 
-@board_brain_bp.route('/pdfs/<path:filename>')
-def serve_pdf(filename):
-    return send_from_directory(RULEBOOKS_PATH, filename)
+@board_brain_bp.route('/pdfs/<path:filepath>')
+def serve_pdf(filepath):
+    try:
+        logger.info(f"Attempting to serve PDF at: {filepath}")
+    
+        directory = os.path.join(RULEBOOKS_PATH, os.path.dirname(filepath))
+        filename = os.path.basename(filepath)
+        
+        return send_from_directory(
+            directory,
+            filename,
+            mimetype='application/pdf',
+            as_attachment=False
+        )
+        
+    except Exception as e:
+        logger.error(f"Error serving PDF: {str(e)}")
+        return {'error': f'Failed to serve PDF: {str(e)}'}, 404
 
 @board_brain_bp.errorhandler(404)
 def not_found(e):

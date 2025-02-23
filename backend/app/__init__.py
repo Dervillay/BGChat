@@ -6,6 +6,6 @@ def create_app():
     app = Flask(__name__)
     CORS(app)
     
-    app.register_blueprint(board_brain_bp, url_prefix='/api')
+    app.register_blueprint(board_brain_bp)
 
     return app
