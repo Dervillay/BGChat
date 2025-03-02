@@ -1,5 +1,10 @@
-openai==1.35.3
-pypdf==4.2.0
+Flask==3.1.0
+flask_cors==5.0.1
+numpy==2.2.3
+openai==1.65.1
+pypdf==5.3.0
+regex==2024.11.6
 Requests==2.32.3
-tinydb==4.8.0
-tqdm==4.62.3
+sentence_transformers==3.4.1
+tinydb==4.8.2
+tqdm==4.67.1
