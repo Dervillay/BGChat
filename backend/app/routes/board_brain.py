@@ -1,5 +1,4 @@
 from flask import Blueprint, request, jsonify, send_from_directory, current_app
-from app.board_brain import BoardBrain
 from app.config.paths import RULEBOOKS_PATH
 from functools import wraps
 import logging
@@ -10,7 +9,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 board_brain_bp = Blueprint('board_brain', __name__)
-board_brain = BoardBrain()
 
 def validate_question(f):
     """
@@ -52,7 +50,7 @@ def get_known_board_games():
     try:
         logger.info(f"Getting known board games")
         return jsonify({
-            'response': board_brain.known_board_games
+            'response': current_app.board_brain.known_board_games
         })
         
     except Exception as e:
@@ -68,7 +66,7 @@ def get_selected_board_game():
     Endpoint to get currently selected board game
     """
     return jsonify({
-        'response': board_brain.selected_board_game
+        'response': current_app.board_brain.selected_board_game
     })
 
 @board_brain_bp.route('/set-selected-board-game', methods=['POST'])
@@ -89,7 +87,7 @@ def set_selected_board_game():
     try:
         data = request.get_json()
         logger.info(f'Setting selected board game to: {data["selected_board_game"]}')
-        board_brain.set_selected_board_game(data["selected_board_game"])
+        current_app.board_brain.set_selected_board_game(data["selected_board_game"])
         return jsonify({
             'success': True
         })
@@ -116,10 +114,10 @@ def get_chat_history():
     """
     try:
         return jsonify({
-            'response': board_brain.get_user_facing_message_history(board_brain.selected_board_game)
+            'response': current_app.board_brain.get_user_facing_message_history(current_app.board_brain.selected_board_game)
         })
     except Exception as e:
-        logger.error(f"Error getting chat history for {board_brain.selected_board_game}: {str(e)}")
+        logger.error(f"Error getting chat history for {current_app.board_brain.selected_board_game}: {str(e)}")
         return jsonify({
             'error': 'An unexpected error occurred',
             'details': str(e)
@@ -145,7 +143,7 @@ def ask_question():
         data = request.get_json()
         question = data['question']
         logger.info(f"Received question: {question}")
-        response = board_brain.ask_question(question)
+        response = current_app.board_brain.ask_question(question)
 
         return jsonify({
             'response': response
