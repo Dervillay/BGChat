@@ -53,12 +53,18 @@ class BoardBrain:
         self,
         messages: list[dict],
         return_all_metadata: bool = False,
+        stream: bool = False,
     ):
         try:
             response = self.__openai_client.chat.completions.create(
                 model=OPENAI_MODEL_TO_USE,
-                messages=messages
+                messages=messages,
+                stream=stream
             )
+            
+            if stream:
+                return response
+            
             if return_all_metadata:
                 return response
             return response.choices[0].message.content
@@ -234,11 +240,39 @@ class BoardBrain:
     
         self.__messages[self.selected_board_game].append({"content": prompt, "role": "user"})
 
-        response = self.__call_openai_model(
-            self.__messages[self.selected_board_game]
+        stream = self.__call_openai_model(
+            self.__messages[self.selected_board_game],
+            stream=True
         )
-        response_as_message = {"content": response, "role": "assistant"} 
+        
+        full_response = ""
+        citation_buffer = ""
+        in_citation = False
+        
+        # TODO: refactor this to be a bit cleaner
+        for chunk in stream:
+            content = chunk.choices[0].delta.content
+            
+            if content is not None:
+                if '{' in content:
+                    in_citation = True
+                    citation_buffer += content
+                    continue
 
-        self.__messages[self.selected_board_game].append(response_as_message)
+                elif '}' in content:
+                    in_citation = False
+                    citation_buffer += content
+                    parsed = self.__parse_citations(citation_buffer)
+                    full_response += parsed
+                    yield parsed
+                    citation_buffer = ""
+                
+                elif in_citation:
+                    citation_buffer += content
+                    continue
 
-        return self.__convert_to_user_facing_message(response_as_message)["content"]
+                else:
+                    full_response += content
+                    yield content
+        
+        self.__messages[self.selected_board_game].append({"content": full_response, "role": "assistant"})

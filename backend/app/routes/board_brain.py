@@ -1,8 +1,9 @@
-from flask import Blueprint, request, jsonify, send_from_directory, current_app
+from flask import Blueprint, request, jsonify, send_from_directory, current_app, Response, stream_with_context
 from app.config.paths import RULEBOOKS_PATH
 from functools import wraps
 import logging
 import os
+import json
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -123,40 +124,6 @@ def get_chat_history():
             'details': str(e)
         }), 500
 
-@board_brain_bp.route('/ask-question', methods=['POST'])
-@validate_question
-def ask_question():
-    """
-    Endpoint to ask questions about board games.
-    
-    Expected request format:
-    {
-        "question": "How many houses can I put on Park Place?"
-    }
-    
-    Returns:
-    {
-        "response": "answer to the question"
-    }
-    """
-    try:
-        data = request.get_json()
-        question = data['question']
-        logger.info(f"Received question: {question}")
-        response = current_app.board_brain.ask_question(question)
-
-        return jsonify({
-            'response': response
-        })
-        
-    except Exception as e:
-        logger.error(f"Error in ask_question: {str(e)}")
-
-        return jsonify({
-            'error': 'An unexpected error occurred',
-            'details': str(e)
-        }), 500
-
 @board_brain_bp.route('/pdfs/<path:filepath>')
 def serve_pdf(filepath):
     try:
@@ -175,6 +142,46 @@ def serve_pdf(filepath):
     except Exception as e:
         logger.error(f"Error serving PDF: {str(e)}")
         return {'error': f'Failed to serve PDF: {str(e)}'}, 404
+
+@board_brain_bp.route('/ask-question', methods=['GET'])
+def ask_question():
+    """
+    Stream a response to a question about board game rules.
+    
+    Query parameters:
+    - question: The question about board game rules
+    
+    Returns a stream of text chunks as Server-Sent Events.
+    """
+    try:
+        question = request.args.get('question')
+        if not question:
+            return jsonify({'error': 'Missing question parameter'}), 400
+            
+        logger.info(f"Received streaming question: {question}")
+        
+        def generate():
+            for chunk in current_app.board_brain.ask_question(question):
+                yield f"data: {json.dumps({'chunk': chunk})}\n\n"
+            yield f"data: {json.dumps({'done': True})}\n\n"
+        
+        response = Response(
+            stream_with_context(generate()),
+            mimetype='text/event-stream',
+            headers={
+                'Cache-Control': 'no-cache, no-transform',
+                'X-Accel-Buffering': 'no',
+                'Connection': 'keep-alive',
+            }
+        )
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error in stream_response: {str(e)}")
+        return jsonify({
+            'error': 'An unexpected error occurred',
+            'details': str(e)
+        }), 500
 
 @board_brain_bp.errorhandler(404)
 def not_found(e):

@@ -4,6 +4,12 @@ import { ChatMessage } from "./ChatMessage.tsx";
 import { ChatInput } from "./ChatInput.tsx";
 import { BoardGameSelect } from "./BoardGameSelect.tsx";
 
+declare global {
+	interface Window {
+		activeEventSource: EventSource | null;
+	}
+}
+
 interface Message {
 	content: string;
 	role: "user" | "assistant";
@@ -20,6 +26,10 @@ const ChatInterface = () => {
 	useEffect(() => {
 		handleGetKnownBoardGames();
 	}, []);
+
+	useEffect(() => {
+		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+	}, [messages]);
 
 	const handleGetKnownBoardGames = async () => {
 		try {
@@ -76,33 +86,65 @@ const ChatInterface = () => {
 	const handleSendMessage = async (message: string) => {
 		setIsLoading(true);
 		setMessages((prev) => [...prev, { content: message, role: "user" }]);
+		setMessages((prev) => [...prev, { content: "", role: "assistant" }]);
 
+		const params = new URLSearchParams({ question: message });
+		
 		try {
-			const response = await fetch("/ask-question", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ question: message }),
-			});
-			const data = await response.json();
+			if (window.activeEventSource) {
+				window.activeEventSource.close();
+			}
+			
+			const eventSource = new EventSource(`/ask-question?${params}`);
+			window.activeEventSource = eventSource;
 
 			if (!selectedBoardGame) {
 				await handleGetSelectedBoardGame();
 			}
-			// TODO: Figure out how to return full message rather than creating a new object
-			setMessages((prev) => [...prev, { content: data.response, role: "assistant" }]);
-		} catch {
-			setMessages((prev) => [
-				...prev,
-				{ content: "Sorry, I'm having trouble connecting to the server.", role: "assistant" },
-			]);
-		} finally {
+			
+			eventSource.onmessage = (event) => {
+				const data = JSON.parse(event.data);
+				
+				if (data.chunk) {
+					setMessages((prev) => [
+						...prev.slice(0, -1),
+						{ 
+							content: prev.at(-1)?.content + data.chunk,
+							role: "assistant"
+						}
+					]);
+				} else if (data.done) {
+					eventSource.close();
+					setIsLoading(false);
+				}
+			};
+			
+			// TODO: clean up and implement better error handling
+			eventSource.onerror = (error) => {
+				eventSource.close();
+				setMessages((prev) => {
+					const newMessages = [...prev];
+					if (newMessages[newMessages.length - 1].content === "") {
+						newMessages[newMessages.length - 1].content = "Sorry, I'm having trouble connecting to the server.";
+					}
+					return newMessages;
+				});
+				setIsLoading(false);
+			};
+		} catch (error) {
+			setMessages((prev) => {
+				const newMessages = [...prev];
+				if (newMessages[newMessages.length - 1].role === "assistant" && 
+					newMessages[newMessages.length - 1].content === "") {
+					newMessages[newMessages.length - 1].content = "Sorry, I'm having trouble connecting to the server.";
+				} else {
+					newMessages.push({ content: "Sorry, I'm having trouble connecting to the server.", role: "assistant" });
+				}
+				return newMessages;
+			});
 			setIsLoading(false);
 		}
 	};
-
-	useEffect(() => {
-		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-	}, [messages]);
 
 	return (
 		<Box h="100vh" display="flex" flexDirection="column">
@@ -134,7 +176,11 @@ const ChatInterface = () => {
 			<Container maxW="48rem" flex="1" display="flex" mt="4rem">
 				<VStack flex="1" overflowY="auto" spacing={4} w="100%" pb="5.5rem">
 					{messages.map((message, index) => (
-						<ChatMessage key={index} content={message.content} role={message.role} />
+						<ChatMessage 
+							key={index} 
+							content={message.content} 
+							role={message.role} 
+						/>
 					))}
 					<div ref={messagesEndRef} />
 				</VStack>
