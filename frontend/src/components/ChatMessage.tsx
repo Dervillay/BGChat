@@ -25,6 +25,26 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ content, role }) => {
 		a: (props: { href?: string; children: React.ReactNode }) => (
 			<ShimmeringLink href={props.href}>{props.children}</ShimmeringLink>
 		),
+		blockquote: (props: { children: React.ReactNode }) => (
+			<Box 
+				bg="white" 
+				p={4} 
+				borderRadius="md"
+				position="relative"
+				pl={6}
+				_before={{
+					content: '""',
+					position: "absolute",
+					left: 0,
+					top: 0,
+					bottom: 0,
+					width: "3px",
+					background: "linear-gradient(to bottom, #7928CA, #FF0080)",
+				}}
+			>
+				{props.children}
+			</Box>
+		),
 	};
 
 	const processMarkdown = (text: string) => {

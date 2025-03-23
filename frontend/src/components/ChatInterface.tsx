@@ -51,19 +51,18 @@ const ChatInterface = () => {
 		}
 	};
 
-	const handleSelectBoardGame = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-		const game = e.target.value;
+	const handleSelectBoardGame = async (boardGame: string) => {
 		setIsLoading(true);
 		try {
 			const response = await fetch("/set-selected-board-game", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ selected_board_game: game }),
+				body: JSON.stringify({ selected_board_game: boardGame }),
 			});
 			const data = await response.json();
 
 			if (data.success) {
-				setSelectedBoardGame(game);
+				setSelectedBoardGame(boardGame);
 				const response = await fetch(`/chat-history`, {
 					method: "GET",
 				});
@@ -85,8 +84,11 @@ const ChatInterface = () => {
 
 	const handleSendMessage = async (message: string) => {
 		setIsLoading(true);
-		setMessages((prev) => [...prev, { content: message, role: "user" }]);
-		setMessages((prev) => [...prev, { content: "", role: "assistant" }]);
+		setMessages((prev) => [
+			...prev,
+			{ content: message, role: "user" },
+			{ content: "", role: "assistant" },
+		]);
 
 		const params = new URLSearchParams({ question: message });
 		
