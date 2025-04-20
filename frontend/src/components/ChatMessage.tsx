@@ -50,20 +50,11 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ content, role }) => {
 	const processMarkdown = (text: string) => {
 		if (role === "user") return text;
 
-		const citationPattern = /{[^}]*"link":[^}]*}/g;
-		const citations = text.match(citationPattern) || [];
-		const parts = text.split(citationPattern);
-
-		let processedText = parts.reduce((acc, part, index) => {
-			const citation = citations[index - 1];
-			if (citation) {
-				const citationObj: Citation = JSON.parse(citation);
-				const displayText = `${citationObj.rulebook_name}, Page ${citationObj.page_num}`;
-				const link = `${process.env.REACT_APP_BACKEND_URL}/pdfs/${citationObj.link}`;
-				return acc + `[${displayText}](${link})` + part;
-			}
-			return acc + part;
-		}, "");
+		const markdownLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+		
+		const processedText = text.replace(markdownLinkRegex, (match, displayText, link) => {
+			return `[${displayText}](${process.env.REACT_APP_BACKEND_URL}/pdfs/${link})`;
+		});
 
 		return processedText;
 	};

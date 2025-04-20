@@ -158,8 +158,11 @@ class BoardBrain:
         def add_link_to_citation(match):
             citation_str = match.group(0)
             citation_dict = ast.literal_eval(citation_str)
-            citation_dict["link"] = self.__construct_rulebook_link(citation_dict)
-            return json.dumps(citation_dict)
+
+            display_text = f"{citation_dict['rulebook_name']}, Page {citation_dict['page_num']}"
+            link = self.__construct_rulebook_link(citation_dict)
+
+            return f"[{display_text}]({link})"
 
         return re.sub(
             CITATION_REGEX_PATTERN,
