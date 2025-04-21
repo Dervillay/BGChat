@@ -4,6 +4,7 @@
 	"private": true,
 	"proxy": "http://127.0.0.1:5000/",
 	"dependencies": {
+		"@auth0/auth0-react": "^2.3.0",
 		"@chakra-ui/checkbox": "^2.3.2",
 		"@chakra-ui/image": "^2.1.0",
 		"@chakra-ui/layout": "^2.3.1",

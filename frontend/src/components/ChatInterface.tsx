@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Box, Container, VStack, Text } from "@chakra-ui/react";
+import { Box, Container, VStack, Text, Button, Flex } from "@chakra-ui/react";
 import { ChatMessage } from "./ChatMessage.tsx";
 import { ChatInput } from "./ChatInput.tsx";
 import { BoardGameSelect } from "./BoardGameSelect.tsx";
-
+import { theme } from "../theme/index.ts";
+import { useAuth0 } from '@auth0/auth0-react';
+import { FiLogOut } from 'react-icons/fi';
 declare global {
 	interface Window {
 		activeEventSource: EventSource | null;
@@ -22,6 +24,7 @@ const ChatInterface = () => {
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [inputValue, setInputValue] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
+	const { logout } = useAuth0();
 
 	useEffect(() => {
 		handleGetKnownBoardGames();
@@ -151,7 +154,7 @@ const ChatInterface = () => {
 	};
 
 	return (
-		<Box h="100vh" display="flex" flexDirection="column">
+		<Flex direction="column" h="100vh">
 			<Box
 				position="fixed"
 				top={0}
@@ -165,7 +168,7 @@ const ChatInterface = () => {
 				px={5}
 				zIndex={1}
 			>
-				<Text bgGradient="linear(to-l, #7928CA, #FF0080)" bgClip="text" fontSize="4xl" fontWeight="extrabold">
+				<Text bgGradient={theme.gradients.purpleToRed} bgClip="text" fontSize="4xl" fontWeight="extrabold">
 					BGChat
 				</Text>
 				<Box>
@@ -190,17 +193,32 @@ const ChatInterface = () => {
 				</VStack>
 			</Container>
 
-			<Container maxW="48rem" position="fixed" bottom="1rem" left="50%" transform="translateX(-50%)">
-				<ChatInput
-					inputValue={inputValue}
-					isLoading={isLoading}
-					selectedBoardGame={selectedBoardGame}
-					setInputValue={setInputValue}
-					setIsLoading={setIsLoading}
-					onMessageSend={handleSendMessage}
-				/>
-			</Container>
-		</Box>
+			<Box position="relative" p={4}>
+				<Container maxW="48rem" position="fixed" bottom="1rem" left="50%" transform="translateX(-50%)">
+					<ChatInput
+						inputValue={inputValue}
+						isLoading={isLoading}
+						selectedBoardGame={selectedBoardGame}
+						setInputValue={setInputValue}
+						setIsLoading={setIsLoading}
+						onMessageSend={handleSendMessage}
+					/>
+				</Container>
+
+				<Button
+					leftIcon={<FiLogOut />}
+					onClick={() => logout({logoutParams:{ returnTo: window.location.origin }})}
+					position="absolute"
+					bottom="100%"
+					left={4}
+					mb={2}
+					size="sm"
+					variant="ghost"
+				>
+					Logout
+				</Button>
+			</Box>
+		</Flex>
 	);
 };
 

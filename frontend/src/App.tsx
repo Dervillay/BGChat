@@ -1,43 +1,44 @@
-import React from "react";
+import React, { useEffect } from "react";
 import "./App.css";
-import { ChakraProvider } from "@chakra-ui/react";
-import { Spinner, Center } from "@chakra-ui/react";
 import ChatInterface from "./components/ChatInterface.tsx";
+import { Auth0Provider, useAuth0 } from '@auth0/auth0-react';
+import { ChakraProvider } from "@chakra-ui/react";
 import { theme } from "./theme/index.ts";
-import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
-import { Login } from './components/Login.tsx';
+import { LoadingScreen } from "./components/LoadingScreen.tsx";
 
 function AppContent() {
-	const { isAuthenticated, isLoading } = useAuth();
+	const { isAuthenticated, isLoading, loginWithRedirect } = useAuth0();
 
-	if (isLoading) {
-		return (
-			<ChakraProvider theme={theme}>
-				<Center h="100vh">
-					<Spinner
-						thickness="4px"
-						speed="0.65s"
-						emptyColor="gray.200"
-						color="blue.500"
-						size="xl"
-					/>
-				</Center>
-			</ChakraProvider>
-		);
-	}
+	useEffect(() => {
+		if (!isLoading && !isAuthenticated) {
+			loginWithRedirect();
+		}
+	}, [isLoading, isAuthenticated, loginWithRedirect]);
 
 	return (
 		<ChakraProvider theme={theme}>
-			{isAuthenticated ? <ChatInterface /> : <Login />}
+			{
+				isLoading ? <LoadingScreen /> 
+				: isAuthenticated ? <ChatInterface />
+				: null
+			}
 		</ChakraProvider>
 	);
 }
 
 function App() {
 	return (
-		<AuthProvider>
+		<Auth0Provider
+			domain={process.env.REACT_APP_AUTH0_DOMAIN}
+			clientId={process.env.REACT_APP_AUTH0_CLIENT_ID}
+			authorizationParams={{
+				redirect_uri: window.location.origin
+			}}
+			useRefreshTokens={true}
+			cacheLocation="localstorage"
+		>
 			<AppContent />
-		</AuthProvider>
+		</Auth0Provider>
 	);
 }
 
