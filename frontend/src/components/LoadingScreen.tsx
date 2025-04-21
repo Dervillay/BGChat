@@ -16,9 +16,8 @@ export const LoadingScreen = () => {
       <Box animation={animation}>
         <Image 
           src="/images/logo.png" 
-          alt="BGChat Logo"
-          width="100px"
-          height="100px"
+          width="5vw"
+          height="5vw"
         />
         </Box>
     </Center>

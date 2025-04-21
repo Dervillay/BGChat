@@ -5,9 +5,6 @@ export const Link = {
     position: "relative",
     fontWeight: "semibold",
     textDecoration: "none",
-    _hover: {
-      textDecoration: "none",
-    }
   },
   variants: {
     shimmeringLink: {

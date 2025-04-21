@@ -35,7 +35,7 @@ function App() {
 				redirect_uri: window.location.origin
 			}}
 			useRefreshTokens={true}
-			cacheLocation="localstorage"
+			cacheLocation="memory"
 		>
 			<AppContent />
 		</Auth0Provider>
