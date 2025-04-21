@@ -3,16 +3,10 @@ import ReactMarkdown from "react-markdown";
 import { Text, Box, Container, Flex } from "@chakra-ui/react";
 import ChakraUIRenderer from "chakra-ui-markdown-renderer";
 import { ShimmeringLink } from "./ShimmeringLink.tsx";
-
+import { theme } from "../theme/index.ts";
 interface ChatMessageProps {
 	content: string;
 	role: "user" | "assistant";
-}
-
-interface Citation {
-	rulebook_name: string;
-	page_num: number;
-	link: string;
 }
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({ content, role }) => {
@@ -39,7 +33,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ content, role }) => {
 					top: 0,
 					bottom: 0,
 					width: "3px",
-					background: "linear-gradient(to bottom, #7928CA, #FF0080)",
+					background: theme.gradients.purpleToRed,
 				}}
 			>
 				{props.children}

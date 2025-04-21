@@ -3,8 +3,10 @@ import { Input } from './components/Input.ts';
 import { Button } from './components/Button.ts';
 import { Select } from './components/Select.ts';
 import { Link } from './components/Link.ts';
+import { gradients } from './gradients.ts';
 
 export const theme = extendTheme({
+    gradients,
     components: {
         Input,
         Button,

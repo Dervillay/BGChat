@@ -1,3 +1,5 @@
+import { gradients } from '../gradients.ts';
+
 export const Link = {
   baseStyle: {
     position: "relative",
@@ -9,7 +11,7 @@ export const Link = {
   },
   variants: {
     shimmeringLink: {
-      backgroundImage: "linear-gradient(to-l, #7928CA, #FF0080)",
+      backgroundImage: gradients.purpleToRed,
       backgroundSize: "200% 200%",
       backgroundPosition: "30% 80%",
       backgroundClip: "text",

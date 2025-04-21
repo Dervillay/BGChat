@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Link } from "@chakra-ui/react";
+import { theme } from "../theme/index.ts";
 
 interface ShimmeringLinkProps {
 	href?: string;
@@ -20,7 +21,7 @@ export const ShimmeringLink: React.FC<ShimmeringLinkProps> = ({ href, children }
 			const y = ((e.clientY - rect.top) / rect.height) * 100;
 
 			requestAnimationFrame(() => {
-				link.style.backgroundImage = `linear-gradient(to-l, #7928CA, #FF0080)`;
+				link.style.backgroundImage = theme.gradients.purpleToRed;
 				link.style.backgroundPosition = `${x}% ${y}%`;
 			});
 		};
