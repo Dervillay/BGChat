@@ -251,24 +251,24 @@ class BoardBrain:
         full_response = ""
         citation_buffer = ""
         in_citation = False
-        
-        # TODO: refactor this to be a bit cleaner
+       
+        # Buffer chunks when we hit a citation, then parse the citation and yield the parsed text
         for chunk in stream:
             content = chunk.choices[0].delta.content
             
             if content is not None:
-                if '{' in content:
+                if CITATION_REGEX_PATTERN[0] in content:
                     in_citation = True
                     citation_buffer += content
                     continue
 
-                elif '}' in content:
+                elif CITATION_REGEX_PATTERN[-1] in content:
                     in_citation = False
                     citation_buffer += content
                     parsed = self.__parse_citations(citation_buffer)
+                    citation_buffer = ""
                     full_response += parsed
                     yield parsed
-                    citation_buffer = ""
                 
                 elif in_citation:
                     citation_buffer += content
