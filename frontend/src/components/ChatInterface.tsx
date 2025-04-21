@@ -99,14 +99,15 @@ const ChatInterface = () => {
 			
 			const eventSource = new EventSource(`/ask-question?${params}`);
 			window.activeEventSource = eventSource;
+			let hasStartedStreaming = false;
 
-			if (!selectedBoardGame) {
-				await handleGetSelectedBoardGame();
-			}
-			
 			eventSource.onmessage = (event) => {
+				if (!selectedBoardGame && !hasStartedStreaming) {
+					hasStartedStreaming = true;
+					handleGetSelectedBoardGame();
+				}
+
 				const data = JSON.parse(event.data);
-				
 				if (data.chunk) {
 					setMessages((prev) => [
 						...prev.slice(0, -1),
@@ -115,7 +116,8 @@ const ChatInterface = () => {
 							role: "assistant"
 						}
 					]);
-				} else if (data.done) {
+				}
+				else if (data.done) {
 					eventSource.close();
 					setIsLoading(false);
 				}
@@ -131,7 +133,6 @@ const ChatInterface = () => {
 					}
 					return newMessages;
 				});
-				setIsLoading(false);
 			};
 		} catch (error) {
 			setMessages((prev) => {
@@ -139,13 +140,14 @@ const ChatInterface = () => {
 				if (newMessages[newMessages.length - 1].role === "assistant" && 
 					newMessages[newMessages.length - 1].content === "") {
 					newMessages[newMessages.length - 1].content = "Sorry, I'm having trouble connecting to the server.";
-				} else {
+				} 
+				else {
 					newMessages.push({ content: "Sorry, I'm having trouble connecting to the server.", role: "assistant" });
 				}
 				return newMessages;
 			});
-			setIsLoading(false);
 		}
+		setIsLoading(false);
 	};
 
 	return (
