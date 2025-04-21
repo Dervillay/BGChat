@@ -1,7 +1,6 @@
 from flask import Flask
 from flask_cors import CORS
 from app.routes.board_brain import board_brain_bp
-from app.routes.auth import auth_bp
 from app.board_brain import BoardBrain
 import os
 
@@ -16,6 +15,5 @@ def create_app():
     
     app.board_brain = BoardBrain()
     app.register_blueprint(board_brain_bp)
-    app.register_blueprint(auth_bp)
 
     return app
