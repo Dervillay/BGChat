@@ -23,7 +23,7 @@ from app.config.prompts import (
 )
 
 
-class BoardBrain:
+class Chatbot:
     def __init__(
         self,
         embedding_model_path: str = EMBEDDING_MODEL_PATH,

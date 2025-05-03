@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
-from app.routes.board_brain import board_brain_bp
-from app.board_brain import BoardBrain
+from app.routes.chatbot import chatbot_bp
+from app.chatbot import Chatbot
 import os
 
 def create_app():
@@ -13,7 +13,7 @@ def create_app():
     app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access to cookies
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # CSRF protection
     
-    app.board_brain = BoardBrain()
-    app.register_blueprint(board_brain_bp)
+    app.chatbot = Chatbot()
+    app.register_blueprint(chatbot_bp)
 
     return app

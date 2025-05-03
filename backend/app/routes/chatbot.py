@@ -9,7 +9,7 @@ import json
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-board_brain_bp = Blueprint('board_brain', __name__)
+chatbot_bp = Blueprint('chatbot', __name__)
 
 def validate_question(f):
     """
@@ -38,7 +38,7 @@ def validate_question(f):
     return decorated_function
 
 
-@board_brain_bp.route('/known-board-games', methods=['GET'])
+@chatbot_bp.route('/known-board-games', methods=['GET'])
 def get_known_board_games():
     """
     Endpoint to get list of known board games
@@ -51,7 +51,7 @@ def get_known_board_games():
     try:
         logger.info(f"Getting known board games")
         return jsonify({
-            'response': current_app.board_brain.known_board_games
+            'response': current_app.chatbot.known_board_games
         })
         
     except Exception as e:
@@ -61,16 +61,16 @@ def get_known_board_games():
             'details': str(e)
         }), 500
 
-@board_brain_bp.route('/selected-board-game', methods=['GET'])
+@chatbot_bp.route('/selected-board-game', methods=['GET'])
 def get_selected_board_game():
     """
     Endpoint to get currently selected board game
     """
     return jsonify({
-        'response': current_app.board_brain.selected_board_game
+        'response': current_app.chatbot.selected_board_game
     })
 
-@board_brain_bp.route('/set-selected-board-game', methods=['POST'])
+@chatbot_bp.route('/set-selected-board-game', methods=['POST'])
 def set_selected_board_game():
     """
     Endpoint to set selected board game
@@ -88,7 +88,7 @@ def set_selected_board_game():
     try:
         data = request.get_json()
         logger.info(f'Setting selected board game to: {data["selected_board_game"]}')
-        current_app.board_brain.set_selected_board_game(data["selected_board_game"])
+        current_app.chatbot.set_selected_board_game(data["selected_board_game"])
         return jsonify({
             'success': True
         })
@@ -100,7 +100,7 @@ def set_selected_board_game():
             'details': str(e)
         }), 500
 
-@board_brain_bp.route('/chat-history', methods=['GET'])
+@chatbot_bp.route('/chat-history', methods=['GET'])
 def get_chat_history():
     """
     Endpoint to get chat history for the currently selected board game
@@ -115,16 +115,16 @@ def get_chat_history():
     """
     try:
         return jsonify({
-            'response': current_app.board_brain.get_user_facing_message_history(current_app.board_brain.selected_board_game)
+            'response': current_app.chatbot.get_user_facing_message_history(current_app.chatbot.selected_board_game)
         })
     except Exception as e:
-        logger.error(f"Error getting chat history for {current_app.board_brain.selected_board_game}: {str(e)}")
+        logger.error(f"Error getting chat history for {current_app.chatbot.selected_board_game}: {str(e)}")
         return jsonify({
             'error': 'An unexpected error occurred',
             'details': str(e)
         }), 500
 
-@board_brain_bp.route('/pdfs/<path:filepath>')
+@chatbot_bp.route('/pdfs/<path:filepath>')
 def serve_pdf(filepath):
     try:
         logger.info(f"Attempting to serve PDF at: {filepath}")
@@ -143,7 +143,7 @@ def serve_pdf(filepath):
         logger.error(f"Error serving PDF: {str(e)}")
         return {'error': f'Failed to serve PDF: {str(e)}'}, 404
 
-@board_brain_bp.route('/ask-question', methods=['GET'])
+@chatbot_bp.route('/ask-question', methods=['GET'])
 def ask_question():
     """
     Stream a response to a question about board game rules.
@@ -161,7 +161,7 @@ def ask_question():
         logger.info(f"Received streaming question: {question}")
         
         def generate():
-            for chunk in current_app.board_brain.ask_question(question):
+            for chunk in current_app.chatbot.ask_question(question):
                 yield f"data: {json.dumps({'chunk': chunk})}\n\n"
             yield f"data: {json.dumps({'done': True})}\n\n"
         
@@ -183,14 +183,14 @@ def ask_question():
             'details': str(e)
         }), 500
 
-@board_brain_bp.errorhandler(404)
+@chatbot_bp.errorhandler(404)
 def not_found(e):
     return jsonify({'error': 'Resource not found'}), 404
 
-@board_brain_bp.errorhandler(405)
+@chatbot_bp.errorhandler(405)
 def method_not_allowed(e):
     return jsonify({'error': 'Method not allowed'}), 405
 
-@board_brain_bp.errorhandler(500)
+@chatbot_bp.errorhandler(500)
 def internal_server_error(e):
     return jsonify({'error': 'Internal server error'}), 500
