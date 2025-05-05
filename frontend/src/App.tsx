@@ -1,27 +1,27 @@
-import React, { useEffect } from "react";
 import "./App.css";
+import React from "react";
 import ChatInterface from "./components/ChatInterface.tsx";
 import { Auth0Provider, useAuth0 } from '@auth0/auth0-react';
 import { ChakraProvider } from "@chakra-ui/react";
 import { theme } from "./theme/index.ts";
 import { LoadingScreen } from "./components/LoadingScreen.tsx";
+import { RedirectingScreen } from "./components/RedirectingScreen.tsx";
 
 function AppContent() {
 	const { isAuthenticated, isLoading, loginWithRedirect } = useAuth0();
 
-	useEffect(() => {
-		if (!isLoading && !isAuthenticated) {
-			loginWithRedirect();
-		}
-	}, [isLoading, isAuthenticated, loginWithRedirect]);
+	if (isLoading) {
+		return <LoadingScreen />;
+	}
+
+	if (!isAuthenticated) {
+		loginWithRedirect();
+		return <RedirectingScreen />;
+	}
 
 	return (
 		<ChakraProvider theme={theme}>
-			{
-				isLoading ? <LoadingScreen /> 
-				: isAuthenticated ? <ChatInterface />
-				: null
-			}
+			<ChatInterface />
 		</ChakraProvider>
 	);
 }

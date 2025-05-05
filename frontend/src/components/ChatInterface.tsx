@@ -6,6 +6,8 @@ import { BoardGameSelect } from "./BoardGameSelect.tsx";
 import { theme } from "../theme/index.ts";
 import { useAuth0 } from '@auth0/auth0-react';
 import { FiLogOut } from 'react-icons/fi';
+import { fetchWithAuth } from "../utils/fetchWithAuth.ts";
+import { withError } from "../utils/withError.ts";
 declare global {
 	interface Window {
 		activeEventSource: EventSource | null;
@@ -24,7 +26,7 @@ const ChatInterface = () => {
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [inputValue, setInputValue] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
-	const { logout } = useAuth0();
+	const { logout, getAccessTokenSilently } = useAuth0();
 
 	useEffect(() => {
 		handleGetKnownBoardGames();
@@ -36,47 +38,58 @@ const ChatInterface = () => {
 
 	const handleGetKnownBoardGames = async () => {
 		try {
-			const response = await fetch("/known-board-games", { method: "GET" });
-			const data = await response.json();
-			setKnownBoardGames(data.response);
-		} catch {
-			setMessages((prev) => [...prev, { content: "Failed to load known board games", role: "assistant" }]);
-		}
+			const response = await withError(() => fetchWithAuth(
+				"/known-board-games",
+				{ method: "GET" },
+				getAccessTokenSilently
+			));
+			const knownBoardGames = await response.json();
+			setKnownBoardGames(knownBoardGames);
+		} catch (error) {
+			console.log(error);
+			setMessages((prev) => [...prev, { content: "Failed to load known board games: " + error.message, role: "assistant" }]);
+		}	
 	};
 
 	const handleGetSelectedBoardGame = async () => {
 		try {
-			const response = await fetch("/selected-board-game", { method: "GET" });
-			const data = await response.json();
-			setSelectedBoardGame(data.response);
-		} catch {
-			setMessages((prev) => [...prev, { content: "Failed to load selected board game", role: "assistant" }]);
+			const response = await withError(() => fetchWithAuth(
+				"/selected-board-game",
+				{ method: "GET" },
+				getAccessTokenSilently
+			));
+			const selectedBoardGame = await response.json();
+			setSelectedBoardGame(selectedBoardGame);
+		} catch (error) {
+			setMessages((prev) => [...prev, { content: "Failed to load selected board game: " + error.message, role: "assistant" }]);
 		}
 	};
 
 	const handleSelectBoardGame = async (boardGame: string) => {
 		setIsLoading(true);
 		try {
-			const response = await fetch("/set-selected-board-game", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ selected_board_game: boardGame }),
-			});
+			const response = await withError(() => fetchWithAuth(
+				"/set-selected-board-game",
+				{ method: "POST", body: JSON.stringify({ selected_board_game: boardGame }) },
+				getAccessTokenSilently
+			));
 			const data = await response.json();
 
 			if (data.success) {
 				setSelectedBoardGame(boardGame);
-				const response = await fetch(`/chat-history`, {
-					method: "GET",
-				});
+				const response = await withError(() => fetchWithAuth(
+					`/chat-history`,
+					{ method: "GET" },
+					getAccessTokenSilently
+				));
 				const data = await response.json();
-				setMessages(data.response);
+				setMessages(data);
 			}
 		} catch (error) {
 			setMessages((prev) => [
 				...prev,
 				{
-					content: "Failed to switch board game. Please try again.",
+					content: "Failed to switch board game. Please try again: " + error.message,
 					role: "assistant",
 				},
 			]);
