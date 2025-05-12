@@ -40,7 +40,7 @@ def validate_question(f):
 
 
 @chatbot_bp.route("/known-board-games", methods=["GET"])
-# @requires_auth
+@requires_auth
 def get_known_board_games():
     return jsonify(current_app.chatbot.known_board_games), 200
 
@@ -116,10 +116,8 @@ def ask_question():
 
 
 @chatbot_bp.errorhandler(AuthError)
-def handle_auth_error(exception):
-    response = jsonify(exception.error)
-    response.status_code = exception.status_code
-    return response
+def handle_auth_error(e):
+    return jsonify({"error": e.error}), e.status_code
 
 
 @chatbot_bp.errorhandler(404)

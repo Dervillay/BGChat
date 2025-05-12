@@ -1,13 +1,13 @@
 import { useAuth0 } from "@auth0/auth0-react";
 
-export async function fetchWithAuth(
-  url: string,
-  options: RequestInit = {},
-  getAccessTokenSilently: ReturnType<typeof useAuth0>["getAccessTokenSilently"],
-) {
+export function useFetchWithAuth() {
+  const { getAccessTokenSilently } = useAuth0();
+
+  return async (url: string, options: RequestInit = {}) => {
     const token = await getAccessTokenSilently({
+      authorizationParams: {
         audience: process.env.REACT_APP_AUTH0_AUDIENCE,
-        scope: "openid profile email",
+      }
     });
     const headers = {
       ...options.headers,
@@ -15,4 +15,5 @@ export async function fetchWithAuth(
       "Content-Type": "application/json",
     };
     return fetch(url, { ...options, headers });
-};
+  };
+}

@@ -6,7 +6,7 @@ import { BoardGameSelect } from "./BoardGameSelect.tsx";
 import { theme } from "../theme/index.ts";
 import { useAuth0 } from '@auth0/auth0-react';
 import { FiLogOut } from 'react-icons/fi';
-import { fetchWithAuth } from "../utils/fetchWithAuth.ts";
+import { useFetchWithAuth } from "../utils/fetchWithAuth.ts";
 import { withError } from "../utils/withError.ts";
 declare global {
 	interface Window {
@@ -20,13 +20,15 @@ interface Message {
 }
 
 const ChatInterface = () => {
-	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const [knownBoardGames, setKnownBoardGames] = useState<string[]>([]);
 	const [selectedBoardGame, setSelectedBoardGame] = useState<string>("");
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [inputValue, setInputValue] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
-	const { logout, getAccessTokenSilently } = useAuth0();
+	const { logout } = useAuth0();
+	const fetchWithAuth = useFetchWithAuth();
+	
+	const messagesEndRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		handleGetKnownBoardGames();
@@ -40,13 +42,11 @@ const ChatInterface = () => {
 		try {
 			const response = await withError(() => fetchWithAuth(
 				"/known-board-games",
-				{ method: "GET" },
-				getAccessTokenSilently
+				{ method: "GET" }
 			));
 			const knownBoardGames = await response.json();
 			setKnownBoardGames(knownBoardGames);
 		} catch (error) {
-			console.log(error);
 			setMessages((prev) => [...prev, { content: "Failed to load known board games: " + error.message, role: "assistant" }]);
 		}	
 	};
@@ -55,8 +55,7 @@ const ChatInterface = () => {
 		try {
 			const response = await withError(() => fetchWithAuth(
 				"/selected-board-game",
-				{ method: "GET" },
-				getAccessTokenSilently
+				{ method: "GET" }
 			));
 			const selectedBoardGame = await response.json();
 			setSelectedBoardGame(selectedBoardGame);
@@ -71,7 +70,6 @@ const ChatInterface = () => {
 			const response = await withError(() => fetchWithAuth(
 				"/set-selected-board-game",
 				{ method: "POST", body: JSON.stringify({ selected_board_game: boardGame }) },
-				getAccessTokenSilently
 			));
 			const data = await response.json();
 
@@ -79,8 +77,7 @@ const ChatInterface = () => {
 				setSelectedBoardGame(boardGame);
 				const response = await withError(() => fetchWithAuth(
 					`/chat-history`,
-					{ method: "GET" },
-					getAccessTokenSilently
+					{ method: "GET" }
 				));
 				const data = await response.json();
 				setMessages(data);
