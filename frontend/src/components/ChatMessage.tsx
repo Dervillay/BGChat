@@ -4,6 +4,7 @@ import { Text, Box, Container, Flex } from "@chakra-ui/react";
 import ChakraUIRenderer from "chakra-ui-markdown-renderer";
 import { ShimmeringLink } from "./ShimmeringLink.tsx";
 import { theme } from "../theme/index.ts";
+
 interface ChatMessageProps {
 	content: string;
 	role: "user" | "assistant";
@@ -17,7 +18,9 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ content, role }) => {
 			</Text>
 		),
 		a: (props: { href?: string; children: React.ReactNode }) => (
-			<ShimmeringLink href={props.href}>{props.children}</ShimmeringLink>
+			<ShimmeringLink href={props.href}>
+				{props.children}
+			</ShimmeringLink>
 		),
 		blockquote: (props: { children: React.ReactNode }) => (
 			<Box 
