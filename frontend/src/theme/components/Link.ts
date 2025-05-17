@@ -7,7 +7,7 @@ export const Link = {
     textDecoration: "none",
   },
   variants: {
-    shimmeringLink: {
+    rulebookLink: {
       backgroundImage: gradients.purpleToRed,
       backgroundSize: "200% 200%",
       backgroundPosition: "30% 80%",
