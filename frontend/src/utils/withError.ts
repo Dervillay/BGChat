@@ -9,8 +9,7 @@ export async function withError<T>(
             errorBody = await response.json();
         } catch {
             errorBody = { message: response.statusText };
-        }
-        throw {
+        } throw {
             status: response.status,
             message: errorBody.error || errorBody.message || response.statusText,
             body: errorBody,
