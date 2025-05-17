@@ -5,11 +5,9 @@ import logging
 import os
 import json
 
-from functools import wraps
 from flask import Blueprint, request, jsonify, send_from_directory, current_app, Response, stream_with_context
 from app.config.paths import RULEBOOKS_PATH
 from app.utils.auth import AuthError, requires_auth
-from app.utils.exceptions import ChatbotError
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -60,8 +58,8 @@ def serve_pdf(filepath):
         directory,
         filename,
         mimetype="application/pdf",
-        as_attachment=False
-        )
+        as_attachment=False,
+    )
 
 
 @chatbot_bp.route("/ask-question", methods=["POST"])
@@ -114,12 +112,6 @@ def ask_question():
 @chatbot_bp.errorhandler(AuthError)
 def handle_auth_error(e):
     return jsonify({"error": e.error}), e.status_code
-
-
-@chatbot_bp.errorhandler(ChatbotError)
-def handle_chatbot_error(e):
-    logger.error("Chatbot error: %s", str(e))
-    return jsonify({"error": e.message}), e.status_code
 
 
 @chatbot_bp.errorhandler(404)
