@@ -15,11 +15,16 @@ export const ShimmeringLink: React.FC<ShimmeringLinkProps> = ({ href, children }
 
 	const handleOnClick = async (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
 		e.preventDefault();
-
+		
 		const response = await withError(() => fetchWithAuth(href));
 		const blob = await response.blob();
-		const url = window.URL.createObjectURL(blob);
-		
+		let url = window.URL.createObjectURL(blob);
+
+		const pageNumber = href.split("#page=").pop();
+		if (pageNumber) {
+			url = url + `#page=${pageNumber}`;
+		}
+
 		window.open(url, '_blank');
 	};
 
