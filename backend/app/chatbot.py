@@ -70,20 +70,19 @@ class Chatbot:
             return response.choices[0].message.content
         
         except openai.error.AuthenticationError as e:
-            print(f"Authentication failed: {e}")
+            raise ValueError(f"Authentication failed: {e}") from e
 
         except openai.error.InvalidRequestError as e:
-            print(f"Invalid request: {e}")
+            raise ValueError(f"Invalid request: {e}") from e
 
         except openai.error.RateLimitError as e:
-            print(f"Rate limit exceeded: {e}")
+            raise ValueError(f"Rate limit exceeded: {e}") from e
 
         except openai.error.OpenAIError as e:
-            print(f"An error occurred: {e}")
+            raise ValueError(f"An error occurred: {e}") from e
 
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
-
+            raise ValueError(f"An unexpected error occurred: {e}") from e
     
     def __determine_board_game(
         self,
@@ -145,8 +144,7 @@ class Chatbot:
         page_num = citation.get("page_num")
 
         if not rulebook_name or not page_num:
-            print(f"WARN: Malformed citation detected:\n{json.dumps(citation)}")
-            return
+            raise ValueError(f"Malformed citation detected:\n{json.dumps(citation)}")
 
         return f"{quote(f'{self.selected_board_game}/{rulebook_name}.pdf')}#page={page_num}"
 
