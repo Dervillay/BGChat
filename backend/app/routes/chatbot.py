@@ -1,42 +1,20 @@
-from flask import Blueprint, request, jsonify, send_from_directory, current_app, Response, stream_with_context
-from app.config.paths import RULEBOOKS_PATH
-from app.utils.auth import AuthError, requires_auth
-from functools import wraps
+"""
+API routes for interacting with the chatbot.
+"""
 import logging
 import os
 import json
+
+from functools import wraps
+from flask import Blueprint, request, jsonify, send_from_directory, current_app, Response, stream_with_context
+from app.config.paths import RULEBOOKS_PATH
+from app.utils.auth import AuthError, requires_auth
+from app.utils.exceptions import ChatbotError
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 chatbot_bp = Blueprint("chatbot", __name__)
-
-
-def validate_question(f):
-    """
-    Decorator to validate incoming message requests.
-    Ensures requests have required JSON format and message field.
-    """
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not request.is_json:
-            return jsonify({
-                "error": "Content-Type must be application/json"
-            }), 415
-        
-        data = request.get_json()
-        if not data or "question" not in data:
-            return jsonify({
-                "error": "Request must include a question field"
-            }), 400
-            
-        if not isinstance(data["question"], str) or not data["question"].strip():
-            return jsonify({
-                "error": "Question must be a non-empty string"
-            }), 400
-            
-        return f(*args, **kwargs)
-    return decorated_function
 
 
 @chatbot_bp.route("/known-board-games", methods=["GET"])
@@ -46,31 +24,35 @@ def get_known_board_games():
 
 
 @chatbot_bp.route("/selected-board-game", methods=["GET"])
+@requires_auth
 def get_selected_board_game():
-    logger.info("Getting selected board games")
+    logger.info("Getting selected board game")
     return jsonify(current_app.chatbot.selected_board_game), 200
 
 
 @chatbot_bp.route("/set-selected-board-game", methods=["POST"])
+@requires_auth
 def set_selected_board_game():
     data = request.get_json()
     if not data or "selected_board_game" not in data:
         return jsonify({"error": "Missing 'selected_board_game' in request"}), 400
     
-    logger.info(f"Setting selected board game to: {data["selected_board_game"]}")
+    logger.info("Setting selected board game to: %s", data["selected_board_game"])
     current_app.chatbot.set_selected_board_game(data["selected_board_game"])
     return jsonify({"success": True}), 200
 
 
 @chatbot_bp.route("/chat-history", methods=["GET"])
+@requires_auth
 def get_chat_history():
     currently_selected_board_game = current_app.chatbot.selected_board_game
     return jsonify(current_app.chatbot.get_user_facing_message_history(currently_selected_board_game)), 200
 
 
 @chatbot_bp.route("/pdfs/<path:filepath>")
+@requires_auth
 def serve_pdf(filepath):
-    logger.info(f"Attempting to serve PDF at: {filepath}")
+    logger.info("Attempting to serve PDF at: %s", filepath)
     directory = os.path.join(RULEBOOKS_PATH, os.path.dirname(filepath))
     filename = os.path.basename(filepath)
     
@@ -82,21 +64,35 @@ def serve_pdf(filepath):
         )
 
 
-@chatbot_bp.route("/ask-question", methods=["GET"])
+@chatbot_bp.route("/ask-question", methods=["POST"])
+@requires_auth
 def ask_question():
     """
     Stream a response to a question about board game rules.
     
-    Query parameters:
-    - question: The question about board game rules
+    Request body:
+    - question: A question about board game rules
     
-    Returns a stream of text chunks as Server-Sent Events.
+    Returns a stream of text chunks.
     """
-    question = request.args.get("question")
-    if not question:
-        return jsonify({"error": "Missing question parameter in request"}), 400
+    if not request.is_json:
+        return jsonify({
+            "error": "Content-Type must be application/json"
+        }), 415
+
+    data = request.get_json()
+    if not data or "question" not in data:
+        return jsonify({
+            "error": "Request missing field 'question'"
+        }), 400
         
-    logger.info(f"Received streaming question: {question}")
+    question = data["question"]
+    if not isinstance(question, str) or not question.strip():
+        return jsonify({
+            "error": "Question must be a non-empty string"
+        }), 400
+        
+    logger.info("Received streaming question: %s", question)
     
     def generate():
         for chunk in current_app.chatbot.ask_question(question):
@@ -118,6 +114,12 @@ def ask_question():
 @chatbot_bp.errorhandler(AuthError)
 def handle_auth_error(e):
     return jsonify({"error": e.error}), e.status_code
+
+
+@chatbot_bp.errorhandler(ChatbotError)
+def handle_chatbot_error(e):
+    logger.error("Chatbot error: %s", str(e))
+    return jsonify({"error": e.message}), e.status_code
 
 
 @chatbot_bp.errorhandler(404)

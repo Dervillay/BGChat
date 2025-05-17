@@ -103,50 +103,51 @@ const ChatInterface = () => {
 			{ content: "", role: "assistant" },
 		]);
 
-		const params = new URLSearchParams({ question: message });
-		
 		try {
-			if (window.activeEventSource) {
-				window.activeEventSource.close();
+			const response = await withError(() => fetchWithAuth(
+				`/ask-question`, 
+				{ method: "POST", body: JSON.stringify({ question: message }) }
+			));
+
+			const reader = response.body?.getReader();
+			if (!reader) {
+				throw new Error('No reader available');
 			}
-			
-			const eventSource = new EventSource(`/ask-question?${params}`);
-			window.activeEventSource = eventSource;
+
 			let hasStartedStreaming = false;
+			const decoder = new TextDecoder();
 
-			eventSource.onmessage = (event) => {
-				if (!selectedBoardGame && !hasStartedStreaming) {
-					hasStartedStreaming = true;
-					handleGetSelectedBoardGame();
-				}
+			while (true) {
+				const { done, value } = await reader.read();
+				if (done) break;
 
-				const data = JSON.parse(event.data);
-				if (data.chunk) {
-					setMessages((prev) => [
-						...prev.slice(0, -1),
-						{ 
-							content: prev.at(-1)?.content + data.chunk,
-							role: "assistant"
+				const chunk = decoder.decode(value);
+				const lines = chunk.split('\n');
+
+				for (const line of lines) {
+					if (line.startsWith('data: ')) {
+						const data = JSON.parse(line.slice(6));
+						
+						if (!selectedBoardGame && !hasStartedStreaming) {
+							hasStartedStreaming = true;
+							handleGetSelectedBoardGame();
 						}
-					]);
-				}
-				else if (data.done) {
-					eventSource.close();
-					setIsLoading(false);
-				}
-			};
-			
-			// TODO: clean up and implement better error handling
-			eventSource.onerror = (error) => {
-				eventSource.close();
-				setMessages((prev) => {
-					const newMessages = [...prev];
-					if (newMessages[newMessages.length - 1].content === "") {
-						newMessages[newMessages.length - 1].content = "Sorry, I'm having trouble connecting to the server.";
+
+						if (data.chunk) {
+							setMessages((prev) => [
+								...prev.slice(0, -1),
+								{ 
+									content: prev.at(-1)?.content + data.chunk,
+									role: "assistant"
+								}
+							]);
+						}
+						else if (data.done) {
+							setIsLoading(false);
+						}
 					}
-					return newMessages;
-				});
-			};
+				}
+			}
 		} catch (error) {
 			setMessages((prev) => {
 				const newMessages = [...prev];
@@ -159,8 +160,9 @@ const ChatInterface = () => {
 				}
 				return newMessages;
 			});
+		} finally {
+			setIsLoading(false);
 		}
-		setIsLoading(false);
 	};
 
 	return (
