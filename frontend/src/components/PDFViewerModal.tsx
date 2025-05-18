@@ -17,9 +17,15 @@ import { useFetchWithAuth } from "../utils/fetchWithAuth.ts";
 import { usePDFViewer } from "../contexts/PDFViewerContext.tsx";
 
 const borderChase = keyframes`
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
 `;
 
 export const PDFViewerModal: React.FC = () => {
@@ -49,7 +55,6 @@ export const PDFViewerModal: React.FC = () => {
         const baseParams = "toolbar=1&navpanes=1&view=FitH";
         const pageParams = pageNumber ? `&page=${pageNumber}` : "";
         const fullUrl = `${blobUrl}#${baseParams}${pageParams}`;
-        
         setIframeSrc(fullUrl);
     };
 
@@ -92,11 +97,12 @@ export const PDFViewerModal: React.FC = () => {
                         background: theme.gradients.purpleToRed,
                         backgroundSize: "200% 200%",
                         backgroundPosition: "0% 50%",
-                        animation: `${borderChase} 3s ease infinite`,    
+                        animation: `${borderChase} 2s ease infinite`,
                         WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
                         WebkitMaskComposite: "xor",
                         maskComposite: "exclude",
                         zIndex: -1,
+                        pointerEvents: "none"
                     }
                 }}
             >
