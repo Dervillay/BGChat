@@ -7,42 +7,32 @@ import { PDFViewerModal } from "./PDFViewerModal.tsx";
 
 interface RulebookLinkProps {
 	href?: string;
+	text?: string;
 	children: React.ReactNode;
 }
 
-export const RulebookLink: React.FC<RulebookLinkProps> = ({ href, children }) => {
+export const RulebookLink: React.FC<RulebookLinkProps> = ({ href, text, children }) => {
 	const fetchWithAuth = useFetchWithAuth();
 	const linkRef = useRef<HTMLAnchorElement>(null);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 	const [pageNumber, setPageNumber] = useState<string | undefined>();
+	const [rulebookTitle, setRulebookTitle] = useState<string | undefined>();
 
-	const handleOnClick = async (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-		e.preventDefault();
-		try {
-			const pageMatch = href.match(/#page=(\d+)$/);
-			const page = pageMatch ? pageMatch[1] : undefined;
-			setPageNumber(page);
+	useEffect(() => {
+		const title = text?.split(",").at(0);
+		setRulebookTitle(title);
+	}, [text]);
 
-			const response = await withError(() => fetchWithAuth(href));
-			const blob = await response.blob();
-			const url = window.URL.createObjectURL(blob);
-			setPdfUrl(url);
-			setIsModalOpen(true);
-		} catch (error) {
-			// TODO: add better error handling
-			console.error('Error fetching PDF:', error);
-		}
-	};
+	useEffect(() => {
+		if (!href) return;
 
-	const handleCloseModal = () => {
-		setIsModalOpen(false);
-		if (pdfUrl) {
-			window.URL.revokeObjectURL(pdfUrl);
-			setPdfUrl(null);
-		}
-		setPageNumber(undefined);
-	};
+		const pageMatch = href.match(/#page=(\d+)$/);
+		const page = pageMatch ? pageMatch[1] : undefined;
+		setPageNumber(page);
+
+		handleUpdatePdfUrl(href);
+	}, [href]);
 
 	useEffect(() => {
 		const link = linkRef.current;
@@ -75,9 +65,37 @@ export const RulebookLink: React.FC<RulebookLinkProps> = ({ href, children }) =>
 		};
 	}, []);
 
+	const handleOnClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+		e.preventDefault();
+		setIsModalOpen(true);
+	};
+
+	const handleCloseModal = () => {
+		setIsModalOpen(false);
+	};
+
+	const handleUpdatePdfUrl = async (href: string) => {
+		try {
+			const response = await withError(() => fetchWithAuth(href));
+			const blob = await response.blob();
+			const url = window.URL.createObjectURL(blob);
+
+			if (pdfUrl) {
+				window.URL.revokeObjectURL(pdfUrl);
+				setPdfUrl(null);
+			}
+
+			setPdfUrl(url);
+		} catch (error) {
+			// TODO: add better error handling
+			console.error('Error fetching PDF:', error);
+		}
+	};
+
+
 	return (
 		<>
-			<Link ref={linkRef} href={href} onClick={(e) => href && handleOnClick(e, href)} isExternal variant="rulebookLink">
+			<Link ref={linkRef} href={href} onClick={(e) => href && handleOnClick(e)} isExternal variant="rulebookLink">
 				{children} ↗
 			</Link>
 			{pdfUrl && (
@@ -86,6 +104,7 @@ export const RulebookLink: React.FC<RulebookLinkProps> = ({ href, children }) =>
 					onClose={handleCloseModal}
 					pdfUrl={pdfUrl}
 					pageNumber={pageNumber}
+					title={rulebookTitle ?? "Rulebook"}
 				/>
 			)}
 		</>

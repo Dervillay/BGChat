@@ -18,7 +18,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ content, role }) => {
 			</Text>
 		),
 		a: (props: { href?: string; children: React.ReactNode }) => (
-			<RulebookLink href={props.href}>
+			<RulebookLink href={props.href} text={props.children?.toString()}>
 				{props.children}
 			</RulebookLink>
 		),
