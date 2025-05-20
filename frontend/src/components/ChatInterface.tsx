@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Box, Container, VStack, Text, Button, Flex } from "@chakra-ui/react";
-import { ChatMessage } from "./ChatMessage.tsx";
+import { AssistantMessage } from "./AssistantMessage.tsx";
 import { ChatInput } from "./ChatInput.tsx";
 import { BoardGameSelect } from "./BoardGameSelect.tsx";
 import { theme } from "../theme/index.ts";
@@ -9,6 +9,7 @@ import { FiLogOut } from 'react-icons/fi';
 import { useFetchWithAuth } from "../utils/fetchWithAuth.ts";
 import { withError } from "../utils/withError.ts";
 import { ThinkingPlaceholder } from "./ThinkingPlaceholder.tsx";
+import { UserMessage } from "./UserMessage.tsx";
 
 declare global {
 	interface Window {
@@ -96,6 +97,23 @@ const ChatInterface = () => {
 		} finally {
 			setIsLoading(false);
 		}
+	};
+
+	const handleEditMessage = async (index: number, newContent: string) => {
+		// Update the message in the UI
+		setMessages((prev) => {
+			const newMessages = [...prev];
+			newMessages[index] = { ...newMessages[index], content: newContent };
+			return newMessages;
+		});
+
+		// Remove all messages after the edited message
+		setMessages((prev) => prev.slice(0, index + 1));
+
+		//TODO: Reset messages on the server
+
+		// Send the edited message
+		await handleSendMessage(newContent);
 	};
 
 	const handleSendMessage = async (message: string) => {
@@ -206,11 +224,19 @@ const ChatInterface = () => {
 			<Container maxW="48rem" flex="1" display="flex" mt="4rem">
 				<VStack flex="1" overflowY="auto" spacing={4} w="100%" pb="5.5rem">
 					{messages.map((message, index) => (
-						<ChatMessage 
-							key={index} 
-							content={message.content} 
-							role={message.role}
-						/>
+						message.role === "user" ? (
+							<Flex key={index} justifyContent="flex-end" w="100%" role="group">
+								<UserMessage
+									content={message.content}
+									onEdit={(newContent) => handleEditMessage(index, newContent)}
+								/>
+							</Flex>
+						) : (
+							<AssistantMessage 
+								key={index} 
+								content={message.content}
+							/>
+						)
 					))}
 					{isThinking && <ThinkingPlaceholder />}
 					<div ref={messagesEndRef} />

@@ -5,15 +5,14 @@ import ChakraUIRenderer from "chakra-ui-markdown-renderer";
 import { RulebookLink } from "./RulebookLink.tsx";
 import { theme } from "../theme/index.ts";
 
-interface ChatMessageProps {
+interface AssistantMessageProps {
 	content: string;
-	role: "user" | "assistant";
 }
 
-export const ChatMessage: React.FC<ChatMessageProps> = ({ content, role }) => {
+export const AssistantMessage: React.FC<AssistantMessageProps> = ({ content }) => {
 	const markdown = {
 		p: (props: { children: React.ReactNode }) => (
-			<Text my={role === "assistant" ? 3 : 0} lineHeight={1.7}>
+			<Text my={3} lineHeight={1.7}>
 				{props.children}
 			</Text>
 		),
@@ -33,8 +32,8 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ content, role }) => {
 					content: '""',
 					position: "absolute",
 					left: 0,
-					top: 0,
-					bottom: 0,
+					top: 3,
+					bottom: 3,
 					width: "3px",
 					background: theme.gradients.purpleToRed,
 				}}
@@ -45,10 +44,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ content, role }) => {
 	};
 
 	const processMarkdown = (text: string) => {
-		if (role === "user") return text;
-
 		const markdownLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
-		
 		const processedText = text.replace(markdownLinkRegex, (match, displayText, link) => {
 			return `[${displayText}](${process.env.REACT_APP_BACKEND_URL}/pdfs/${link})`;
 		});
@@ -58,18 +54,12 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ content, role }) => {
 
 	return (
 		<Container maxW="48rem">
-			<Flex justifyContent={role === "user" ? "flex-end" : "flex-start"}>
-				{role === "user" ? (
-					<Box maxW="70%" bg="gray.800" color="white" px={5} py={2.5} borderRadius="1.5rem">
-						<ReactMarkdown components={ChakraUIRenderer(markdown)}>{content}</ReactMarkdown>
-					</Box>
-				) : (
-					<Box maxW="100%">
-						<ReactMarkdown components={ChakraUIRenderer(markdown)}>
-							{processMarkdown(content)}
-						</ReactMarkdown>
-					</Box>
-				)}
+			<Flex justifyContent="flex-start">
+				<Box maxW="100%">
+					<ReactMarkdown components={ChakraUIRenderer(markdown)}>
+						{processMarkdown(content)}
+					</ReactMarkdown>
+				</Box>
 			</Flex>
 		</Container>
 	);
