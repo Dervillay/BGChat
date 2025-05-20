@@ -10,23 +10,11 @@ import {
 } from "@chakra-ui/react";
 import { FiX } from "react-icons/fi";
 import { theme } from "../theme/index.ts";
-import { keyframes } from "@emotion/react";
 import { useState, useEffect } from "react";
 import { withError } from "../utils/withError.ts";
 import { useFetchWithAuth } from "../utils/fetchWithAuth.ts";
 import { usePDFViewer } from "../contexts/PDFViewerContext.tsx";
-
-const borderChase = keyframes`
-    0% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
-    100% {
-        background-position: 0% 50%;
-    }
-`;
+import { borderChase } from "../theme/animations.ts";
 
 export const PDFViewerModal: React.FC = () => {
     const { isOpen, url, title, pageNumber, closeViewer } = usePDFViewer();

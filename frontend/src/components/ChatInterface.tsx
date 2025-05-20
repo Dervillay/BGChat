@@ -8,6 +8,8 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { FiLogOut } from 'react-icons/fi';
 import { useFetchWithAuth } from "../utils/fetchWithAuth.ts";
 import { withError } from "../utils/withError.ts";
+import { ThinkingPlaceholder } from "./ThinkingPlaceholder.tsx";
+
 declare global {
 	interface Window {
 		activeEventSource: EventSource | null;
@@ -25,6 +27,7 @@ const ChatInterface = () => {
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [inputValue, setInputValue] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
+	const [isThinking, setIsThinking] = useState(false);
 	const { logout } = useAuth0();
 	const fetchWithAuth = useFetchWithAuth();
 	
@@ -97,6 +100,7 @@ const ChatInterface = () => {
 
 	const handleSendMessage = async (message: string) => {
 		setIsLoading(true);
+		setIsThinking(true);
 		setMessages((prev) => [
 			...prev,
 			{ content: message, role: "user" },
@@ -109,31 +113,36 @@ const ChatInterface = () => {
 				{ method: "POST", body: JSON.stringify({ question: message }) }
 			));
 
+			if (!selectedBoardGame) {
+				handleGetSelectedBoardGame();
+			}
+
 			const reader = response.body?.getReader();
 			if (!reader) {
 				throw new Error('No reader available');
 			}
 
-			let hasStartedStreaming = false;
 			const decoder = new TextDecoder();
+			let hasStartedStreaming = false;
 
 			while (true) {
 				const { done, value } = await reader.read();
+
 				if (done) break;
 
 				const chunk = decoder.decode(value);
 				const lines = chunk.split('\n');
+				const dataStart = "data: ";
 
 				for (const line of lines) {
-					if (line.startsWith('data: ')) {
-						const data = JSON.parse(line.slice(6));
-						
-						if (!selectedBoardGame && !hasStartedStreaming) {
-							hasStartedStreaming = true;
-							handleGetSelectedBoardGame();
-						}
+					if (line.startsWith(dataStart)) {
+						const data = JSON.parse(line.slice(dataStart.length));
 
 						if (data.chunk) {
+							if (!hasStartedStreaming) {
+								hasStartedStreaming = true;
+								setIsThinking(false);
+							}
 							setMessages((prev) => [
 								...prev.slice(0, -1),
 								{ 
@@ -149,6 +158,7 @@ const ChatInterface = () => {
 				}
 			}
 		} catch (error) {
+			// TODO: add better error handling
 			setMessages((prev) => {
 				const newMessages = [...prev];
 				if (newMessages[newMessages.length - 1].role === "assistant" && 
@@ -162,6 +172,7 @@ const ChatInterface = () => {
 			});
 		} finally {
 			setIsLoading(false);
+			setIsThinking(false);
 		}
 	};
 
@@ -198,9 +209,10 @@ const ChatInterface = () => {
 						<ChatMessage 
 							key={index} 
 							content={message.content} 
-							role={message.role} 
+							role={message.role}
 						/>
 					))}
+					{isThinking && <ThinkingPlaceholder />}
 					<div ref={messagesEndRef} />
 				</VStack>
 			</Container>
