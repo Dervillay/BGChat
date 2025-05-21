@@ -12,7 +12,7 @@ interface AssistantMessageProps {
 export const AssistantMessage: React.FC<AssistantMessageProps> = ({ content }) => {
 	const markdown = {
 		p: (props: { children: React.ReactNode }) => (
-			<Text my={3} lineHeight={1.7}>
+			<Text mt={1} mb={3} lineHeight={1.7}>
 				{props.children}
 			</Text>
 		),
@@ -33,7 +33,7 @@ export const AssistantMessage: React.FC<AssistantMessageProps> = ({ content }) =
 					position: "absolute",
 					left: 0,
 					top: 3,
-					bottom: 3,
+					bottom: 4,
 					width: "3px",
 					background: theme.gradients.purpleToRed,
 				}}
@@ -53,7 +53,7 @@ export const AssistantMessage: React.FC<AssistantMessageProps> = ({ content }) =
 	};
 
 	return (
-		<Container maxW="48rem">
+		<Container maxW="48rem" p={0}>
 			<Flex justifyContent="flex-start">
 				<Box maxW="100%">
 					<ReactMarkdown components={ChakraUIRenderer(markdown)}>

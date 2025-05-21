@@ -222,7 +222,7 @@ const ChatInterface = () => {
 			</Box>
 
 			<Container maxW="48rem" flex="1" display="flex" mt="4rem">
-				<VStack flex="1" overflowY="auto" spacing={4} w="100%" pb="5.5rem">
+				<VStack flex="1" overflowY="auto" w="100%" pb="5.5rem">
 					{messages.map((message, index) => (
 						message.role === "user" ? (
 							<Flex key={index} justifyContent="flex-end" w="100%" role="group">
