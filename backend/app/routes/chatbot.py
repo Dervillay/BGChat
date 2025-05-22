@@ -122,6 +122,13 @@ def delete_messages_from_index():
     return jsonify({"success": True}), 200
 
 
+@chatbot_bp.route("/clear-chat", methods=["POST"])
+@requires_auth
+def clear_chat():
+    current_app.chatbot.delete_messages_from_index(0)
+    return jsonify({"success": True}), 200
+
+
 @chatbot_bp.errorhandler(AuthError)
 def handle_auth_error(e):
     return jsonify({"error": e.error}), e.status_code

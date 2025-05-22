@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Box, Container, VStack, Text, Button, Flex } from "@chakra-ui/react";
+import { Box, Container, VStack, Text, Button, Flex, Tooltip } from "@chakra-ui/react";
 import { AssistantMessage } from "./AssistantMessage.tsx";
 import { ChatInput } from "./ChatInput.tsx";
 import { BoardGameSelect } from "./BoardGameSelect.tsx";
 import { theme } from "../theme/index.ts";
 import { useAuth0 } from '@auth0/auth0-react';
-import { FiLogOut } from 'react-icons/fi';
+import { FiLogOut, FiRefreshCw } from 'react-icons/fi';
 import { useFetchWithAuth } from "../utils/fetchWithAuth.ts";
 import { withError } from "../utils/withError.ts";
 import { ThinkingPlaceholder } from "./ThinkingPlaceholder.tsx";
@@ -189,6 +189,19 @@ const ChatInterface = () => {
 		}
 	};
 
+	const handleClearChat = async () => {
+		try {
+			await withError(() => fetchWithAuth(
+				"/clear-chat",
+				{ method: "POST" }
+			));
+			setMessages([]);
+		} catch (error) {
+			// TODO: add better error handling
+			console.error("Failed to clear chat:", error);
+		}
+	};
+
 	return (
 		<Flex direction="column" h="100vh">
 			<Box
@@ -248,20 +261,31 @@ const ChatInterface = () => {
 						setIsLoading={setIsLoading}
 						onMessageSend={handleSendMessage}
 					/>
+					<Flex justify="space-between" w="100%" mt={2}>
+						<Button
+							leftIcon={<FiLogOut />}
+							onClick={() => logout({logoutParams:{ returnTo: window.location.origin }})}
+							size="xs"
+							variant="ghost"
+							color="gray.500"
+							_hover={{ color: "gray.700" }}
+						>
+							Logout
+						</Button>
+						{messages.length > 0 && (
+							<Button
+								rightIcon={<FiRefreshCw />}
+								onClick={handleClearChat}
+								size="xs"
+								variant="ghost"
+								color="gray.500"
+								_hover={{ color: "gray.700" }}
+							>
+								Clear chat
+							</Button>
+						)}
+					</Flex>
 				</Container>
-
-				<Button
-					leftIcon={<FiLogOut />}
-					onClick={() => logout({logoutParams:{ returnTo: window.location.origin }})}
-					position="absolute"
-					bottom="100%"
-					left={4}
-					mb={2}
-					size="sm"
-					variant="ghost"
-				>
-					Logout
-				</Button>
 			</Box>
 		</Flex>
 	);
