@@ -71,21 +71,18 @@ const ChatInterface = () => {
 	const handleSelectBoardGame = async (boardGame: string) => {
 		setIsLoading(true);
 		try {
-			const response = await withError(() => fetchWithAuth(
+			await withError(() => fetchWithAuth(
 				"/set-selected-board-game",
 				{ method: "POST", body: JSON.stringify({ selected_board_game: boardGame }) },
 			));
-			const data = await response.json();
+			setSelectedBoardGame(boardGame);
 
-			if (data.success) {
-				setSelectedBoardGame(boardGame);
-				const response = await withError(() => fetchWithAuth(
-					`/chat-history`,
+			const response = await withError(() => fetchWithAuth(
+				`/chat-history`,
 					{ method: "GET" }
 				));
-				const data = await response.json();
-				setMessages(data);
-			}
+			const data = await response.json();
+			setMessages(data);
 		} catch (error) {
 			setMessages((prev) => [
 				...prev,
@@ -100,19 +97,17 @@ const ChatInterface = () => {
 	};
 
 	const handleEditMessage = async (index: number, newContent: string) => {
-		// Update the message in the UI
-		setMessages((prev) => {
-			const newMessages = [...prev];
-			newMessages[index] = { ...newMessages[index], content: newContent };
-			return newMessages;
-		});
+		try {
+			await withError(() => fetchWithAuth(
+				"/delete-messages-from-index",
+				{ method: "POST", body: JSON.stringify({ index: index }) }
+			));
+			setMessages((prev) => prev.slice(0, index));
+		} catch (error) {
+			// TODO: add better error handling
+			console.error("Failed to delete messages:", error);
+		}
 
-		// Remove all messages after the edited message
-		setMessages((prev) => prev.slice(0, index + 1));
-
-		//TODO: Reset messages on the server
-
-		// Send the edited message
 		await handleSendMessage(newContent);
 	};
 

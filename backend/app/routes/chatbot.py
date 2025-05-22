@@ -109,6 +109,19 @@ def ask_question():
     return response
 
 
+@chatbot_bp.route("/delete-messages-from-index", methods=["POST"])
+@requires_auth
+def delete_messages_from_index():
+    data = request.get_json()
+    if not data or "index" not in data:
+        return jsonify({"error": "Missing 'index' in request"}), 400
+    
+    index = data["index"]
+    current_app.chatbot.delete_messages_from_index(index)
+
+    return jsonify({"success": True}), 200
+
+
 @chatbot_bp.errorhandler(AuthError)
 def handle_auth_error(e):
     return jsonify({"error": e.error}), e.status_code

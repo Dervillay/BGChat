@@ -31,32 +31,32 @@ class Chatbot:
     ):
         self.selected_board_game: str = None
         self.known_board_games: list[str] = [board_game["name"] for board_game in BOARD_GAMES]
-        self.__messages = {board_game["name"]: [] for board_game in BOARD_GAMES}
-        self.__embedding_db = TinyDB(embedding_database_path)
-        self.__rulebook_pages = self.__embedding_db.table("rulebook_pages")
-        self.__embedding_model = SentenceTransformer(embedding_model_path)
-        self.__openai_client = openai.OpenAI()
+        self._messages = {board_game["name"]: [] for board_game in BOARD_GAMES}
+        self._embedding_db = TinyDB(embedding_database_path)
+        self._rulebook_pages = self._embedding_db.table("rulebook_pages")
+        self._embedding_model = SentenceTransformer(embedding_model_path)
+        self._openai_client = openai.OpenAI()
 
 
-    def __embed_question(
+    def _embed_question(
         self,
         question: str,
     ):
-        embedding = self.__embedding_model.encode(
+        embedding = self._embedding_model.encode(
             f"query: {question}",
             normalize_embeddings=True,
         )
         return embedding.tolist()
 
 
-    def __call_openai_model(
+    def _call_openai_model(
         self,
         messages: list[dict],
         return_all_metadata: bool = False,
         stream: bool = False,
     ):
         try:
-            response = self.__openai_client.chat.completions.create(
+            response = self._openai_client.chat.completions.create(
                 model=OPENAI_MODEL_TO_USE,
                 messages=messages,
                 stream=stream
@@ -84,7 +84,7 @@ class Chatbot:
         except Exception as e:
             raise ValueError(f"An unexpected error occurred: {e}") from e
     
-    def __determine_board_game(
+    def _determine_board_game(
         self,
         question: str
     ):
@@ -92,23 +92,24 @@ class Chatbot:
             "content": DETERMINE_BOARD_GAME_PROMPT_TEMPLATE.replace("<QUESTION>", question),
             "role": "user",
         }
-        response = self.__call_openai_model([message])
+        response = self._call_openai_model([message])
 
         if response in self.known_board_games:
             return response
-        elif response == UNKNOWN_VALUE:
+
+        if response == UNKNOWN_VALUE:
             return UNKNOWN_BOARD_GAME_RESPONSE
-        else:
-            raise ValueError(f"Received an unexpected response when attempting to determine board game: {response}")
+
+        raise ValueError(f"Received an unexpected response when attempting to determine board game: {response}")
 
 
-    def __get_relevant_rulebook_extracts(
+    def _get_relevant_rulebook_extracts(
         self,
         question: str,
         n: int = 5,
     ):
-        question_embedding = self.__embed_question(question)
-        pages = self.__rulebook_pages.search(
+        question_embedding = self._embed_question(question)
+        pages = self._rulebook_pages.search(
             where("board_game_name") == self.selected_board_game
         )
 
@@ -136,7 +137,7 @@ class Chatbot:
         return results[:n]
 
 
-    def __construct_rulebook_link(
+    def _construct_rulebook_link(
         self,
         citation: dict,
     ):
@@ -149,7 +150,7 @@ class Chatbot:
         return f"{quote(f'{self.selected_board_game}/{rulebook_name}.pdf')}#page={page_num}"
 
 
-    def __parse_citations(
+    def _parse_citations(
             self,
             text: str
         ):
@@ -158,7 +159,7 @@ class Chatbot:
             citation_dict = ast.literal_eval(citation_str)
 
             display_text = f"{citation_dict['rulebook_name']}, Page {citation_dict['page_num']}"
-            link = self.__construct_rulebook_link(citation_dict)
+            link = self._construct_rulebook_link(citation_dict)
 
             return f"[{display_text}]({link})"
 
@@ -169,7 +170,7 @@ class Chatbot:
         )
 
 
-    def __convert_to_user_facing_message(
+    def _convert_to_user_facing_message(
             self,
             message: dict,
         ):
@@ -188,8 +189,8 @@ class Chatbot:
 
             return {"content": content, "role": "user"}
 
-        elif message["role"] == "assistant":
-            return {"content": self.__parse_citations(content), "role": "assistant"}
+        if message["role"] == "assistant":
+            return {"content": self._parse_citations(content), "role": "assistant"}
 
 
     def set_selected_board_game(
@@ -207,9 +208,21 @@ class Chatbot:
             return []
 
         return [
-            self.__convert_to_user_facing_message(message)
-            for message in self.__messages[board_game_name]
+            self._convert_to_user_facing_message(message)
+            for message in self._messages[board_game_name]
         ]
+
+
+    def delete_messages_from_index(
+        self,
+        index: int,
+    ):
+        if index < 0:
+            raise ValueError(f"Index must be non-negative, but got {index}")
+
+        self._messages[self.selected_board_game] = (
+            self._messages[self.selected_board_game][:index]
+        )
 
 
     def ask_question(
@@ -219,14 +232,14 @@ class Chatbot:
         # If the user hasn't selected a board game manually, determine which board game the question is about.
         # Return the response if we can't determine one
         if self.selected_board_game is None:
-            maybe_board_game = self.__determine_board_game(question)
+            maybe_board_game = self._determine_board_game(question)
             if maybe_board_game not in self.known_board_games:
                 return maybe_board_game
             self.selected_board_game = maybe_board_game
 
         # Get N most relevant chunks of rulebook text for the selected board game and construct a prompt
         # with these extracts in them
-        rulebook_extracts = self.__get_relevant_rulebook_extracts(question)
+        rulebook_extracts = self._get_relevant_rulebook_extracts(question)
         rulebook_extracts_as_string = "\n".join([json.dumps(extract) for extract in rulebook_extracts])
         prompt = (
             EXPLAIN_RULES_PROMPT_TEMPLATE
@@ -236,13 +249,13 @@ class Chatbot:
         )
 
         # Prepend the system prompt if this is the first question about this board game
-        if len(self.__messages[self.selected_board_game]) == 0:
+        if len(self._messages[self.selected_board_game]) == 0:
             prompt = SYSTEM_PROMPT + prompt
     
-        self.__messages[self.selected_board_game].append({"content": prompt, "role": "user"})
+        self._messages[self.selected_board_game].append({"content": prompt, "role": "user"})
 
-        stream = self.__call_openai_model(
-            self.__messages[self.selected_board_game],
+        stream = self._call_openai_model(
+            self._messages[self.selected_board_game],
             stream=True
         )
         
@@ -263,7 +276,7 @@ class Chatbot:
                 elif CITATION_REGEX_PATTERN[-1] in content:
                     in_citation = False
                     citation_buffer += content
-                    parsed = self.__parse_citations(citation_buffer)
+                    parsed = self._parse_citations(citation_buffer)
                     citation_buffer = ""
                     full_response += parsed
                     yield parsed
@@ -276,4 +289,4 @@ class Chatbot:
                     full_response += content
                     yield content
         
-        self.__messages[self.selected_board_game].append({"content": full_response, "role": "assistant"})
+        self._messages[self.selected_board_game].append({"content": full_response, "role": "assistant"})
