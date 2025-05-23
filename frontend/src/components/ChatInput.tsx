@@ -1,29 +1,31 @@
 import React, { FC, ChangeEvent, KeyboardEvent } from "react";
-import { Input, InputGroup, InputRightElement, IconButton, Spinner } from "@chakra-ui/react";
+import { Input, InputGroup, InputRightElement, IconButton, Spinner, Flex } from "@chakra-ui/react";
 import { FaArrowUp } from "react-icons/fa";
+import { BoardGameSelect } from "./BoardGameSelect.tsx";
 
 interface ChatInputProps {
 	inputValue: string;
 	isLoading: boolean;
 	selectedBoardGame: string;
 	setInputValue: (value: string) => void;
-	setIsLoading: (loading: boolean) => void;
 	onMessageSend: (message: string) => void;
+	knownBoardGames: string[];
+	onSelectBoardGame: (selectedBoardGame: string) => void;
 }
 
 export const ChatInput: FC<ChatInputProps> = ({
 	inputValue,
 	isLoading,
+	knownBoardGames,
 	selectedBoardGame,
 	setInputValue,
-	setIsLoading,
 	onMessageSend,
+	onSelectBoardGame,
 }) => {
 	const handleSend = async () => {
 		const message = inputValue.trim();
 		if (!message) return;
 		setInputValue("");
-		setIsLoading(true);
 		onMessageSend(message);
 	};
 
@@ -47,25 +49,30 @@ export const ChatInput: FC<ChatInputProps> = ({
 				value={inputValue}
 				onChange={handleChange}
 				onKeyDown={handleKeyPress}
-				placeholder={`Ask about the rules for ${selectedBoardGame || "a board game"}`}
+				placeholder={`Ask about the rules for ${selectedBoardGame || "any board game"}`}
 				disabled={isLoading}
 				pt="1rem"
 				pl="1rem"
-				pr="3.5rem"
+				pr="8rem"
 				pb="1rem"
 				variant="chat"
+				minH="6rem"
 			/>
 			<InputRightElement h="100%" position="absolute">
-				<IconButton
-					icon={isLoading ? <Spinner /> : <FaArrowUp />}
-					onClick={handleSend}
-					disabled={!inputValue.trim() || isLoading}
-					aria-label="Send message"
-					position="absolute"
-					bottom="1rem"
-					right="1rem"
-					variant="send"
-				/>
+				<Flex align="center" gap={2} position="absolute" minWidth="15rem" bottom="1rem" right="1rem" justify="flex-end">
+					<BoardGameSelect
+						selectedBoardGame={selectedBoardGame}
+						knownBoardGames={knownBoardGames}
+						onSelectBoardGame={onSelectBoardGame}
+					/>
+					<IconButton
+						icon={isLoading ? <Spinner /> : <FaArrowUp />}
+						onClick={handleSend}
+						disabled={!inputValue.trim() || isLoading}
+						aria-label="Send message"
+						variant="send"
+					/>
+				</Flex>
 			</InputRightElement>
 		</InputGroup>
 	);

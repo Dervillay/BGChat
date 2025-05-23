@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Box, Container, VStack, Text, Button, Flex, Tooltip } from "@chakra-ui/react";
+import { Box, Container, VStack, Text, Button, Flex } from "@chakra-ui/react";
 import { AssistantMessage } from "./AssistantMessage.tsx";
 import { ChatInput } from "./ChatInput.tsx";
-import { BoardGameSelect } from "./BoardGameSelect.tsx";
+import { ThinkingPlaceholder } from "./ThinkingPlaceholder.tsx";
 import { theme } from "../theme/index.ts";
 import { useAuth0 } from '@auth0/auth0-react';
 import { FiLogOut, FiRefreshCw } from 'react-icons/fi';
 import { useFetchWithAuth } from "../utils/fetchWithAuth.ts";
 import { withError } from "../utils/withError.ts";
-import { ThinkingPlaceholder } from "./ThinkingPlaceholder.tsx";
 import { UserMessage } from "./UserMessage.tsx";
 
 declare global {
@@ -220,13 +219,6 @@ const ChatInterface = () => {
 				<Text bgGradient={theme.gradients.purpleToRed} bgClip="text" fontSize="4xl" fontWeight="extrabold">
 					BGChat
 				</Text>
-				<Box>
-					<BoardGameSelect
-						selectedBoardGame={selectedBoardGame}
-						knownBoardGames={knownBoardGames}
-						onSelectBoardGame={handleSelectBoardGame}
-					/>
-				</Box>
 			</Box>
 
 			<Container maxW="48rem" flex="1" display="flex" mt="4rem">
@@ -240,10 +232,26 @@ const ChatInterface = () => {
 								/>
 							</Flex>
 						) : (
-							<AssistantMessage 
-								key={index} 
-								content={message.content}
-							/>
+							<Box key={index} w="100%" position="relative">
+								<AssistantMessage 
+									content={message.content}
+								/>
+								{index === messages.length - 1 && !isLoading && messages.length > 0 && (
+									<Flex justify="flex-end" w="100%" mt={1}>
+										<Button
+											leftIcon={<FiRefreshCw />}
+											onClick={handleClearChat}
+											size="xs"
+											variant="ghost"
+											color="gray.500"
+											_hover={{ color: "gray.700" }}
+											fontWeight="light"
+										>
+											Restart chat
+										</Button>
+									</Flex>
+								)}
+							</Box>
 						)
 					))}
 					{isThinking && <ThinkingPlaceholder />}
@@ -258,10 +266,11 @@ const ChatInterface = () => {
 						isLoading={isLoading}
 						selectedBoardGame={selectedBoardGame}
 						setInputValue={setInputValue}
-						setIsLoading={setIsLoading}
 						onMessageSend={handleSendMessage}
+						knownBoardGames={knownBoardGames}
+						onSelectBoardGame={handleSelectBoardGame}
 					/>
-					<Flex justify="space-between" w="100%" mt={2}>
+					<Flex justify="flex-start" w="100%" mt={2}>
 						<Button
 							leftIcon={<FiLogOut />}
 							onClick={() => logout({logoutParams:{ returnTo: window.location.origin }})}
@@ -269,21 +278,10 @@ const ChatInterface = () => {
 							variant="ghost"
 							color="gray.500"
 							_hover={{ color: "gray.700" }}
+							fontWeight="light"
 						>
 							Logout
 						</Button>
-						{messages.length > 0 && (
-							<Button
-								rightIcon={<FiRefreshCw />}
-								onClick={handleClearChat}
-								size="xs"
-								variant="ghost"
-								color="gray.500"
-								_hover={{ color: "gray.700" }}
-							>
-								Clear chat
-							</Button>
-						)}
 					</Flex>
 				</Container>
 			</Box>

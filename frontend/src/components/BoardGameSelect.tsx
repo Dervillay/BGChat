@@ -17,7 +17,6 @@ export const BoardGameSelect: FC<BoardGameSelectProps> = ({
 		label: game
 	}));
 
-	// TODO: Move chakraStyles to theme
 	return (
 		<Select
 			options={options}
@@ -25,32 +24,61 @@ export const BoardGameSelect: FC<BoardGameSelectProps> = ({
 			value={selectedBoardGame ? { value: selectedBoardGame, label: selectedBoardGame } : undefined}
 			onChange={(selectedBoardGame) => selectedBoardGame && onSelectBoardGame(selectedBoardGame.value)}
 			placeholder={selectedBoardGame ? undefined : "Select a board game"}
-			size="md"
+			size="sm"
+			menuPlacement="top"
 			chakraStyles={{
-				container: (provided) => ({
+				control: (provided, state) => ({
 					...provided,
-					minWidth: '15rem',
+					border: 'none',
+					boxShadow: 'none',
+					minWidth: 'fit-content',
+					maxWidth: '15rem',
+					color: 'gray.600',
+					'&:hover': {
+						boxShadow: 'none',
+						border: '1px',
+						borderColor: 'gray.200',
+						cursor: 'pointer',
+					},
+					'&:focus-within': {
+						boxShadow: 'none',
+					},
+					...(state.isFocused && {
+						border: '1px',
+						borderColor: 'gray.200',
+					}),
 				}),
 				menu: (provided) => ({
 					...provided,
+					minWidth: '14rem',
 					borderRadius: '10px',
-					boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
+					right: 0,
 				}),
 				menuList: (provided) => ({
 					...provided,
 					borderRadius: '10px',
+					padding: '0.3rem',
 				}),
 				option: (provided, state) => ({
 					...provided,
-					fontWeight: state.isSelected ? '600' : 'normal',
+					fontWeight: 'normal',
 					backgroundColor: 'transparent',
-					color: 'black',
+					color: 'gray.600',
+					'&:hover': {
+						backgroundColor: 'gray.50',
+						borderRadius: '5px',
+					},
+					...(state.isSelected && {
+						color: 'gray.900',
+					}),
 				}),
-				singleValue: (provided) => ({
+				dropdownIndicator: (provided) => ({
 					...provided,
-					fontWeight: '600',
+					color: 'gray.600',
+					marginLeft: '-1rem',
 				}),
 			}}
 		/>
 	);
 };
+
