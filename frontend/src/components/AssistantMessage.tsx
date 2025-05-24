@@ -12,28 +12,31 @@ interface AssistantMessageProps {
 export const AssistantMessage: React.FC<AssistantMessageProps> = ({ content }) => {
 	const markdown = {
 		p: (props: { children: React.ReactNode }) => (
-			<Text mt={1} mb={3} lineHeight={1.7}>
+			<Text pt={4} lineHeight={1.7}>
 				{props.children}
 			</Text>
 		),
 		a: (props: { href?: string; children: React.ReactNode }) => (
-			<RulebookLink href={props.href} text={props.children?.toString()}>
-				{props.children}
-			</RulebookLink>
+			<Box mt={1}>
+				<RulebookLink href={props.href} text={props.children?.toString()}>
+					{props.children}
+				</RulebookLink>
+			</Box>
 		),
 		blockquote: (props: { children: React.ReactNode }) => (
 			<Box 
 				bg="white" 
-				p={4} 
+				mt={1} 
+				pl={5}
 				borderRadius="md"
 				position="relative"
-				pl={6}
 				_before={{
 					content: '""',
 					position: "absolute",
 					left: 0,
 					top: 3,
-					bottom: 4,
+					bottom: 0,
+					height: "100%",
 					width: "3px",
 					background: theme.gradients.purpleToRed,
 				}}
