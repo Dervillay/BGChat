@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Box, Container, VStack, Text, Button, Flex } from "@chakra-ui/react";
+import { Box, Container, VStack, Text, Button, Flex, Input, HStack, useToast, IconButton, Tooltip, useDisclosure, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalCloseButton, ModalFooter, useColorModeValue } from "@chakra-ui/react";
 import { AssistantMessage } from "./AssistantMessage.tsx";
 import { ChatInput } from "./ChatInput.tsx";
 import { ThinkingPlaceholder } from "./ThinkingPlaceholder.tsx";
 import { theme } from "../theme/index.ts";
-import { useAuth0 } from '@auth0/auth0-react';
-import { FiLogOut, FiRefreshCw } from 'react-icons/fi';
+import { FiRefreshCw } from 'react-icons/fi';
 import { useFetchWithAuth } from "../utils/fetchWithAuth.ts";
 import { withError } from "../utils/withError.ts";
 import { UserMessage } from "./UserMessage.tsx";
+import { UserProfileMenu } from "./UserProfileMenu.tsx";
 
 declare global {
 	interface Window {
@@ -28,7 +28,6 @@ const ChatInterface = () => {
 	const [inputValue, setInputValue] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [isThinking, setIsThinking] = useState(false);
-	const { logout } = useAuth0();
 	const fetchWithAuth = useFetchWithAuth();
 	
 	const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -202,90 +201,80 @@ const ChatInterface = () => {
 	};
 
 	return (
-		<Flex direction="column" h="100vh">
-			<Box
-				position="fixed"
-				top={0}
-				left={0}
-				right={0}
-				h="4rem"
-				bgGradient="linear(to bottom, rgba(255, 255, 255, 1) 50%, rgba(255, 255, 255, 0) 100%)"
-				display="flex"
-				alignItems="center"
-				justifyContent="space-between"
-				px={5}
-				zIndex={1}
-			>
-				<Text bgGradient={theme.gradients.purpleToRed} bgClip="text" fontSize="4xl" fontWeight="extrabold">
-					BGChat
-				</Text>
-			</Box>
+		<Container maxW="container.xl" h="100vh" p={4} display="flex" flexDirection="column">
+			<Flex direction="column" h="100vh">
+				<Box
+					position="fixed"
+					top={0}
+					left={0}
+					right={0}
+					h="4rem"
+					bgGradient="linear(to bottom, rgba(255, 255, 255, 1) 50%, rgba(255, 255, 255, 0) 100%)"
+					display="flex"
+					alignItems="center"
+					justifyContent="space-between"
+					px={5}
+					zIndex={1}
+				>
+					<Text bgGradient={theme.gradients.purpleToRed} bgClip="text" fontSize="4xl" fontWeight="extrabold">
+						BGChat
+					</Text>
+					<UserProfileMenu />
+				</Box>
 
-			<Container maxW="48rem" flex="1" display="flex" mt="4rem">
-				<VStack flex="1" overflowY="auto" w="100%" pb="5.5rem">
-					{messages.map((message, index) => (
-						message.role === "user" ? (
-							<Flex key={index} justifyContent="flex-end" w="100%" role="group">
-								<UserMessage
-									content={message.content}
-									onEdit={(newContent) => handleEditMessage(index, newContent)}
-								/>
-							</Flex>
-						) : (
-							<Box key={index} w="100%" position="relative">
-								<AssistantMessage 
-									content={message.content}
-								/>
-								{index === messages.length - 1 && !isLoading && messages.length > 0 && (
-									<Flex justify="flex-end" w="100%" mt={1}>
-										<Button
-											leftIcon={<FiRefreshCw />}
-											onClick={handleClearChat}
-											size="xs"
-											variant="ghost"
-											color="gray.500"
-											_hover={{ color: "gray.700" }}
-											fontWeight="light"
-										>
-											Restart chat
-										</Button>
-									</Flex>
-								)}
-							</Box>
-						)
-					))}
-					{isThinking && <ThinkingPlaceholder />}
-					<div ref={messagesEndRef} />
-				</VStack>
-			</Container>
-
-			<Box position="relative" p={4}>
-				<Container maxW="48rem" position="fixed" bottom="1rem" left="50%" transform="translateX(-50%)">
-					<ChatInput
-						inputValue={inputValue}
-						isLoading={isLoading}
-						selectedBoardGame={selectedBoardGame}
-						setInputValue={setInputValue}
-						onMessageSend={handleSendMessage}
-						knownBoardGames={knownBoardGames}
-						onSelectBoardGame={handleSelectBoardGame}
-					/>
-					<Flex justify="flex-start" w="100%" mt={2}>
-						<Button
-							leftIcon={<FiLogOut />}
-							onClick={() => logout({logoutParams:{ returnTo: window.location.origin }})}
-							size="xs"
-							variant="ghost"
-							color="gray.500"
-							_hover={{ color: "gray.700" }}
-							fontWeight="light"
-						>
-							Logout
-						</Button>
-					</Flex>
+				<Container maxW="48rem" flex="1" display="flex" mt="4rem">
+					<VStack flex="1" overflowY="auto" w="100%" pb="5.5rem">
+						{messages.map((message, index) => (
+							message.role === "user" ? (
+								<Flex key={index} justifyContent="flex-end" w="100%" role="group">
+									<UserMessage
+										content={message.content}
+										onEdit={(newContent) => handleEditMessage(index, newContent)}
+									/>
+								</Flex>
+							) : (
+								<Box key={index} w="100%" position="relative">
+									<AssistantMessage 
+										content={message.content}
+									/>
+									{index === messages.length - 1 && !isLoading && messages.length > 0 && (
+										<Flex justify="flex-end" w="100%" mt={1}>
+											<Button
+												leftIcon={<FiRefreshCw />}
+												onClick={handleClearChat}
+												size="xs"
+												variant="ghost"
+												color="gray.500"
+												_hover={{ color: "gray.700" }}
+												fontWeight="light"
+											>
+												Restart chat
+											</Button>
+										</Flex>
+									)}
+								</Box>
+							)
+						))}
+						{isThinking && <ThinkingPlaceholder />}
+						<div ref={messagesEndRef} />
+					</VStack>
 				</Container>
-			</Box>
-		</Flex>
+
+				<Box position="relative" p={4}>
+					<Container maxW="48rem" position="fixed" bottom="1rem" left="50%" transform="translateX(-50%)">
+						<ChatInput
+							inputValue={inputValue}
+							isLoading={isLoading}
+							selectedBoardGame={selectedBoardGame}
+							setInputValue={setInputValue}
+							onMessageSend={handleSendMessage}
+							knownBoardGames={knownBoardGames}
+							onSelectBoardGame={handleSelectBoardGame}
+						/>
+					</Container>
+				</Box>
+			</Flex>
+		</Container>
 	);
 };
 
