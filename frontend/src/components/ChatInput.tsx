@@ -51,6 +51,7 @@ export const ChatInput: FC<ChatInputProps> = ({
 				onKeyDown={handleKeyPress}
 				placeholder={`Ask about the rules for ${selectedBoardGame || "any board game"}`}
 				disabled={isLoading}
+				_disabled={{ bg: "white", opacity: 1 }}
 				pt="1rem"
 				pl="1rem"
 				pr="8rem"
