@@ -34,7 +34,16 @@ BOARD_GAMES = [
                 "download_url": "https://cdn.1j1ju.com/medias/59/e6/c2-dominion-rulebook.pdf",
             }
         ]
-    }
+    },
+    {
+        "name": "Dune: Imperium",
+        "rulebooks": [
+            {
+                "name": "Rules",
+                "download_url": "https://d19y2ttatozxjp.cloudfront.net/pdfs/DUNE_IMPERIUM_Rules_2020_10_26.pdf",
+            }
+        ]
+    },
 ]
 
-BOARD_GAMES_STRING_LIST = "\n".join([f"- {board_game['name']}" for board_game in BOARD_GAMES]) 
+BOARD_GAMES_STRING_LIST = "\n".join([f"- {board_game['name']}" for board_game in BOARD_GAMES])
