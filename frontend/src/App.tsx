@@ -5,7 +5,6 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { ChakraProvider } from "@chakra-ui/react";
 import { theme } from "./theme/index.ts";
 import { LoadingScreen } from "./components/LoadingScreen.tsx";
-import { RedirectingScreen } from "./components/RedirectingScreen.tsx";
 import { PDFViewerModal } from "./components/PDFViewerModal.tsx";
 import { PDFViewerProvider } from "./contexts/PDFViewerContext.tsx";
 
@@ -18,7 +17,7 @@ function App() {
 
 	if (!isAuthenticated) {
 		loginWithRedirect();
-		return <RedirectingScreen />;
+		return <LoadingScreen />;
 	}
 
 	return (
