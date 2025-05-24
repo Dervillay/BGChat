@@ -17,7 +17,13 @@ export const UserProfileMenu = () => {
 
 	return (
 		<Menu>
-			<MenuButton>
+			<MenuButton
+				_hover={{
+					boxShadow: "0 0 0 3px var(--chakra-colors-gray-200)",
+					borderRadius: "full"
+				}}
+				transition="all 0.2s"
+			>
 				<Avatar
 					size="sm"
 					name={user?.name || user?.email}
@@ -28,10 +34,8 @@ export const UserProfileMenu = () => {
 					_hover={{ 
 						opacity: 0.8,
 						color: "gray.900",
-						boxShadow: "0 0 0 3px gray.600"
 					}}
-				>
-				</Avatar>
+				/>
 			</MenuButton>
 			<MenuList
 				borderRadius="10px"
