@@ -239,20 +239,25 @@ const ChatInterface = () => {
 									/>
 									{index === messages.length - 1 && !isLoading && messages.length > 0 && (
 										<Flex justify="flex-end" w="100%" mt={1}>
-											<Button
-												leftIcon={<FiRefreshCw />}
-												onClick={handleClearChat}
-												size="xs"
-												variant="ghost"
-												color="gray.500"
-												_hover={{ color: "gray.700" }}
-												fontWeight="light"
+											<Tooltip 
+												label="Reset chat"
+												placement="bottom"
+												offset={[0, 0]}
 											>
-												Restart chat
-											</Button>
+												<IconButton
+													icon={<FiRefreshCw />}
+													onClick={handleClearChat}
+													size="sm"
+													variant="ghost"
+													color="gray.500"
+													_hover={{ color: "gray.700" }}
+													aria-label="Reset chat"
+												/>
+											</Tooltip>
 										</Flex>
 									)}
 								</Box>
+								
 							)
 						))}
 						{isThinking && <ThinkingPlaceholder />}
