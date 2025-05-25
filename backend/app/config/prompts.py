@@ -4,11 +4,6 @@ from .board_games import BOARD_GAMES_STRING_LIST
 CITATION_REGEX_PATTERN = r"{[^{}]*(?:{[^{}]*})*[^{}]*}"
 UNKNOWN_VALUE = "UNKNOWN"
 
-UNKNOWN_BOARD_GAME_RESPONSE = """
-I'm unable to determine which board game your question refers to.
-Please select one manually from the dropdown or try asking me another question.
-"""
-
 SYSTEM_PROMPT = f"""
 You are an intellectually honest assistant that helps users understand the rules for different board games.
 
@@ -43,7 +38,7 @@ USER_QUESTION_STRING = "The question is:"
 
 EXPLAIN_RULES_PROMPT_TEMPLATE = f"""
 {THE_BOARD_GAME_IS_STRING}
-<SELECTED_BOARD_GAME>
+<BOARD_GAME>
 
 {THE_RULEBOOK_TEXTS_ARE_STRING}
 <RULEBOOK_EXTRACTS>

@@ -11,15 +11,16 @@ from flask import (
     jsonify,
     send_from_directory,
     current_app,
-    Response, stream_with_context
+    Response,
+    stream_with_context,
 )
 
 from app.config.paths import RULEBOOKS_PATH
 from app.utils.auth import (
-    AuthError,
     requires_auth,
     get_user_id_from_auth_header,
 )
+from app.utils.request_validation import validate_json_body
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -33,34 +34,23 @@ def get_known_board_games():
     return jsonify(current_app.orchestrator.known_board_games), 200
 
 
-@orchestrator_bp.route("/selected-board-game", methods=["GET"])
+@orchestrator_bp.route("/get-message-history", methods=["POST"])
 @requires_auth
-def get_selected_board_game():
-    logger.info("Getting selected board game")
-    return jsonify(current_app.orchestrator.selected_board_game), 200
-
-
-@orchestrator_bp.route("/set-selected-board-game", methods=["POST"])
-@requires_auth
-def set_selected_board_game():
+@validate_json_body(board_game=str)
+def get_message_history():
     data = request.get_json()
-    if not data or "selected_board_game" not in data:
-        return jsonify({"error": "Missing 'selected_board_game' in request"}), 400
-    
-    logger.info("Setting selected board game to: %s", data["selected_board_game"])
-    current_app.orchestrator.set_selected_board_game(data["selected_board_game"])
-    return jsonify({"success": True}), 200
 
+    board_game = data["board_game"]
+    if board_game not in current_app.orchestrator.known_board_games:
+        return jsonify({"error": "Unrecognised board game"}), 400
 
-@orchestrator_bp.route("/chat-history", methods=["GET"])
-@requires_auth
-def get_chat_history():
     user_id = get_user_id_from_auth_header()
-    chat_history = current_app.orchestrator.get_user_facing_message_history(
+
+    message_history = current_app.orchestrator.get_message_history(
         user_id,
-        current_app.orchestrator.selected_board_game
+        board_game
     )
-    return jsonify(chat_history), 200
+    return jsonify(message_history), 200
 
 
 @orchestrator_bp.route("/pdfs/<path:filepath>")
@@ -69,7 +59,7 @@ def serve_pdf(filepath: str):
     logger.info("Attempting to serve PDF at: %s", filepath)
     directory = os.path.join(RULEBOOKS_PATH, os.path.dirname(filepath))
     filename = os.path.basename(filepath)
-    
+
     return send_from_directory(
         directory,
         filename,
@@ -78,43 +68,47 @@ def serve_pdf(filepath: str):
     )
 
 
+@orchestrator_bp.route("/determine-board-game", methods=["POST"])
+@requires_auth
+@validate_json_body(question=str)
+def determine_board_game():
+    data = request.get_json()
+
+    question = data["question"]
+    if not question.strip():
+        return jsonify({"error": "Question must be a non-empty string"}), 400
+
+    board_game = current_app.orchestrator.determine_board_game(question)
+    return jsonify(board_game), 200
+
+
 @orchestrator_bp.route("/ask-question", methods=["POST"])
 @requires_auth
+@validate_json_body(question=str, board_game=str)
 def ask_question():
-    """
-    Stream a response to a question about board game rules.
-    
-    Request body:
-    - question: A question about board game rules
-    
-    Returns a stream of text chunks.
-    """
-    if not request.is_json:
-        return jsonify({
-            "error": "Content-Type must be application/json"
-        }), 415
-
     data = request.get_json()
-    if not data or "question" not in data:
-        return jsonify({
-            "error": "Request missing field 'question'"
-        }), 400
-        
+
     question = data["question"]
-    if not isinstance(question, str) or not question.strip():
-        return jsonify({
-            "error": "Question must be a non-empty string"
-        }), 400
-        
-    logger.info("Received streaming question: %s", question)
+    if not question.strip():
+        return jsonify({"error": "Question must be a non-empty string"}), 400
+
+    board_game = data["board_game"]
+    if board_game not in current_app.orchestrator.known_board_games:
+        return jsonify({"error": "Unrecognised board game"}), 400
+
     user_id = get_user_id_from_auth_header()
+    logger.info("Received question from user %s for %s", user_id, board_game)
 
     def generate():
-        response = current_app.orchestrator.ask_question(user_id, question)
+        response = current_app.orchestrator.ask_question(
+            user_id,
+            board_game,
+            question
+        )
         for chunk in response:
             yield f"data: {json.dumps({"chunk": chunk})}\n\n"
         yield f"data: {json.dumps({"done": True})}\n\n"
-    
+
     response = Response(
         stream_with_context(generate()),
         mimetype="text/event-stream",
@@ -129,17 +123,23 @@ def ask_question():
 
 @orchestrator_bp.route("/delete-messages-from-index", methods=["POST"])
 @requires_auth
+@validate_json_body(board_game=str, index=int)
 def delete_messages_from_index():
     data = request.get_json()
-    if not data or "index" not in data:
-        return jsonify({"error": "Missing 'index' in request"}), 400
-    
-    user_id = get_user_id_from_auth_header()
-    
+
     index = data["index"]
+    if index < 0:
+        return jsonify({"error": "Index must be non-negative"}), 400
+
+    board_game = data["board_game"]
+    if board_game not in current_app.orchestrator.known_board_games:
+        return jsonify({"error": "Unrecognised board game"}), 400
+
+    user_id = get_user_id_from_auth_header()
+
     current_app.orchestrator.delete_messages_from_index(
         user_id,
-        current_app.orchestrator.selected_board_game,
+        board_game,
         index
     )
 
@@ -148,18 +148,21 @@ def delete_messages_from_index():
 
 @orchestrator_bp.route("/clear-message-history", methods=["POST"])
 @requires_auth
+@validate_json_body(board_game=str)
 def clear_message_history():
+    data = request.get_json()
+
+    board_game = data["board_game"]
+    if board_game not in current_app.orchestrator.known_board_games:
+        return jsonify({"error": "Unrecognised board game"}), 400
+
     user_id = get_user_id_from_auth_header()
+
     current_app.orchestrator.clear_message_history(
         user_id,
-        current_app.orchestrator.selected_board_game
+        board_game
     )
     return jsonify({"success": True}), 200
-
-
-@orchestrator_bp.errorhandler(AuthError)
-def handle_auth_error(e):
-    return jsonify({"error": e.error}), e.status_code
 
 
 @orchestrator_bp.errorhandler(404)

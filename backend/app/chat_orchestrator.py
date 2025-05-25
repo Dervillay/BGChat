@@ -15,7 +15,6 @@ from app.config.prompts import (
     DETERMINE_BOARD_GAME_PROMPT_TEMPLATE,
     EXPLAIN_RULES_PROMPT_TEMPLATE,
     UNKNOWN_VALUE,
-    UNKNOWN_BOARD_GAME_RESPONSE,
     CITATION_REGEX_PATTERN,
     USER_QUESTION_STRING,
     THE_BOARD_GAME_IS_STRING,
@@ -30,7 +29,6 @@ class ChatOrchestrator:
         embedding_model_path: str = EMBEDDING_MODEL_PATH,
         embedding_database_path: str = DATABASE_PATH,
     ):
-        self.selected_board_game: str = None
         self.known_board_games: list[str] = [board_game["name"] for board_game in BOARD_GAMES]
         self._embedding_db = TinyDB(embedding_database_path)
         self._rulebook_pages = self._embedding_db.table("rulebook_pages")
@@ -79,34 +77,17 @@ class ChatOrchestrator:
 
         except Exception as e:
             raise ValueError(f"An unexpected error occurred: {e}") from e
-    
-    def _determine_board_game(
-        self,
-        question: str
-    ):
-        message = {
-            "content": DETERMINE_BOARD_GAME_PROMPT_TEMPLATE.replace("<QUESTION>", question),
-            "role": "user",
-        }
-        response = self._call_openai_model([message], stream=False)
-
-        if response in self.known_board_games:
-            return response
-
-        if response == UNKNOWN_VALUE:
-            return UNKNOWN_BOARD_GAME_RESPONSE
-
-        raise ValueError(f"Received an unexpected response when attempting to determine board game: {response}")
 
 
     def _get_relevant_rulebook_extracts(
         self,
+        board_game: str,
         question: str,
         n: int = 5,
     ):
         question_embedding = self._embed_question(question)
         pages = self._rulebook_pages.search(
-            where("board_game_name") == self.selected_board_game
+            where("board_game_name") == board_game
         )
 
         results = []
@@ -135,6 +116,7 @@ class ChatOrchestrator:
 
     def _construct_rulebook_link(
         self,
+        board_game: str,
         citation: dict,
     ):
         rulebook_name = citation.get("rulebook_name")
@@ -143,11 +125,12 @@ class ChatOrchestrator:
         if not rulebook_name or not page_num:
             raise ValueError(f"Malformed citation detected:\n{json.dumps(citation)}")
 
-        return f"{quote(f'{self.selected_board_game}/{rulebook_name}.pdf')}#page={page_num}"
+        return f"{quote(f'{board_game}/{rulebook_name}.pdf')}#page={page_num}"
 
 
     def _parse_citations(
         self,
+        board_game: str,
         text: str
     ):
         def add_link_to_citation(match):
@@ -155,7 +138,7 @@ class ChatOrchestrator:
             citation_dict = ast.literal_eval(citation_str)
 
             display_text = f"{citation_dict['rulebook_name']}, Page {citation_dict['page_num']}"
-            link = self._construct_rulebook_link(citation_dict)
+            link = self._construct_rulebook_link(board_game, citation_dict)
 
             return f"[{display_text}]({link})"
 
@@ -186,17 +169,12 @@ class ChatOrchestrator:
             return {"content": content, "role": "user"}
 
         if message["role"] == "assistant":
-            return {"content": self._parse_citations(content), "role": "assistant"}
+            return {"content": content, "role": "assistant"}
+
+        raise ValueError(f"Invalid role value '{message['role']}', expected 'user' or 'assistant'")
 
 
-    def set_selected_board_game(
-        self,
-        selected_board_game
-    ):
-        self.selected_board_game = selected_board_game
-
-
-    def get_user_facing_message_history(
+    def get_message_history(
         self,
         user_id: str,
         board_game: str,
@@ -229,33 +207,47 @@ class ChatOrchestrator:
         self._mongodb_client.clear_message_history(user_id, board_game)
 
 
+    def determine_board_game(
+        self,
+        question: str
+    ):
+        message = {
+            "content": DETERMINE_BOARD_GAME_PROMPT_TEMPLATE.replace("<QUESTION>", question),
+            "role": "user",
+        }
+        response = self._call_openai_model([message], stream=False)
+
+        if response in self.known_board_games or response == UNKNOWN_VALUE:
+            return response
+
+        raise ValueError(
+            f"Received an unexpected response when attempting to determine board game: {response}"
+        )
+
+
     def ask_question(
         self,
         user_id: str,
+        board_game: str,
         question: str,
     ):
-        # If the user hasn't selected a board game manually,
-        # determine which board game the question is about.
-        # Return the response if we can't determine one
-        if self.selected_board_game is None:
-            maybe_board_game = self._determine_board_game(question)
-            if maybe_board_game not in self.known_board_games:
-                return maybe_board_game
-            self.selected_board_game = maybe_board_game
-
         # Get N most relevant chunks of rulebook text for the selected board game
         # and construct a prompt with these extracts in them
-        rulebook_extracts = self._get_relevant_rulebook_extracts(question)
-        rulebook_extracts_as_string = "\n".join([json.dumps(extract) for extract in rulebook_extracts])
+        rulebook_extracts = self._get_relevant_rulebook_extracts(board_game, question)
+        rulebook_extracts_as_string = "\n".join(
+            json.dumps(extract)
+            for extract in rulebook_extracts
+        )
+
         prompt = (
             EXPLAIN_RULES_PROMPT_TEMPLATE
-            .replace("<SELECTED_BOARD_GAME>", self.selected_board_game)
+            .replace("<BOARD_GAME>", board_game)
             .replace("<RULEBOOK_EXTRACTS>", rulebook_extracts_as_string)
             .replace("<QUESTION>", question)
         )
 
-        # Prepend the system prompt if this is the first question about this board game
-        message_history = self._mongodb_client.get_message_history(user_id, self.selected_board_game)
+        # Prepend the system prompt if this is the first message
+        message_history = self._mongodb_client.get_message_history(user_id, board_game)
         if len(message_history) == 0:
             prompt = SYSTEM_PROMPT + prompt
 
@@ -284,7 +276,7 @@ class ChatOrchestrator:
                 elif CITATION_REGEX_PATTERN[-1] in content:
                     in_citation = False
                     citation_buffer += content
-                    parsed = self._parse_citations(citation_buffer)
+                    parsed = self._parse_citations(board_game, citation_buffer)
                     citation_buffer = ""
                     full_response += parsed
                     yield parsed
@@ -305,6 +297,6 @@ class ChatOrchestrator:
 
         self._mongodb_client.append_messages(
             user_id,
-            self.selected_board_game,
+            board_game,
             [user_message, assistant_message]
         )
