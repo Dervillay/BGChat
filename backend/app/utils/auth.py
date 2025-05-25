@@ -5,7 +5,7 @@ from functools import wraps
 import jwt
 import requests
 from dotenv import find_dotenv, load_dotenv
-from flask import request
+from flask import request, jsonify
 
 from app.config.constants import DEFAULT_TIMEOUT_SECONDS
 
@@ -17,14 +17,6 @@ AUTH0_DOMAIN = env.get("AUTH0_DOMAIN")
 AUTH0_AUDIENCE = env.get("AUTH0_AUDIENCE")
 ALGORITHM = env.get("ALGORITHM")
 
-class AuthError(Exception):
-    """
-    Custom exception class for auth errors.
-    """
-    def __init__(self, error, status_code):
-        self.error = error
-        self.status_code = status_code
-
 def get_token_from_auth_header():
     """
     Extracts the JWT token from the Authorization header.
@@ -33,16 +25,16 @@ def get_token_from_auth_header():
     auth_header = request.headers.get("Authorization", None)
 
     if not auth_header:
-        raise AuthError("Authorization header expected but not found", 401)
+        return jsonify({"error": "Authorization header expected but not found"}), 401
 
     parts = auth_header.split()
 
     if parts[0].lower() != "bearer":
-        raise AuthError("Authorization header must start with 'Bearer'", 401)
+        return jsonify({"error": "Authorization header must start with 'Bearer'"}), 401
     if len(parts) == 1:
-        raise AuthError("Token not found", 401)
+        return jsonify({"error": "Token not found"}), 401
     if len(parts) > 2:
-        raise AuthError("Authorization header must be Bearer token", 401)
+        return jsonify({"error": "Authorization header must be Bearer token"}), 401
 
     return parts[1]
 
@@ -59,7 +51,7 @@ def validate_jwt(token):
 
     unverified_header = jwt.get_unverified_header(token)
     if "kid" not in unverified_header:
-        raise AuthError("Invalid header: No KID", 401)
+        return jsonify({"error": "Invalid header: No KID"}), 401
 
     rsa_key = {}
     for key in jwks["keys"]:
@@ -74,7 +66,7 @@ def validate_jwt(token):
             break
 
     if not rsa_key:
-        raise AuthError("Unable to find appropriate key", 401)
+        return jsonify({"error": "Unable to find appropriate key"}), 401
 
     try:
         jwt.decode(
@@ -85,7 +77,7 @@ def validate_jwt(token):
             issuer=f"https://{AUTH0_DOMAIN}/"
         )
     except Exception as e:
-        raise AuthError(f"Invalid token: {str(e)}", 401) from e
+        return jsonify({"error": f"Invalid token: {str(e)}"}), 401
 
 def get_user_id_from_auth_header() -> str:
     """
@@ -102,16 +94,17 @@ def get_user_id_from_auth_header() -> str:
         )
 
         if "sub" not in unverified_claims:
-            raise AuthError("Token does not contain a user ID", 401)
+            return jsonify({"error": "Token does not contain a user ID"}), 401
 
         return unverified_claims["sub"]
 
     except Exception as e:
-        raise AuthError(f"Error extracting user ID: {str(e)}", 401) from e
+        return jsonify({"error": f"Error extracting user ID: {str(e)}"}), 401
 
 def requires_auth(f):
     """
     Decorator to check if the request has a valid auth token.
+    Returns an appropriate error response if the token is invalid or missing.
     """
     @wraps(f)
     def decorated(*args, **kwargs):
