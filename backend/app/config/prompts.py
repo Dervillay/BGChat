@@ -28,9 +28,9 @@ this is only an interpretation. You must answer in clear, concise, easy to read 
 DETERMINE_BOARD_GAME_PROMPT_TEMPLATE = f"""
 You will be given a list of board games and a question, where you must determine which board game in the list the question is about.
 You must answer with the name of the board game exactly as it appears in the list.
-If the question is about a board game that isn't in the list, or the question isn't related to board games at all, respond with "{UNKNOWN_VALUE}".
+If you aren't sure, respond with "{UNKNOWN_VALUE}".
 
-The list is:
+The list of board games is:
 {BOARD_GAMES_STRING_LIST}
 
 The question is:
