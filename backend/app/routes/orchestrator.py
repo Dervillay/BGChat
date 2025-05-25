@@ -34,7 +34,7 @@ def get_known_board_games():
     return jsonify(current_app.orchestrator.known_board_games), 200
 
 
-@orchestrator_bp.route("/get-message-history", methods=["POST"])
+@orchestrator_bp.route("/message-history", methods=["POST"])
 @requires_auth
 @validate_json_body(board_game=str)
 def get_message_history():

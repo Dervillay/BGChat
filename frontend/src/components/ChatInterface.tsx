@@ -57,7 +57,7 @@ const ChatInterface = () => {
 		setIsLoading(true);
 		try {
 			const response = await withError(() => fetchWithAuth(
-				"/get-message-history",
+				"/message-history",
 				{ method: "POST", body: JSON.stringify({ board_game: boardGame }) }
 			));
 			const data = await response.json();
@@ -97,28 +97,34 @@ const ChatInterface = () => {
 	};
 
 	const handleDetermineBoardGame = async (message: string) => {
-		const response = await withError(() => fetchWithAuth(
-			"/determine-board-game",
-			{ method: "POST", body: JSON.stringify({ question: message }) }
-		));
+		const response = await fetchWithAuth("/determine-board-game", {
+			method: "POST",
+			body: JSON.stringify({ question: message }),
+		});
 		const boardGame = await response.json();
 
 		if (knownBoardGames.includes(boardGame)) {
 			setSelectedBoardGame(boardGame);
 			return boardGame;
 		}
-		else {
-			// Mock the streaming behaviour for this
+
+		const errorMessage = `Sorry, I'm unable to determine which board game your question refers to.
+							Please ask another question, or manually select a board game from the dropdown instead.`;
+		const chunks = errorMessage.match(/.{1,4}/g) || []; // Split into chunks of 4 characters
+		setIsThinking(false);
+		
+		// Emulate streaming behaviour for visual consistency
+		for (const chunk of chunks) {
+			await new Promise(resolve => setTimeout(resolve, 50));
 			setMessages((prev) => [
-				...prev,
+				...prev.slice(0, -1),
 				{ 
-					content: `Sorry, I'm unable to determine which board game your question refers to.
-						      Please ask another question, or manually select a board game from the dropdown instead.`,
-					role: "assistant",
-				},
+					content: prev.at(-1)?.content + chunk,
+					role: "assistant"
+				}
 			]);
-			return null;
 		}
+		return "";
 	}
 
 	const handleSendMessage = async (message: string) => {
@@ -132,12 +138,11 @@ const ChatInterface = () => {
 
 		try {
 			let boardGame = selectedBoardGame;
+			
 			if (!boardGame) {
 				boardGame = await handleDetermineBoardGame(message);
 
 				if (!boardGame) {
-					setIsLoading(false);
-					setIsThinking(false);
 					return;
 				}
 			}
@@ -214,13 +219,15 @@ const ChatInterface = () => {
 
 	const handleClearChat = async () => {
 		try {
-			await withError(() => fetchWithAuth(
-				"/clear-message-history",
-				{ 
-					method: "POST",
-					body: JSON.stringify({ board_game: selectedBoardGame })
-				}
-			));
+			if (selectedBoardGame) {
+				await withError(() => fetchWithAuth(
+					"/clear-message-history",
+					{ 
+						method: "POST",
+						body: JSON.stringify({ board_game: selectedBoardGame })
+					}
+				));
+			}
 			setMessages([]);
 		} catch (error) {
 			// TODO: add better error handling
