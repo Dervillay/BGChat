@@ -190,7 +190,7 @@ const ChatInterface = () => {
 	const handleClearChat = async () => {
 		try {
 			await withError(() => fetchWithAuth(
-				"/clear-chat",
+				"/clear-message-history",
 				{ method: "POST" }
 			));
 			setMessages([]);

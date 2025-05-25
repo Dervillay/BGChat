@@ -1,34 +1,46 @@
 """
-API routes for interacting with the chatbot.
+API routes for interacting with the board game rulebook chat orchestrator.
 """
 import logging
 import os
 import json
 
-from flask import Blueprint, request, jsonify, send_from_directory, current_app, Response, stream_with_context
+from flask import (
+    Blueprint,
+    request,
+    jsonify,
+    send_from_directory,
+    current_app,
+    Response, stream_with_context
+)
+
 from app.config.paths import RULEBOOKS_PATH
-from app.utils.auth import AuthError, requires_auth
+from app.utils.auth import (
+    AuthError,
+    requires_auth,
+    get_user_id_from_auth_header,
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-chatbot_bp = Blueprint("chatbot", __name__)
+orchestrator_bp = Blueprint("orchestrator", __name__)
 
 
-@chatbot_bp.route("/known-board-games", methods=["GET"])
+@orchestrator_bp.route("/known-board-games", methods=["GET"])
 @requires_auth
 def get_known_board_games():
-    return jsonify(current_app.chatbot.known_board_games), 200
+    return jsonify(current_app.orchestrator.known_board_games), 200
 
 
-@chatbot_bp.route("/selected-board-game", methods=["GET"])
+@orchestrator_bp.route("/selected-board-game", methods=["GET"])
 @requires_auth
 def get_selected_board_game():
     logger.info("Getting selected board game")
-    return jsonify(current_app.chatbot.selected_board_game), 200
+    return jsonify(current_app.orchestrator.selected_board_game), 200
 
 
-@chatbot_bp.route("/set-selected-board-game", methods=["POST"])
+@orchestrator_bp.route("/set-selected-board-game", methods=["POST"])
 @requires_auth
 def set_selected_board_game():
     data = request.get_json()
@@ -36,20 +48,24 @@ def set_selected_board_game():
         return jsonify({"error": "Missing 'selected_board_game' in request"}), 400
     
     logger.info("Setting selected board game to: %s", data["selected_board_game"])
-    current_app.chatbot.set_selected_board_game(data["selected_board_game"])
+    current_app.orchestrator.set_selected_board_game(data["selected_board_game"])
     return jsonify({"success": True}), 200
 
 
-@chatbot_bp.route("/chat-history", methods=["GET"])
+@orchestrator_bp.route("/chat-history", methods=["GET"])
 @requires_auth
 def get_chat_history():
-    currently_selected_board_game = current_app.chatbot.selected_board_game
-    return jsonify(current_app.chatbot.get_user_facing_message_history(currently_selected_board_game)), 200
+    user_id = get_user_id_from_auth_header()
+    chat_history = current_app.orchestrator.get_user_facing_message_history(
+        user_id,
+        current_app.orchestrator.selected_board_game
+    )
+    return jsonify(chat_history), 200
 
 
-@chatbot_bp.route("/pdfs/<path:filepath>")
+@orchestrator_bp.route("/pdfs/<path:filepath>")
 @requires_auth
-def serve_pdf(filepath):
+def serve_pdf(filepath: str):
     logger.info("Attempting to serve PDF at: %s", filepath)
     directory = os.path.join(RULEBOOKS_PATH, os.path.dirname(filepath))
     filename = os.path.basename(filepath)
@@ -62,7 +78,7 @@ def serve_pdf(filepath):
     )
 
 
-@chatbot_bp.route("/ask-question", methods=["POST"])
+@orchestrator_bp.route("/ask-question", methods=["POST"])
 @requires_auth
 def ask_question():
     """
@@ -91,9 +107,11 @@ def ask_question():
         }), 400
         
     logger.info("Received streaming question: %s", question)
-    
+    user_id = get_user_id_from_auth_header()
+
     def generate():
-        for chunk in current_app.chatbot.ask_question(question):
+        response = current_app.orchestrator.ask_question(user_id, question)
+        for chunk in response:
             yield f"data: {json.dumps({"chunk": chunk})}\n\n"
         yield f"data: {json.dumps({"done": True})}\n\n"
     
@@ -109,47 +127,57 @@ def ask_question():
     return response
 
 
-@chatbot_bp.route("/delete-messages-from-index", methods=["POST"])
+@orchestrator_bp.route("/delete-messages-from-index", methods=["POST"])
 @requires_auth
 def delete_messages_from_index():
     data = request.get_json()
     if not data or "index" not in data:
         return jsonify({"error": "Missing 'index' in request"}), 400
     
+    user_id = get_user_id_from_auth_header()
+    
     index = data["index"]
-    current_app.chatbot.delete_messages_from_index(index)
+    current_app.orchestrator.delete_messages_from_index(
+        user_id,
+        current_app.orchestrator.selected_board_game,
+        index
+    )
 
     return jsonify({"success": True}), 200
 
 
-@chatbot_bp.route("/clear-chat", methods=["POST"])
+@orchestrator_bp.route("/clear-message-history", methods=["POST"])
 @requires_auth
-def clear_chat():
-    current_app.chatbot.delete_messages_from_index(0)
+def clear_message_history():
+    user_id = get_user_id_from_auth_header()
+    current_app.orchestrator.clear_message_history(
+        user_id,
+        current_app.orchestrator.selected_board_game
+    )
     return jsonify({"success": True}), 200
 
 
-@chatbot_bp.errorhandler(AuthError)
+@orchestrator_bp.errorhandler(AuthError)
 def handle_auth_error(e):
     return jsonify({"error": e.error}), e.status_code
 
 
-@chatbot_bp.errorhandler(404)
+@orchestrator_bp.errorhandler(404)
 def not_found(e):
     return jsonify({"error": "Resource not found: " + str(e)}), 404
 
 
-@chatbot_bp.errorhandler(405)
+@orchestrator_bp.errorhandler(405)
 def method_not_allowed(e):
     return jsonify({"error": "Method not allowed: " + str(e)}), 405
 
 
-@chatbot_bp.errorhandler(500)
+@orchestrator_bp.errorhandler(500)
 def internal_server_error(e):
     return jsonify({"error": "Internal server error: " + str(e)}), 500
 
 
-@chatbot_bp.errorhandler(Exception)
+@orchestrator_bp.errorhandler(Exception)
 def handle_exception(e):
     logger.error("An unexpected error occurred: %s", str(e))
     return jsonify({"error": "An unexpected error occurred: " + str(e)}), 500

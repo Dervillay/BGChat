@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
-from app.routes.chatbot import chatbot_bp
-from app.chatbot import Chatbot
+from app.routes.orchestrator import orchestrator_bp
+from app.chat_orchestrator import ChatOrchestrator
 import os
 
 def create_app():
@@ -13,7 +13,7 @@ def create_app():
     app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access to cookies
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # CSRF protection
     
-    app.chatbot = Chatbot()
-    app.register_blueprint(chatbot_bp)
+    app.orchestrator = ChatOrchestrator()
+    app.register_blueprint(orchestrator_bp)
 
     return app

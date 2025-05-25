@@ -21,9 +21,10 @@ from app.config.prompts import (
     THE_BOARD_GAME_IS_STRING,
     THE_RULEBOOK_TEXTS_ARE_STRING,
 )
+from app.mongodb_client import MongoDBClient
+from app.types import Message
 
-
-class Chatbot:
+class ChatOrchestrator:
     def __init__(
         self,
         embedding_model_path: str = EMBEDDING_MODEL_PATH,
@@ -31,11 +32,11 @@ class Chatbot:
     ):
         self.selected_board_game: str = None
         self.known_board_games: list[str] = [board_game["name"] for board_game in BOARD_GAMES]
-        self._messages = {board_game["name"]: [] for board_game in BOARD_GAMES}
         self._embedding_db = TinyDB(embedding_database_path)
         self._rulebook_pages = self._embedding_db.table("rulebook_pages")
         self._embedding_model = SentenceTransformer(embedding_model_path)
         self._openai_client = openai.OpenAI()
+        self._mongodb_client = MongoDBClient()
 
 
     def _embed_question(
@@ -51,9 +52,8 @@ class Chatbot:
 
     def _call_openai_model(
         self,
-        messages: list[dict],
-        return_all_metadata: bool = False,
-        stream: bool = False,
+        messages: list[Message],
+        stream: bool,
     ):
         try:
             response = self._openai_client.chat.completions.create(
@@ -61,11 +61,7 @@ class Chatbot:
                 messages=messages,
                 stream=stream
             )
-            
             if stream:
-                return response
-            
-            if return_all_metadata:
                 return response
             return response.choices[0].message.content
         
@@ -92,7 +88,7 @@ class Chatbot:
             "content": DETERMINE_BOARD_GAME_PROMPT_TEMPLATE.replace("<QUESTION>", question),
             "role": "user",
         }
-        response = self._call_openai_model([message])
+        response = self._call_openai_model([message], stream=False)
 
         if response in self.known_board_games:
             return response
@@ -151,9 +147,9 @@ class Chatbot:
 
 
     def _parse_citations(
-            self,
-            text: str
-        ):
+        self,
+        text: str
+    ):
         def add_link_to_citation(match):
             citation_str = match.group(0)
             citation_dict = ast.literal_eval(citation_str)
@@ -171,9 +167,9 @@ class Chatbot:
 
 
     def _convert_to_user_facing_message(
-            self,
-            message: dict,
-        ):
+        self,
+        message: Message,
+    ):
         content = message["content"]
         if message["role"] == "user":
 
@@ -194,42 +190,52 @@ class Chatbot:
 
 
     def set_selected_board_game(
-            self,
-            selected_board_game
-        ):
+        self,
+        selected_board_game
+    ):
         self.selected_board_game = selected_board_game
 
 
     def get_user_facing_message_history(
-            self,
-            board_game_name: str
-        ):
-        if board_game_name not in self.known_board_games:
-            return []
+        self,
+        user_id: str,
+        board_game: str,
+    ):
+        message_history = self._mongodb_client.get_message_history(user_id, board_game)
 
         return [
             self._convert_to_user_facing_message(message)
-            for message in self._messages[board_game_name]
+            for message in message_history
         ]
 
 
     def delete_messages_from_index(
         self,
+        user_id: str,
+        board_game: str,
         index: int,
     ):
         if index < 0:
             raise ValueError(f"Index must be non-negative, but got {index}")
 
-        self._messages[self.selected_board_game] = (
-            self._messages[self.selected_board_game][:index]
-        )
+        self._mongodb_client.delete_messages_from_index(user_id, board_game, index)
+
+
+    def clear_message_history(
+        self,
+        user_id: str,
+        board_game: str,
+    ):
+        self._mongodb_client.clear_message_history(user_id, board_game)
 
 
     def ask_question(
         self,
+        user_id: str,
         question: str,
     ):
-        # If the user hasn't selected a board game manually, determine which board game the question is about.
+        # If the user hasn't selected a board game manually,
+        # determine which board game the question is about.
         # Return the response if we can't determine one
         if self.selected_board_game is None:
             maybe_board_game = self._determine_board_game(question)
@@ -237,8 +243,8 @@ class Chatbot:
                 return maybe_board_game
             self.selected_board_game = maybe_board_game
 
-        # Get N most relevant chunks of rulebook text for the selected board game and construct a prompt
-        # with these extracts in them
+        # Get N most relevant chunks of rulebook text for the selected board game
+        # and construct a prompt with these extracts in them
         rulebook_extracts = self._get_relevant_rulebook_extracts(question)
         rulebook_extracts_as_string = "\n".join([json.dumps(extract) for extract in rulebook_extracts])
         prompt = (
@@ -249,24 +255,26 @@ class Chatbot:
         )
 
         # Prepend the system prompt if this is the first question about this board game
-        if len(self._messages[self.selected_board_game]) == 0:
+        message_history = self._mongodb_client.get_message_history(user_id, self.selected_board_game)
+        if len(message_history) == 0:
             prompt = SYSTEM_PROMPT + prompt
-    
-        self._messages[self.selected_board_game].append({"content": prompt, "role": "user"})
 
+        user_message = {
+            "content": prompt,
+            "role": "user"
+        }
         stream = self._call_openai_model(
-            self._messages[self.selected_board_game],
+            [user_message],
             stream=True
         )
-        
         full_response = ""
         citation_buffer = ""
         in_citation = False
-       
+
         # Buffer chunks when we hit a citation, then parse the citation and yield the parsed text
         for chunk in stream:
             content = chunk.choices[0].delta.content
-            
+
             if content is not None:
                 if CITATION_REGEX_PATTERN[0] in content:
                     in_citation = True
@@ -280,7 +288,7 @@ class Chatbot:
                     citation_buffer = ""
                     full_response += parsed
                     yield parsed
-                
+
                 elif in_citation:
                     citation_buffer += content
                     continue
@@ -288,5 +296,15 @@ class Chatbot:
                 else:
                     full_response += content
                     yield content
-        
-        self._messages[self.selected_board_game].append({"content": full_response, "role": "assistant"})
+
+
+        assistant_message = {
+            "content": full_response,
+            "role": "assistant"
+        }
+
+        self._mongodb_client.append_messages(
+            user_id,
+            self.selected_board_game,
+            [user_message, assistant_message]
+        )

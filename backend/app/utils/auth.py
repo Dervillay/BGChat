@@ -6,6 +6,7 @@ import jwt
 import requests
 from dotenv import find_dotenv, load_dotenv
 from flask import request
+
 from app.config.constants import DEFAULT_TIMEOUT_SECONDS
 
 ENV_FILE = find_dotenv()
@@ -55,11 +56,11 @@ def validate_jwt(token):
     jwks_response = requests.get(jwks_url, timeout=DEFAULT_TIMEOUT_SECONDS)
     jwks_response.raise_for_status()
     jwks = jwks_response.json()
-   
+
     unverified_header = jwt.get_unverified_header(token)
     if "kid" not in unverified_header:
         raise AuthError("Invalid header: No KID", 401)
-   
+
     rsa_key = {}
     for key in jwks["keys"]:
         if key["kid"] == unverified_header["kid"]:
@@ -71,10 +72,10 @@ def validate_jwt(token):
                 "e": key["e"]
             }
             break
-   
+
     if not rsa_key:
         raise AuthError("Unable to find appropriate key", 401)
-   
+
     try:
         jwt.decode(
             token,
@@ -86,6 +87,28 @@ def validate_jwt(token):
     except Exception as e:
         raise AuthError(f"Invalid token: {str(e)}", 401) from e
 
+def get_user_id_from_auth_header() -> str:
+    """
+    Extract the user's ID from the token in the request's Authorization header.
+
+    Note: This function does not validate the token, so should only be used
+    in routes protected by the `@requires_auth` decorator.
+    """
+    try:
+        token = get_token_from_auth_header()
+        unverified_claims = jwt.decode(
+            token,
+            options={"verify_signature": False}
+        )
+
+        if "sub" not in unverified_claims:
+            raise AuthError("Token does not contain a user ID", 401)
+
+        return unverified_claims["sub"]
+
+    except Exception as e:
+        raise AuthError(f"Error extracting user ID: {str(e)}", 401) from e
+
 def requires_auth(f):
     """
     Decorator to check if the request has a valid auth token.
@@ -95,5 +118,5 @@ def requires_auth(f):
         token = get_token_from_auth_header()
         validate_jwt(token)
         return f(*args, **kwargs)
-    
+
     return decorated
