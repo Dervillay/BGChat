@@ -29,11 +29,11 @@ export const UserMessage: React.FC<UserMessageProps> = ({ content, onEdit }) => 
     };
 
     const handleSave = () => {
-        if (editedContent.trim() === "") {
+        const trimmedEditedContent = editedContent.trim();
+        if (trimmedEditedContent && trimmedEditedContent !== content) {
+            onEdit(trimmedEditedContent);
+        } else {
             setEditedContent(content);
-        }
-        else if (editedContent !== content) {
-            onEdit(editedContent);
         }
         setIsEditing(false);
     };
