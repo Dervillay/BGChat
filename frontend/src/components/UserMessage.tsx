@@ -49,6 +49,15 @@ export const UserMessage: React.FC<UserMessageProps> = ({ content, onEdit }) => 
         setEditedContent(e.target.value);
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSave();
+        } else if (e.key === 'Escape') {
+            handleCancel();
+        }
+    };
+
     if (isEditing) {
         return (
             <Box maxW="70%" display="flex" flexDirection="column" alignItems="flex-end" w="100%">
@@ -57,6 +66,7 @@ export const UserMessage: React.FC<UserMessageProps> = ({ content, onEdit }) => 
                         as="textarea"
                         value={editedContent}
                         onChange={handleChange}
+                        onKeyDown={handleKeyDown}
                         variant="chat"
                         pt="1rem"
                         pl="1rem"
