@@ -7,6 +7,6 @@ class Message(TypedDict):
 
 class RulebookPage(TypedDict):
     """Type definition for a rulebook page."""
+    rulebook_name: str
     page_num: int
     text: str
-    embedding: list[float]

@@ -34,17 +34,18 @@ class MongoDBClient:
             self.db = None
             self._connect()
             self._initialized = True
-    
+
     def _get_mongodb_uri(self) -> str:
         """Get the MongoDB connection URI with proper encoding."""
         username = quote_plus(os.getenv('MONGODB_USERNAME'))
         password = quote_plus(os.getenv('MONGODB_PASSWORD'))
         host = os.getenv('MONGODB_HOST')
-        
+
         return (
             f"mongodb+srv://{username}:{password}@{host}/"
             f"?retryWrites=true&w=majority"
         )
+
 
     def _connect(self) -> None:
         """Establish connection to MongoDB with retry logic."""
@@ -54,10 +55,13 @@ class MongoDBClient:
             try:
                 self.client = MongoClient(self._get_mongodb_uri())
                 self.client.admin.command("ping")
+                logger.info("Successfully connected to MongoDB server")
+
                 self.db = self.client[os.getenv("MONGODB_DB_NAME")]
-                logger.info("Successfully connected to MongoDB database")
+                logger.info("Successfully loaded database '%s'", os.getenv("MONGODB_DB_NAME"))
+
                 return
-            
+
             except (ConnectionFailure, ServerSelectionTimeoutError) as e:
                 retry_count += 1
                 if retry_count == max_retries:
@@ -204,73 +208,98 @@ class MongoDBClient:
             logger.error("Error deleting messages: %s", str(e))
             raise
 
-    def get_rulebooks(self, board_game: str) -> None:
-        """
-        Get all rulebooks for a given board game.
-        """
-        self._ensure_connection()
-        try:
-            result = self.db.rulebooks.find_one(
-                {"board_game": board_game},
-                {
-                    "rulebooks": 1,
-                    "_id": 0
-                }
-            )
-
-            if result is None:
-                return {}
-
-            return result.get("rulebooks", {})
-
-        except Exception as e:
-            logger.error("Error retrieving rulebooks for '%s': %s", board_game, str(e))
-            raise
-
-    def store_rulebook(
-        self,
-        board_game: str,
-        rulebook: str,
-        pages: list[RulebookPage]
+    def store_rulebook_pages(self, pages: list[RulebookPage]
     ) -> None:
         """
-        Store pages for a rulebook for a given board game.
-        Creates a new document for the board game if it doesn't exist.
+        Store rulebook pages for a given board game.
+        Each page is stored as a separate document in the rulebook_pages collection.
         """
         self._ensure_connection()
         try:
-            self.db.rulebooks.update_one(
-                {"board_game": board_game},
-                {
-                    "$setOnInsert": {
-                        "board_game": board_game,
-                    },
-                    "$push": {
-                        f"rulebooks.{rulebook}": {
-                            "$each": pages
-                        }
-                    }
-                },
-                upsert=True
-            )
+            self.db.rulebook_pages.insert_many(pages)
+
         except Exception as e:
-            logger.error("Error storing rulebook '%s' for '%s': %s", rulebook, board_game, str(e))
+            logger.error("Error storing rulebook pages: %s", str(e))
             raise
 
-    def delete_rulebook(
+    def delete_rulebook_pages(
         self,
         board_game: str,
         rulebook: str
     ) -> None:
-        """Delete a rulebook for a given board game."""
+        """Delete all pages for a given board game and rulebook."""
         self._ensure_connection()
         try:
-            self.db.rulebooks.update_one(
-                {"board_game": board_game},
-                {"$unset": {f"rulebooks.{rulebook}": ""}}
-            )
+            result = self.db.rulebook_pages.delete_many({
+                "board_game": board_game,
+                "rulebook_name": rulebook
+            })
+            logger.info("Deleted %d pages for rulebook '%s' in '%s'",
+                       result.deleted_count, rulebook, board_game)
         except Exception as e:
-            logger.error("Error deleting rulebook '%s' for '%s': %s", rulebook, board_game, str(e))
+            logger.error("Error deleting rulebook pages for '%s' in '%s': %s",
+                        rulebook, board_game, str(e))
+            raise
+
+    def get_rulebook_pages(
+        self,
+        board_game: str,
+        rulebook: str
+    ) -> list[RulebookPage]:
+        """
+        Get all pages for a given board game and rulebook.
+        """
+        self._ensure_connection()
+        try:
+            results = self.db.rulebook_pages.find(
+                {"board_game": board_game, "rulebook_name": rulebook},
+                {"_id": 0, "embedding": 0}
+            )
+
+            return list(results)
+
+        except Exception as e:
+            logger.error("Error retrieving rulebook pages for '%s': %s", board_game, str(e))
+            raise
+
+    def get_similar_rulebook_pages(
+        self,
+        board_game: str,
+        query_embedding: list[float],
+        limit: int
+    ) -> list[RulebookPage]:
+        """
+        Find rulebook pages for a given board game with similar embeddings to the query embedding.
+        """
+        self._ensure_connection()
+        try:
+            results = self.db.rulebook_pages.aggregate([
+                {
+                    "$vectorSearch": {
+                        "index": "embedding_index",
+                        "path": "embedding",
+                        "filter": {
+                            "board_game": {
+                                "$eq": board_game
+                            }
+                        },
+                        "queryVector": query_embedding,
+                        "numCandidates": 100,
+                        "limit": limit,
+                    }
+                },
+                {
+                    "$project": {
+                        "_id": 0,
+                        "embedding": 0,
+                    }
+                }
+            ])
+
+            return list(results)
+
+        except Exception as e:
+            logger.error("Error performing vector search: %s", str(e))
             raise
 
     def __del__(self):

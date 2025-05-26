@@ -1,13 +1,11 @@
 import openai
 import json
 import ast
-import numpy as np
 import regex as re
 from sentence_transformers import SentenceTransformer
-from tinydb import TinyDB, where
 from urllib.parse import quote
 
-from app.config.paths import EMBEDDING_MODEL_PATH, DATABASE_PATH
+from app.config.paths import EMBEDDING_MODEL_PATH
 from app.config.models import OPENAI_MODEL_TO_USE
 from app.config.board_games import BOARD_GAMES
 from app.config.prompts import (
@@ -18,7 +16,7 @@ from app.config.prompts import (
     CITATION_REGEX_PATTERN,
     USER_QUESTION_STRING,
     THE_BOARD_GAME_IS_STRING,
-    THE_RULEBOOK_TEXTS_ARE_STRING,
+    THE_RULEBOOK_PAGES_ARE_STRING,
 )
 from app.mongodb_client import MongoDBClient
 from app.types import Message
@@ -26,12 +24,9 @@ from app.types import Message
 class ChatOrchestrator:
     def __init__(
         self,
-        embedding_model_path: str = EMBEDDING_MODEL_PATH,
-        embedding_database_path: str = DATABASE_PATH,
+        embedding_model_path: str = EMBEDDING_MODEL_PATH
     ):
         self.known_board_games: list[str] = [board_game["name"] for board_game in BOARD_GAMES]
-        self._embedding_db = TinyDB(embedding_database_path)
-        self._rulebook_pages = self._embedding_db.table("rulebook_pages")
         self._embedding_model = SentenceTransformer(embedding_model_path)
         self._openai_client = openai.OpenAI()
         self._mongodb_client = MongoDBClient()
@@ -44,6 +39,7 @@ class ChatOrchestrator:
         embedding = self._embedding_model.encode(
             f"query: {question}",
             normalize_embeddings=True,
+            show_progress_bar=False
         )
         return embedding.tolist()
 
@@ -79,39 +75,19 @@ class ChatOrchestrator:
             raise ValueError(f"An unexpected error occurred: {e}") from e
 
 
-    def _get_relevant_rulebook_extracts(
+    def _get_similar_rulebook_pages(
         self,
         board_game: str,
         question: str,
-        n: int = 5,
     ):
-        question_embedding = self._embed_question(question)
-        pages = self._rulebook_pages.search(
-            where("board_game_name") == board_game
+        embedding = self._embed_question(question)
+        results = self._mongodb_client.get_similar_rulebook_pages(
+            board_game,
+            embedding,
+            limit=5
         )
 
-        results = []
-        for page in pages:
-            for chunk in page["chunks"].values():
-                cosine_similarity = np.dot(
-                    np.array(question_embedding),
-                    np.array(chunk["embedding"]),
-                )
-                results.append(
-                    {
-                        "rulebook_name": page["rulebook_name"],
-                        "page_num": page["page_num"],
-                        "text": chunk["text"],
-                        "similarity": cosine_similarity,
-                    }
-                )
-        results = sorted(
-            results,
-            key=lambda x: x["similarity"],
-            reverse=True,
-        )
-
-        return results[:n]
+        return results
 
 
     def _construct_rulebook_link(
@@ -161,7 +137,7 @@ class ChatOrchestrator:
 
             if (
                 THE_BOARD_GAME_IS_STRING in content and
-                THE_RULEBOOK_TEXTS_ARE_STRING in content and
+                THE_RULEBOOK_PAGES_ARE_STRING in content and
                 USER_QUESTION_STRING in content
             ):
                 content = content.split(USER_QUESTION_STRING)[1].strip()
@@ -231,18 +207,19 @@ class ChatOrchestrator:
         board_game: str,
         question: str,
     ):
-        # Get N most relevant chunks of rulebook text for the selected board game
-        # and construct a prompt with these extracts in them
-        rulebook_extracts = self._get_relevant_rulebook_extracts(board_game, question)
-        rulebook_extracts_as_string = "\n".join(
-            json.dumps(extract)
-            for extract in rulebook_extracts
+        # Get N most relevant pages of rulebooks for the selected board game
+        # and construct a prompt with these pages in them
+        rulebook_pages = self._get_similar_rulebook_pages(board_game, question)
+
+        rulebook_pages_as_string = "\n".join(
+            json.dumps(page)
+            for page in rulebook_pages
         )
 
         prompt = (
             EXPLAIN_RULES_PROMPT_TEMPLATE
             .replace("<BOARD_GAME>", board_game)
-            .replace("<RULEBOOK_EXTRACTS>", rulebook_extracts_as_string)
+            .replace("<RULEBOOK_PAGES>", rulebook_pages_as_string)
             .replace("<QUESTION>", question)
         )
 
@@ -256,7 +233,7 @@ class ChatOrchestrator:
             "role": "user"
         }
         stream = self._call_openai_model(
-            [user_message],
+            message_history + [user_message],
             stream=True
         )
         full_response = ""

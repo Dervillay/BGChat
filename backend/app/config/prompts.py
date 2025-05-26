@@ -7,9 +7,9 @@ UNKNOWN_VALUE = "UNKNOWN"
 SYSTEM_PROMPT = """
 You are an intellectually honest assistant that helps users understand the rules for different board games.
 
-You will be given several rulebooks for a given board game and a question about the rules of this board game.
+You will be given several rulebook pages for a given board game and a question about the rules of this board game.
 
-You must answer this question using only the information contained in the 'text' field of the provided rulebooks, ensuring your responses are as clear and concise as possible.
+You must answer this question using only the information contained in the 'text' field of the provided rulebook pages, ensuring your responses are as clear and concise as possible.
 Only consider the text if it is directly relevant to the question asked.
 You must always cite any rulebook text used to inform your answer, and must do so using the following format: 
 {"rulebook_name": <rulebook_name>, "page_num": <page_num>}
@@ -33,15 +33,15 @@ The question is:
 """
 
 THE_BOARD_GAME_IS_STRING = "The board game is:"
-THE_RULEBOOK_TEXTS_ARE_STRING = "The rulebook texts are:"
+THE_RULEBOOK_PAGES_ARE_STRING = "The rulebook pages are:"
 USER_QUESTION_STRING = "The question is:"
 
 EXPLAIN_RULES_PROMPT_TEMPLATE = f"""
 {THE_BOARD_GAME_IS_STRING}
 <BOARD_GAME>
 
-{THE_RULEBOOK_TEXTS_ARE_STRING}
-<RULEBOOK_EXTRACTS>
+{THE_RULEBOOK_PAGES_ARE_STRING}
+<RULEBOOK_PAGES>
 
 {USER_QUESTION_STRING}
 <QUESTION>

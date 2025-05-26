@@ -65,7 +65,7 @@ def download_embedding_model():
     if os.listdir(EMBEDDING_MODEL_PATH):
         print("Detected an existing embedding model, will use that")
     else:
-        temp_model = SentenceTransformer(EMBEDDING_MODEL_TO_USE)
+        temp_model = SentenceTransformer(EMBEDDING_MODEL_TO_USE, verbose=False)
         temp_model.save(EMBEDDING_MODEL_PATH)
     print()
 
@@ -83,20 +83,22 @@ def process_and_store_rulebook_text(
 ):
     print_bold("Processing and storing text from rulebooks...")
     for board_game in BOARD_GAMES:
-
-        existing_rulebooks = mongodb_client.get_rulebooks(board_game["name"])
-
         for rulebook in board_game["rulebooks"]:
+            print_bold(f'\n{board_game["name"]} - {rulebook["name"]}')
+
             reader = PdfReader(f'{RULEBOOKS_PATH}/{board_game["name"]}/{rulebook["name"]}.pdf')
             page_count = len(reader.pages)
 
-            existing_rulebook_pages = existing_rulebooks.get(rulebook["name"], [])
+            existing_rulebook_pages = mongodb_client.get_rulebook_pages(
+                board_game["name"],
+                rulebook["name"]
+            )
 
-            print_bold(f'\n{board_game["name"]} - {rulebook["name"]}')
             if len(existing_rulebook_pages) != page_count:
                 # Remove existing entries if they don't match the number of pages in the PDF
                 # (i.e. they've been parsed incorrectly or come from an old rulebook)
-                mongodb_client.delete_rulebook(board_game["name"], rulebook["name"])
+                if len(existing_rulebook_pages) > 0:
+                    mongodb_client.delete_rulebook_pages(board_game["name"], rulebook["name"])
 
                 with tqdm(
                     total=page_count,
@@ -108,8 +110,8 @@ def process_and_store_rulebook_text(
 
                         text = page.extract_text()
 
-                        # e5-large-v2 is trained to encode queries and passages for semantic search,
-                        # which requires prepending "query" or "passage" to the text we want to encode
+                        # e5-large-v2 is trained to encode queries and passages for semantic search
+                        # which requires prepending "query" or "passage" before encoding
                         embedding = model.encode(
                             f"passage: {text}",
                             normalize_embeddings=True,
@@ -117,6 +119,8 @@ def process_and_store_rulebook_text(
                         )
 
                         pages_to_store.append({
+                            "board_game": board_game["name"],
+                            "rulebook_name": rulebook["name"],
                             "page_num": page_num,
                             "text": text,
                             "embedding": embedding.tolist()
@@ -124,7 +128,7 @@ def process_and_store_rulebook_text(
 
                         progress_bar.update(1)
 
-                mongodb_client.store_rulebook(board_game["name"], rulebook["name"], pages_to_store)
+                mongodb_client.store_rulebook_pages(pages_to_store)
 
             else:
                 print("This rulebook already exists in the database")
@@ -132,10 +136,10 @@ def process_and_store_rulebook_text(
 
 
 if __name__ == "__main__":
+    # TODO: Get rid of logging when running this script
     download_rulebooks()
     download_embedding_model()
 
     mongodb_client = MongoDBClient()
     embedding_model = initialise_embedding_model()
-
     process_and_store_rulebook_text(mongodb_client, embedding_model)
