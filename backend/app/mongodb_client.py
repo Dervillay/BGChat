@@ -9,7 +9,7 @@ from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 from pymongo.results import UpdateResult
 from urllib.parse import quote_plus
 
-from app.types import Message
+from app.types import Message, RulebookPage
 
 load_dotenv()
 
@@ -97,8 +97,8 @@ class MongoDBClient:
             user_id: str,
             board_game: str,
             messages: list[Message]
-        ) -> None:
-        """Store a message in the conversation history."""
+    ) -> None:
+        """Append messages to the message history for a given user and board game."""
         self._ensure_connection()
         try:
             request_datetime_utc = self._get_current_datetime_utc()
@@ -132,7 +132,7 @@ class MongoDBClient:
             self,
             user_id: str,
             board_game: str
-        ) -> list[Message]:
+    ) -> list[Message]:
         """Get message history for a given user and board game."""
         self._ensure_connection()
         try:
@@ -154,7 +154,7 @@ class MongoDBClient:
             self,
             user_id: str,
             board_game: str
-        ) -> None:
+    ) -> None:
         """Clear the message history for a given user and board game."""
         self._ensure_connection()
         try:
@@ -177,7 +177,7 @@ class MongoDBClient:
             user_id: str,
             board_game: str,
             index: int
-        ) -> None:
+    ) -> None:
         """
         Delete all messages with index greater than or equal to the specified index (0-based)
         for a given user and board game.
@@ -204,7 +204,82 @@ class MongoDBClient:
             logger.error("Error deleting messages: %s", str(e))
             raise
 
+    def get_rulebooks(self, board_game: str) -> None:
+        """
+        Get all rulebooks for a given board game.
+        """
+        self._ensure_connection()
+        try:
+            result = self.db.rulebooks.find_one(
+                {"board_game": board_game},
+                {
+                    "rulebooks": 1,
+                    "_id": 0
+                }
+            )
+
+            if result is None:
+                return {}
+
+            return result.get("rulebooks", {})
+
+        except Exception as e:
+            logger.error("Error retrieving rulebooks for '%s': %s", board_game, str(e))
+            raise
+
+    def store_rulebook(
+        self,
+        board_game: str,
+        rulebook: str,
+        pages: list[RulebookPage]
+    ) -> None:
+        """
+        Store pages for a rulebook for a given board game.
+        Creates a new document for the board game if it doesn't exist.
+        """
+        self._ensure_connection()
+        try:
+            self.db.rulebooks.update_one(
+                {"board_game": board_game},
+                {
+                    "$setOnInsert": {
+                        "board_game": board_game,
+                    },
+                    "$push": {
+                        f"rulebooks.{rulebook}": {
+                            "$each": pages
+                        }
+                    }
+                },
+                upsert=True
+            )
+        except Exception as e:
+            logger.error("Error storing rulebook '%s' for '%s': %s", rulebook, board_game, str(e))
+            raise
+
+    def delete_rulebook(
+        self,
+        board_game: str,
+        rulebook: str
+    ) -> None:
+        """Delete a rulebook for a given board game."""
+        self._ensure_connection()
+        try:
+            self.db.rulebooks.update_one(
+                {"board_game": board_game},
+                {"$unset": {f"rulebooks.{rulebook}": ""}}
+            )
+        except Exception as e:
+            logger.error("Error deleting rulebook '%s' for '%s': %s", rulebook, board_game, str(e))
+            raise
+
     def __del__(self):
         """Cleanup MongoDB connection on object deletion."""
-        if self.client:
-            self.client.close()
+        try:
+            if self.client:
+                self.client.close()
+        except ImportError:
+            # Python is shutting down, ignore the error
+            pass
+        except Exception as e:
+            logger.error("Error closing MongoDB connection: %s", str(e))

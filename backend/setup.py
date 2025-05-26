@@ -1,19 +1,16 @@
 import os
 import requests
 from tqdm import tqdm
-from tinydb import TinyDB, where
 from pypdf import PdfReader
 from sentence_transformers import SentenceTransformer
 
-from app.config.paths import RULEBOOKS_PATH, EMBEDDING_MODEL_PATH, DATABASE_PATH
+from app.config.paths import RULEBOOKS_PATH, EMBEDDING_MODEL_PATH
 from app.config.models import EMBEDDING_MODEL_TO_USE
 from app.config.board_games import BOARD_GAMES
+from app.config.constants import DEFAULT_TIMEOUT_SECONDS
+from app.mongodb_client import MongoDBClient
 
 DOWNLOAD_BLOCK_SIZE = 1024
-
-db = None
-model = None
-chars_per_chunk = None
 
 
 def print_bold(text):
@@ -34,7 +31,11 @@ def download_rulebooks():
 
             if not os.path.exists(rulebook_path):
                 try:
-                    response = requests.get(rulebook["download_url"], stream=True)
+                    response = requests.get(
+                        rulebook["download_url"],
+                        stream=True,
+                        timeout=DEFAULT_TIMEOUT_SECONDS
+                    )
                     response.raise_for_status()
                     response_size = int(response.headers.get("content-length", 0))
 
@@ -49,171 +50,92 @@ def download_rulebooks():
                                 file.write(chunk)
                                 progress_bar.update(len(chunk))
                 except requests.exceptions.HTTPError as error:
-                    print(f'Failed to download "{rulebook["name"]}" for "{board_game["name"]}": {error}')
+                    print(
+                        f'Failed to download "{rulebook["name"]}" for "{board_game["name"]}": {error}'
+                    )
             else:
                 print(f'"{rulebook_path}" already exists')
     print()
 
 
 def download_embedding_model():
-    global model
-
     os.makedirs(EMBEDDING_MODEL_PATH, exist_ok=True)
 
     print_bold("Downloading embedding model...")
     if os.listdir(EMBEDDING_MODEL_PATH):
         print("Detected an existing embedding model, will use that")
     else:
-        model = SentenceTransformer(EMBEDDING_MODEL_TO_USE)
-        model.save(EMBEDDING_MODEL_PATH)
+        temp_model = SentenceTransformer(EMBEDDING_MODEL_TO_USE)
+        temp_model.save(EMBEDDING_MODEL_PATH)
     print()
 
 
 def initialise_embedding_model():
-    global model
-    global chars_per_chunk
-
     print_bold("Initialising embedding model...")
     model = SentenceTransformer(EMBEDDING_MODEL_PATH)
-
-    # Assuming each token is ~4 characters long, we aim to make chunks
-    # ~95% of the model's max input size. 95% is chosen to account for 
-    # variance in the average token length, ensuring chunks are never
-    # bigger than the model's context window
-    chars_per_chunk = int(0.95 * 4 * model.tokenizer.model_max_length)
     print("Done\n")
+    return model
 
 
-def initialise_database():
-    global db
-    global query
-
-    print_bold("Initialising local database to store rulebook text and embeddings...")
-    if os.path.isdir(DATABASE_PATH):
-        print("Detected an existing database. Loading...")
-
-    # Creates a database if one doesn't already exist, or loads it if it does
-    db = TinyDB(DATABASE_PATH)
-    print("Done\n")
-
-
-def process_and_store_rulebook_text():
-    global db
-    global model
-    global chars_per_chunk
-
-    rulebook_pages_table = db.table("rulebook_pages")
-
+def process_and_store_rulebook_text(
+    mongodb_client: MongoDBClient,
+    model: SentenceTransformer
+):
     print_bold("Processing and storing text from rulebooks...")
     for board_game in BOARD_GAMES:
+
+        existing_rulebooks = mongodb_client.get_rulebooks(board_game["name"])
 
         for rulebook in board_game["rulebooks"]:
             reader = PdfReader(f'{RULEBOOKS_PATH}/{board_game["name"]}/{rulebook["name"]}.pdf')
             page_count = len(reader.pages)
-            
-            current_board_game_and_rulebook_rows = (
-                (where("board_game_name") == board_game["name"])
-                & (where("rulebook_name") == rulebook["name"])
-            )
-            existing_pages_in_table = rulebook_pages_table.search(current_board_game_and_rulebook_rows)
+
+            existing_rulebook_pages = existing_rulebooks.get(rulebook["name"], [])
 
             print_bold(f'\n{board_game["name"]} - {rulebook["name"]}')
-            if len(existing_pages_in_table) != page_count:
-                # Remove existing entries if they don't match the number of pages in the PDF 
+            if len(existing_rulebook_pages) != page_count:
+                # Remove existing entries if they don't match the number of pages in the PDF
                 # (i.e. they've been parsed incorrectly or come from an old rulebook)
-                rulebook_pages_table.remove(current_board_game_and_rulebook_rows)
+                mongodb_client.delete_rulebook(board_game["name"], rulebook["name"])
 
                 with tqdm(
-                    total=len(reader.pages),
-                    desc="Extracting text",
+                    total=page_count,
+                    desc="Extracting and embedding pages",
                     unit="page"
                 ) as progress_bar:
+                    pages_to_store = []
                     for page_num, page in enumerate(reader.pages, start=1):
-                        rulebook_pages_table.insert(
-                            {
-                                "board_game_name": board_game["name"],
-                                "rulebook_name": rulebook["name"],
-                                "page_num": page_num,
-                                "text": page.extract_text(),
-                            }
-                        )
-                        progress_bar.update(1)
 
-                with tqdm(
-                    total=len(reader.pages),
-                    desc="Chunking text",
-                    unit="page"
-                ) as progress_bar:
-                    rulebook_pages = sorted(
-                        rulebook_pages_table.search(current_board_game_and_rulebook_rows),
-                         key=lambda x: x["page_num"]
-                    )
-                    full_rulebook_text = "".join([page["text"] for page in rulebook_pages])
-                    num_chars_in_page = {page["page_num"]: len(page["text"]) for page in rulebook_pages}
+                        text = page.extract_text()
 
-                    idx = 0
-                    curr_page_num = 1
-                    start_of_next_page = 0
-
-                    while idx < len(full_rulebook_text):
-                        start_of_next_page += num_chars_in_page[curr_page_num]
-                        curr_chunk_id = 0
-                        curr_page_chunks = {}
-
-                        while idx < start_of_next_page:
-                            curr_page_chunks[curr_chunk_id] = {
-                                "text": full_rulebook_text[idx : idx + chars_per_chunk]
-                            }
-                            idx += chars_per_chunk // 2
-                            curr_chunk_id += 1
-
-                        rulebook_pages_table.update(
-                            {"chunks": curr_page_chunks},
-                            current_board_game_and_rulebook_rows
-                            & (where("page_num") == curr_page_num)
-                        )
-
-                        # When we finish chunking a page, set idx to the start of the next page,
-                        # since the final chunk of a page almost always overflows, causing idx to be well into the next one
-                        idx = start_of_next_page
-                        curr_page_num += 1
-                        progress_bar.update(1)
-
-                with tqdm(
-                    total=len(reader.pages),
-                    desc="Embedding chunked text",
-                    unit="page"
-                ) as progress_bar:
-                    rulebook_pages = sorted(
-                        rulebook_pages_table.search(current_board_game_and_rulebook_rows),
-                         key=lambda x: x["page_num"]
-                    )
-                    for page in rulebook_pages:
-                        chunks = page["chunks"]
-                        sorted_chunk_ids = sorted(chunks.keys())
-                        
                         # e5-large-v2 is trained to encode queries and passages for semantic search,
                         # which requires prepending "query" or "passage" to the text we want to encode
-                        text_to_encode = [f'passage: {chunks[chunk_id]["text"]}' for chunk_id in sorted_chunk_ids]
-                        chunk_embeddings = model.encode(text_to_encode, normalize_embeddings=True)
-
-                        for idx, chunk_id in enumerate(sorted_chunk_ids):
-                            chunks[chunk_id]["embedding"] = chunk_embeddings[idx].tolist()
-
-                        rulebook_pages_table.update(
-                            {"chunks": chunks},
-                            current_board_game_and_rulebook_rows
-                            & (where("page_num") == page["page_num"])
+                        embedding = model.encode(
+                            f"passage: {text}",
+                            normalize_embeddings=True,
+                            show_progress_bar=False
                         )
+
+                        pages_to_store.append({
+                            "page_num": page_num,
+                            "text": text,
+                            "embedding": embedding.tolist()
+                        })
+
                         progress_bar.update(1)
+
+                mongodb_client.store_rulebook(board_game["name"], rulebook["name"], pages_to_store)
+
             else:
-                print("This rulebook has already been processed")
+                print("This rulebook already exists in the database")
     print()
 
 
 if __name__ == "__main__":
     download_rulebooks()
     download_embedding_model()
-    initialise_embedding_model()
-    initialise_database()
-    process_and_store_rulebook_text()
+
+    mongodb_client = MongoDBClient()
+    embedding_model = initialise_embedding_model()
+
+    process_and_store_rulebook_text(mongodb_client, embedding_model)
