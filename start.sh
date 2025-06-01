@@ -1,18 +1,3 @@
 #!/bin/bash
-
-# Start backend
-cd backend
-source myenv/bin/activate
-python run.py &
-BACKEND_PID=$!
-cd ..
-
-# Start frontend
-cd frontend
-npm start &
-FRONTEND_PID=$!
-cd ..
-
-# Wait for both to finish
-wait $BACKEND_PID
-wait $FRONTEND_PID
+gnome-terminal --title="Backend Server" -- bash -c "cd backend && source myenv/bin/activate && trap 'kill $(jobs -p)' EXIT && python run.py; exec bash"
+gnome-terminal --title="Frontend Server" -- bash -c "cd frontend && trap 'kill $(jobs -p)' EXIT && npm start; exec bash"
