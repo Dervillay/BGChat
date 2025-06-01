@@ -1,5 +1,4 @@
-# AI model configurations and cost limits
-MAX_COST_PER_USER_PER_DAY_USD = 0.01
+# AI model configurations
 OPENAI_MODEL_TO_USE = "gpt-4o-mini"
 OPENAI_MODEL_PRICING_USD = {
     "gpt-4o-mini": {
