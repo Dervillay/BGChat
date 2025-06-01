@@ -6,9 +6,10 @@ import tiktoken
 from sentence_transformers import SentenceTransformer
 from urllib.parse import quote
 
-from app.config.paths import EMBEDDING_MODEL_PATH
-from app.config.models import OPENAI_MODEL_PRICING_USD, OPENAI_MODEL_TO_USE, MAX_COST_PER_USER_PER_DAY_USD
 from app.config.board_games import BOARD_GAMES
+from app.config.constants import MAX_COST_PER_USER_PER_DAY_USD
+from app.config.models import OPENAI_MODEL_PRICING_USD, OPENAI_MODEL_TO_USE
+from app.config.paths import EMBEDDING_MODEL_PATH
 from app.config.prompts import (
     SYSTEM_PROMPT,
     DETERMINE_BOARD_GAME_PROMPT_TEMPLATE,
