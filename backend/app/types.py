@@ -10,3 +10,8 @@ class RulebookPage(TypedDict):
     rulebook_name: str
     page_num: int
     text: str
+
+class TokenUsage(TypedDict):
+    """Type definition for token usage."""
+    input_tokens: int
+    output_tokens: int

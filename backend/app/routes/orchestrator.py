@@ -17,7 +17,7 @@ from flask import (
 
 from app.config.paths import RULEBOOKS_PATH
 from app.utils.auth import (
-    requires_auth,
+    validate_auth_token,
     get_user_id_from_auth_header,
 )
 from app.utils.request_validation import validate_json_body
@@ -29,13 +29,13 @@ orchestrator_bp = Blueprint("orchestrator", __name__)
 
 
 @orchestrator_bp.route("/known-board-games", methods=["GET"])
-@requires_auth
+@validate_auth_token
 def get_known_board_games():
     return jsonify(current_app.orchestrator.known_board_games), 200
 
 
 @orchestrator_bp.route("/message-history", methods=["POST"])
-@requires_auth
+@validate_auth_token
 @validate_json_body(board_game=str)
 def get_message_history():
     data = request.get_json()
@@ -54,7 +54,7 @@ def get_message_history():
 
 
 @orchestrator_bp.route("/pdfs/<path:filepath>")
-@requires_auth
+@validate_auth_token
 def serve_pdf(filepath: str):
     logger.info("Attempting to serve PDF at: %s", filepath)
     directory = os.path.join(RULEBOOKS_PATH, os.path.dirname(filepath))
@@ -69,7 +69,7 @@ def serve_pdf(filepath: str):
 
 
 @orchestrator_bp.route("/determine-board-game", methods=["POST"])
-@requires_auth
+@validate_auth_token
 @validate_json_body(question=str)
 def determine_board_game():
     data = request.get_json()
@@ -78,12 +78,15 @@ def determine_board_game():
     if not question.strip():
         return jsonify({"error": "Question must be a non-empty string"}), 400
 
-    board_game = current_app.orchestrator.determine_board_game(question)
+    user_id = get_user_id_from_auth_header()
+
+    board_game = current_app.orchestrator.determine_board_game(user_id, question)
+
     return jsonify(board_game), 200
 
 
 @orchestrator_bp.route("/ask-question", methods=["POST"])
-@requires_auth
+@validate_auth_token
 @validate_json_body(question=str, board_game=str)
 def ask_question():
     data = request.get_json()
@@ -122,7 +125,7 @@ def ask_question():
 
 
 @orchestrator_bp.route("/delete-messages-from-index", methods=["POST"])
-@requires_auth
+@validate_auth_token
 @validate_json_body(board_game=str, index=int)
 def delete_messages_from_index():
     data = request.get_json()
@@ -147,7 +150,7 @@ def delete_messages_from_index():
 
 
 @orchestrator_bp.route("/clear-message-history", methods=["POST"])
-@requires_auth
+@validate_auth_token
 @validate_json_body(board_game=str)
 def clear_message_history():
     data = request.get_json()
@@ -166,7 +169,7 @@ def clear_message_history():
 
 
 @orchestrator_bp.errorhandler(404)
-def not_found(e):
+def resource_not_found(e):
     return jsonify({"error": "Resource not found: " + str(e)}), 404
 
 
@@ -181,6 +184,6 @@ def internal_server_error(e):
 
 
 @orchestrator_bp.errorhandler(Exception)
-def handle_exception(e):
+def unexpected_error(e):
     logger.error("An unexpected error occurred: %s", str(e))
     return jsonify({"error": "An unexpected error occurred: " + str(e)}), 500

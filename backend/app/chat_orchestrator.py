@@ -2,11 +2,12 @@ import openai
 import json
 import ast
 import regex as re
+import tiktoken
 from sentence_transformers import SentenceTransformer
 from urllib.parse import quote
 
 from app.config.paths import EMBEDDING_MODEL_PATH
-from app.config.models import OPENAI_MODEL_TO_USE
+from app.config.models import OPENAI_MODEL_PRICING_USD, OPENAI_MODEL_TO_USE, MAX_COST_PER_USER_PER_DAY_USD
 from app.config.board_games import BOARD_GAMES
 from app.config.prompts import (
     SYSTEM_PROMPT,
@@ -19,16 +20,19 @@ from app.config.prompts import (
     THE_RULEBOOK_PAGES_ARE_STRING,
 )
 from app.mongodb_client import MongoDBClient
-from app.types import Message
+from app.types import Message, TokenUsage
 
 class ChatOrchestrator:
     def __init__(
         self,
-        embedding_model_path: str = EMBEDDING_MODEL_PATH
     ):
+        # TODO: Get known board games from MongoDB instead
         self.known_board_games: list[str] = [board_game["name"] for board_game in BOARD_GAMES]
-        self._embedding_model = SentenceTransformer(embedding_model_path)
+        self._embedding_model = SentenceTransformer(EMBEDDING_MODEL_PATH)
         self._openai_client = openai.OpenAI()
+        self._encoding = tiktoken.encoding_for_model(OPENAI_MODEL_TO_USE)
+        self._openai_model_to_use = OPENAI_MODEL_TO_USE
+        self._openai_model_pricing_usd = OPENAI_MODEL_PRICING_USD[OPENAI_MODEL_TO_USE]
         self._mongodb_client = MongoDBClient()
 
 
@@ -43,6 +47,12 @@ class ChatOrchestrator:
         )
         return embedding.tolist()
 
+    def _get_token_count(
+        self,
+        text: str,
+    ):
+        encoding = self._encoding.encode(text)
+        return len(encoding)
 
     def _call_openai_model(
         self,
@@ -51,7 +61,7 @@ class ChatOrchestrator:
     ):
         try:
             response = self._openai_client.chat.completions.create(
-                model=OPENAI_MODEL_TO_USE,
+                model=self._openai_model_to_use,
                 messages=messages,
                 stream=stream
             )
@@ -148,6 +158,23 @@ class ChatOrchestrator:
             return {"content": content, "role": "assistant"}
 
         raise ValueError(f"Invalid role value '{message['role']}', expected 'user' or 'assistant'")
+  
+
+    def _get_token_usage_cost_usd(
+        self,
+        token_usage: TokenUsage,
+    ):
+        input_token_cost = (
+            self._openai_model_pricing_usd["one_million_input_tokens"]
+            * token_usage["input_tokens"]
+            / 1_000_000
+        )
+        output_token_cost = (
+            self._openai_model_pricing_usd["one_million_output_tokens"]
+            * token_usage["output_tokens"]
+            / 1_000_000
+        )
+        return input_token_cost + output_token_cost
 
 
     def get_message_history(
@@ -185,6 +212,7 @@ class ChatOrchestrator:
 
     def determine_board_game(
         self,
+        user_id: str,
         question: str
     ):
         message = {
@@ -192,6 +220,15 @@ class ChatOrchestrator:
             "role": "user",
         }
         response = self._call_openai_model([message], stream=False)
+
+        token_usage = {
+            "input_tokens": self._get_token_count(message["content"]),
+            "output_tokens": self._get_token_count(response),
+        }
+        self._mongodb_client.increment_todays_token_usage(
+            user_id,
+            token_usage
+        )
 
         if response in self.known_board_games or response == UNKNOWN_VALUE:
             return response
@@ -223,8 +260,9 @@ class ChatOrchestrator:
             .replace("<QUESTION>", question)
         )
 
-        # Prepend the system prompt if this is the first message
         message_history = self._mongodb_client.get_message_history(user_id, board_game)
+
+        # Prepend the system prompt if this is the first message
         if len(message_history) == 0:
             prompt = SYSTEM_PROMPT + prompt
 
@@ -266,14 +304,28 @@ class ChatOrchestrator:
                     full_response += content
                     yield content
 
-
         assistant_message = {
             "content": full_response,
             "role": "assistant"
         }
 
-        self._mongodb_client.append_messages(
+        token_usage = {
+            "input_tokens": self._get_token_count(user_message["content"]),
+            "output_tokens": self._get_token_count(assistant_message["content"]),
+        }
+
+        self._mongodb_client.append_messages_and_increment_todays_token_usage(
             user_id,
             board_game,
-            [user_message, assistant_message]
+            [user_message, assistant_message],
+            token_usage
         )
+
+
+    def user_has_exceeded_daily_token_limit(
+        self,
+        user_id: str,
+    ):
+        token_usage = self._mongodb_client.get_todays_token_usage(user_id)
+        cost_usd = self._get_token_usage_cost_usd(token_usage)
+        return cost_usd > MAX_COST_PER_USER_PER_DAY_USD

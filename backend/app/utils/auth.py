@@ -41,7 +41,7 @@ def get_token_from_auth_header():
 def validate_jwt(token):
     """
     Validates the JWT token against the Auth0 JWKS.
-    Raises an AuthError if the token is invalid.
+    Returns an appropriate error response if the token is invalid.
     """
     # TODO: Implement caching of JWKS with expiry of one hour
     jwks_url = f"https://{AUTH0_DOMAIN}/.well-known/jwks.json"
@@ -84,7 +84,7 @@ def get_user_id_from_auth_header() -> str:
     Extract the user's ID from the token in the request's Authorization header.
 
     Note: This function does not validate the token, so should only be used
-    in routes protected by the `@requires_auth` decorator.
+    in routes already protected by the `@validate_auth_token` decorator.
     """
     try:
         token = get_token_from_auth_header()
@@ -101,7 +101,7 @@ def get_user_id_from_auth_header() -> str:
     except Exception as e:
         return jsonify({"error": f"Error extracting user ID: {str(e)}"}), 401
 
-def requires_auth(f):
+def validate_auth_token(f):
     """
     Decorator to check if the request has a valid auth token.
     Returns an appropriate error response if the token is invalid or missing.

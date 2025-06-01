@@ -9,7 +9,7 @@ from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 from pymongo.results import UpdateResult
 from urllib.parse import quote_plus
 
-from app.types import Message, RulebookPage
+from app.types import Message, RulebookPage, TokenUsage
 
 load_dotenv()
 
@@ -37,15 +37,11 @@ class MongoDBClient:
 
     def _get_mongodb_uri(self) -> str:
         """Get the MongoDB connection URI with proper encoding."""
-        username = quote_plus(os.getenv('MONGODB_USERNAME'))
-        password = quote_plus(os.getenv('MONGODB_PASSWORD'))
-        host = os.getenv('MONGODB_HOST')
+        username = quote_plus(os.getenv("MONGODB_USERNAME"))
+        password = quote_plus(os.getenv("MONGODB_PASSWORD"))
+        host = os.getenv("MONGODB_HOST")
 
-        return (
-            f"mongodb+srv://{username}:{password}@{host}/"
-            f"?retryWrites=true&w=majority"
-        )
-
+        return f"mongodb+srv://{username}:{password}@{host}/?retryWrites=true&w=majority"
 
     def _connect(self) -> None:
         """Establish connection to MongoDB with retry logic."""
@@ -96,22 +92,30 @@ class MongoDBClient:
             logger.error(error_message)
             raise ValueError(error_message)
 
-    def append_messages(
-            self,
-            user_id: str,
-            board_game: str,
-            messages: list[Message]
+    def append_messages_and_increment_todays_token_usage(
+        self,
+        user_id: str,
+        board_game: str,
+        messages: list[Message],
+        token_usage: TokenUsage,
     ) -> None:
-        """Append messages to the message history for a given user and board game."""
+        """
+        Append messages to the message history for a given user and board game.
+        Also updates that user's token usage for today.
+
+        If the user does not exist, creates and populates a new document for them.
+        If the user exists, updates the last_active field.
+        """
         self._ensure_connection()
         try:
             request_datetime_utc = self._get_current_datetime_utc()
+            todays_date = request_datetime_utc.strftime("%Y-%m-%d")
+
             self.db.user_data.update_one(
                 {"user_id": user_id},
                 {
                     "$setOnInsert": {
                         "user_id": user_id,
-                        "token_usage": {},
                         "created_at": request_datetime_utc,
                     },
                     "$set": {
@@ -121,6 +125,10 @@ class MongoDBClient:
                         f"messages.{board_game}": {
                             "$each": messages
                         }
+                    },
+                    "$inc": {
+                        f"token_usage.{todays_date}.input_tokens": token_usage["input_tokens"],
+                        f"token_usage.{todays_date}.output_tokens": token_usage["output_tokens"],
                     }
                 },
                 upsert=True
@@ -130,7 +138,6 @@ class MongoDBClient:
             logger.error("Error storing messages: %s", str(e))
             raise
 
-    # TODO: Handle updating token usage
     # TODO: Add pagination
     def get_message_history(
             self,
@@ -211,7 +218,7 @@ class MongoDBClient:
     def store_rulebook_pages(self, pages: list[RulebookPage]
     ) -> None:
         """
-        Store rulebook pages for a given board game.
+        Store rulebook pages for a given board game and rulebook.
         Each page is stored as a separate document in the rulebook_pages collection.
         """
         self._ensure_connection()
@@ -301,6 +308,61 @@ class MongoDBClient:
         except Exception as e:
             logger.error("Error performing vector search: %s", str(e))
             raise
+
+    def increment_todays_token_usage(
+        self,
+        user_id: str,
+        token_usage: TokenUsage,
+    ) -> None:
+        """
+        Increment today's token usage for a given user.
+
+        If the user does not exist, creates and populates a new document for them.
+        If the user exists, updates the last_active field and increments the token usage for today.
+        """
+        self._ensure_connection()
+        try:
+            request_datetime_utc = self._get_current_datetime_utc()
+            todays_date = request_datetime_utc.strftime("%Y-%m-%d")
+
+            self.db.user_data.update_one(
+                {"user_id": user_id},
+                {
+                    "$setOnInsert": {
+                        "user_id": user_id,
+                        "created_at": request_datetime_utc,
+                    },
+                    "$set": {
+                        "last_active": request_datetime_utc
+                    },
+                    "$inc": {
+                        f"token_usage.{todays_date}.input_tokens": token_usage["input_tokens"],
+                        f"token_usage.{todays_date}.output_tokens": token_usage["output_tokens"],
+                    }
+                },
+                upsert=True
+            )
+
+        except Exception as e:
+            logger.error("Error incrementing token usage: %s", str(e))
+            raise
+
+    def get_todays_token_usage(self, user_id: str) -> TokenUsage:
+        """
+        Get today's token usage for a given user.
+        """
+        self._ensure_connection()
+        try:
+            todays_date = self._get_current_datetime_utc().strftime("%Y-%m-%d")
+            result = self.db.user_data.find_one(
+                {"user_id": user_id},
+                {f"token_usage.{todays_date}": 1, "_id": 0}
+            )
+            return result.get("token_usage", {}).get(todays_date, {}) if result else {}
+        except Exception as e:
+            logger.error("Error retrieving token usage for user '%s': %s", user_id, str(e))
+            raise
+
 
     def __del__(self):
         """Cleanup MongoDB connection on object deletion."""
