@@ -23,11 +23,7 @@ from app.mongodb_client import MongoDBClient
 from app.types import Message, TokenUsage
 
 class ChatOrchestrator:
-    def __init__(
-        self,
-    ):
-        # TODO: Get known board games from MongoDB instead
-        self.known_board_games: list[str] = [board_game["name"] for board_game in BOARD_GAMES]
+    def __init__(self):
         self._embedding_model = SentenceTransformer(EMBEDDING_MODEL_PATH)
         self._openai_client = openai.OpenAI()
         self._encoding = tiktoken.encoding_for_model(OPENAI_MODEL_TO_USE)
@@ -35,6 +31,8 @@ class ChatOrchestrator:
         self._openai_model_pricing_usd = OPENAI_MODEL_PRICING_USD[OPENAI_MODEL_TO_USE]
         self._mongodb_client = MongoDBClient()
 
+        # TODO: Get known board games from MongoDB instead
+        self.known_board_games: list[str] = [board_game["name"] for board_game in BOARD_GAMES]
 
     def _embed_question(
         self,
@@ -68,7 +66,7 @@ class ChatOrchestrator:
             if stream:
                 return response
             return response.choices[0].message.content
-        
+
         except openai.error.AuthenticationError as e:
             raise ValueError(f"Authentication failed: {e}") from e
 
@@ -84,7 +82,6 @@ class ChatOrchestrator:
         except Exception as e:
             raise ValueError(f"An unexpected error occurred: {e}") from e
 
-
     def _get_similar_rulebook_pages(
         self,
         board_game: str,
@@ -99,7 +96,6 @@ class ChatOrchestrator:
 
         return results
 
-
     def _construct_rulebook_link(
         self,
         board_game: str,
@@ -112,7 +108,6 @@ class ChatOrchestrator:
             raise ValueError(f"Malformed citation detected:\n{json.dumps(citation)}")
 
         return f"{quote(f'{board_game}/{rulebook_name}.pdf')}#page={page_num}"
-
 
     def _parse_citations(
         self,
@@ -133,7 +128,6 @@ class ChatOrchestrator:
             add_link_to_citation,
             text,
         )
-
 
     def _convert_to_user_facing_message(
         self,
@@ -158,7 +152,6 @@ class ChatOrchestrator:
             return {"content": content, "role": "assistant"}
 
         raise ValueError(f"Invalid role value '{message['role']}', expected 'user' or 'assistant'")
-  
 
     def _get_token_usage_cost_usd(
         self,
@@ -176,7 +169,6 @@ class ChatOrchestrator:
         )
         return input_token_cost + output_token_cost
 
-
     def get_message_history(
         self,
         user_id: str,
@@ -189,7 +181,6 @@ class ChatOrchestrator:
             for message in message_history
         ]
 
-
     def delete_messages_from_index(
         self,
         user_id: str,
@@ -201,14 +192,12 @@ class ChatOrchestrator:
 
         self._mongodb_client.delete_messages_from_index(user_id, board_game, index)
 
-
     def clear_message_history(
         self,
         user_id: str,
         board_game: str,
     ):
         self._mongodb_client.clear_message_history(user_id, board_game)
-
 
     def determine_board_game(
         self,
@@ -236,7 +225,6 @@ class ChatOrchestrator:
         raise ValueError(
             f"Received an unexpected response when attempting to determine board game: {response}"
         )
-
 
     def ask_question(
         self,
@@ -320,7 +308,6 @@ class ChatOrchestrator:
             [user_message, assistant_message],
             token_usage
         )
-
 
     def user_has_exceeded_daily_token_limit(
         self,
