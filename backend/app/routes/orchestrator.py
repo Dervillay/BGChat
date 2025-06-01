@@ -16,11 +16,8 @@ from flask import (
 )
 
 from app.config.paths import RULEBOOKS_PATH
-from app.utils.auth import (
-    validate_auth_token,
-    get_user_id_from_auth_header,
-)
-from app.utils.request_validation import validate_json_body
+from app.utils.auth import get_user_id_from_auth_header
+from app.utils.decorators import check_daily_token_limit, validate_auth_token, validate_json_body
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -35,8 +32,8 @@ def get_known_board_games():
 
 
 @orchestrator_bp.route("/message-history", methods=["POST"])
-@validate_auth_token
 @validate_json_body(board_game=str)
+@validate_auth_token
 def get_message_history():
     data = request.get_json()
 
@@ -50,6 +47,7 @@ def get_message_history():
         user_id,
         board_game
     )
+
     return jsonify(message_history), 200
 
 
@@ -69,8 +67,9 @@ def serve_pdf(filepath: str):
 
 
 @orchestrator_bp.route("/determine-board-game", methods=["POST"])
-@validate_auth_token
 @validate_json_body(question=str)
+@check_daily_token_limit
+@validate_auth_token
 def determine_board_game():
     data = request.get_json()
 
@@ -86,8 +85,9 @@ def determine_board_game():
 
 
 @orchestrator_bp.route("/ask-question", methods=["POST"])
-@validate_auth_token
 @validate_json_body(question=str, board_game=str)
+@check_daily_token_limit
+@validate_auth_token
 def ask_question():
     data = request.get_json()
 
@@ -125,8 +125,8 @@ def ask_question():
 
 
 @orchestrator_bp.route("/delete-messages-from-index", methods=["POST"])
-@validate_auth_token
 @validate_json_body(board_game=str, index=int)
+@validate_auth_token
 def delete_messages_from_index():
     data = request.get_json()
 
@@ -150,8 +150,8 @@ def delete_messages_from_index():
 
 
 @orchestrator_bp.route("/clear-message-history", methods=["POST"])
-@validate_auth_token
 @validate_json_body(board_game=str)
+@validate_auth_token
 def clear_message_history():
     data = request.get_json()
 

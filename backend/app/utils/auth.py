@@ -1,21 +1,39 @@
 import json
-from os import environ as env
-from functools import wraps
+import os
 
 import jwt
 import requests
-from dotenv import find_dotenv, load_dotenv
 from flask import request, jsonify
 
 from app.config.constants import DEFAULT_TIMEOUT_SECONDS
 
-ENV_FILE = find_dotenv()
-if ENV_FILE:
-    load_dotenv(ENV_FILE)
+AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN")
+AUTH0_AUDIENCE = os.getenv("AUTH0_AUDIENCE")
+ALGORITHM = os.getenv("ALGORITHM")
 
-AUTH0_DOMAIN = env.get("AUTH0_DOMAIN")
-AUTH0_AUDIENCE = env.get("AUTH0_AUDIENCE")
-ALGORITHM = env.get("ALGORITHM")
+
+def get_user_id_from_auth_header() -> str:
+    """
+    Extract the user's ID from the token in the request's Authorization header.
+
+    Note: This function does not validate the token, so should only be used
+    in routes already protected by the `@validate_auth_token` decorator.
+    """
+    try:
+        token = get_token_from_auth_header()
+        unverified_claims = jwt.decode(
+            token,
+            options={"verify_signature": False}
+        )
+
+        if "sub" not in unverified_claims:
+            return jsonify({"error": "Token does not contain a user ID"}), 401
+
+        return unverified_claims["sub"]
+
+    except Exception as e:
+        return jsonify({"error": f"Error extracting user ID: {str(e)}"}), 401
+
 
 def get_token_from_auth_header():
     """
@@ -78,38 +96,3 @@ def validate_jwt(token):
         )
     except Exception as e:
         return jsonify({"error": f"Invalid token: {str(e)}"}), 401
-
-def get_user_id_from_auth_header() -> str:
-    """
-    Extract the user's ID from the token in the request's Authorization header.
-
-    Note: This function does not validate the token, so should only be used
-    in routes already protected by the `@validate_auth_token` decorator.
-    """
-    try:
-        token = get_token_from_auth_header()
-        unverified_claims = jwt.decode(
-            token,
-            options={"verify_signature": False}
-        )
-
-        if "sub" not in unverified_claims:
-            return jsonify({"error": "Token does not contain a user ID"}), 401
-
-        return unverified_claims["sub"]
-
-    except Exception as e:
-        return jsonify({"error": f"Error extracting user ID: {str(e)}"}), 401
-
-def validate_auth_token(f):
-    """
-    Decorator to check if the request has a valid auth token.
-    Returns an appropriate error response if the token is invalid or missing.
-    """
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        token = get_token_from_auth_header()
-        validate_jwt(token)
-        return f(*args, **kwargs)
-
-    return decorated
