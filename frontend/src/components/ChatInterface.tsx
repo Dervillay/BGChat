@@ -3,22 +3,20 @@ import { Box, Container, VStack, Text, Flex, IconButton, Tooltip } from "@chakra
 import { AssistantMessage } from "./AssistantMessage.tsx";
 import { ChatInput } from "./ChatInput.tsx";
 import { ThinkingPlaceholder } from "./ThinkingPlaceholder.tsx";
+import { ErrorMessage } from "./ErrorMessage.tsx";
 import { theme } from "../theme/index.ts";
 import { FiRefreshCw } from 'react-icons/fi';
 import { useFetchWithAuth } from "../utils/fetchWithAuth.ts";
 import { withError } from "../utils/withError.ts";
 import { UserMessage } from "./UserMessage.tsx";
 import { UserProfileMenu } from "./UserProfileMenu.tsx";
+import { MessageQueue } from "../utils/messageQueue.ts";
+import { Message } from "../types/message";
 
 declare global {
 	interface Window {
 		activeEventSource: EventSource | null;
 	}
-}
-
-interface Message {
-	content: string;
-	role: "user" | "assistant";
 }
 
 const ChatInterface = () => {
@@ -28,9 +26,12 @@ const ChatInterface = () => {
 	const [inputValue, setInputValue] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [isThinking, setIsThinking] = useState(false);
+
 	const fetchWithAuth = useFetchWithAuth();
-	
 	const messagesEndRef = useRef<HTMLDivElement>(null);
+	const messageQueue = new MessageQueue((message) => {
+		setMessages(prev => [...prev, message]);
+	});
 
 	useEffect(() => {
 		handleGetKnownBoardGames();
@@ -49,7 +50,7 @@ const ChatInterface = () => {
 			const knownBoardGames = await response.json();
 			setKnownBoardGames(knownBoardGames);
 		} catch (error) {
-			setMessages((prev) => [...prev, { content: "Failed to load known board games: " + error.message, role: "assistant" }]);
+			messageQueue.push({ content: "Failed to load known board games: " + error.message, role: "error" });
 		}	
 	};
 
@@ -64,13 +65,7 @@ const ChatInterface = () => {
 			setMessages(data);
 			setSelectedBoardGame(boardGame);
 		} catch (error) {
-			setMessages((prev) => [
-				...prev,
-				{
-					content: "Failed to switch board game. Please try again: " + error.message,
-					role: "assistant",
-				},
-			]);
+			messageQueue.push({ content: "Failed to switch board game. Please try again: " + error.message, role: "error" });
 		}
 		setIsLoading(false);
 	};
@@ -89,18 +84,17 @@ const ChatInterface = () => {
 			));
 			setMessages((prev) => prev.slice(0, index));
 		} catch (error) {
-			// TODO: add better error handling
-			console.error("Failed to delete messages:", error);
+			messageQueue.push({ content: "Failed to edit message: " + error.message, role: "error" });
 		}
 
 		await handleSendMessage(newContent);
 	};
 
 	const handleDetermineBoardGame = async (message: string) => {
-		const response = await fetchWithAuth("/determine-board-game", {
+		const response = await withError(() => fetchWithAuth("/determine-board-game", {
 			method: "POST",
 			body: JSON.stringify({ question: message }),
-		});
+		}));
 		const boardGame = await response.json();
 
 		if (knownBoardGames.includes(boardGame)) {
@@ -133,7 +127,7 @@ const ChatInterface = () => {
 		setMessages((prev) => [
 			...prev,
 			{ content: message, role: "user" },
-			{ content: "", role: "assistant" },
+			{ content: "", role: "assistant" }
 		]);
 
 		try {
@@ -165,6 +159,7 @@ const ChatInterface = () => {
 
 			const decoder = new TextDecoder();
 			let hasStartedStreaming = false;
+			let currentContent = "";
 
 			while (true) {
 				const { done, value } = await reader.read();
@@ -184,10 +179,11 @@ const ChatInterface = () => {
 								hasStartedStreaming = true;
 								setIsThinking(false);
 							}
+							currentContent += data.chunk;
 							setMessages((prev) => [
 								...prev.slice(0, -1),
 								{ 
-									content: prev.at(-1)?.content + data.chunk,
+									content: currentContent,
 									role: "assistant"
 								}
 							]);
@@ -199,18 +195,7 @@ const ChatInterface = () => {
 				}
 			}
 		} catch (error) {
-			// TODO: add better error handling
-			setMessages((prev) => {
-				const newMessages = [...prev];
-				if (newMessages[newMessages.length - 1].role === "assistant" && 
-					newMessages[newMessages.length - 1].content === "") {
-					newMessages[newMessages.length - 1].content = "Sorry, I'm having trouble connecting to the server.";
-				} 
-				else {
-					newMessages.push({ content: "Sorry, I'm having trouble connecting to the server.", role: "assistant" });
-				}
-				return newMessages;
-			});
+			messageQueue.push({ content: error.message, role: "error" });
 		} finally {
 			setIsThinking(false);
 			setIsLoading(false);
@@ -230,8 +215,7 @@ const ChatInterface = () => {
 			}
 			setMessages([]);
 		} catch (error) {
-			// TODO: add better error handling
-			console.error("Failed to clear chat:", error);
+			messageQueue.push({ content: "Failed to clear chat: " + error.message, role: "error" });
 		}
 	};
 
@@ -267,35 +251,38 @@ const ChatInterface = () => {
 										onEdit={(newContent) => handleEditMessage(index, newContent)}
 									/>
 								</Flex>
+							) : message.role === "error" ? (
+								<Box key={index} w="100%" position="relative">
+									<ErrorMessage content={message.content} />
+								</Box>
 							) : (
 								<Box key={index} w="100%" position="relative">
 									<AssistantMessage 
 										content={message.content}
 									/>
-									{index === messages.length - 1 && !isLoading && messages.length > 0 && (
-										<Flex justify="flex-end" w="100%" mt={1}>
-											<Tooltip 
-												label="Reset chat"
-												placement="bottom"
-												offset={[0, 0]}
-											>
-												<IconButton
-													icon={<FiRefreshCw />}
-													onClick={handleClearChat}
-													size="sm"
-													variant="ghost"
-													color="gray.500"
-													_hover={{ color: "gray.700" }}
-													aria-label="Reset chat"
-												/>
-											</Tooltip>
-										</Flex>
-									)}
 								</Box>
-								
 							)
 						))}
 						{isThinking && <ThinkingPlaceholder />}
+						{messages.length >= 2 && !isLoading && (
+							<Flex justify="flex-end" w="100%" mt={1}>
+								<Tooltip 
+									label="Reset chat"
+									placement="bottom"
+									offset={[0, 0]}
+								>
+									<IconButton
+										icon={<FiRefreshCw />}
+										onClick={handleClearChat}
+										size="sm"
+										variant="ghost"
+										color="gray.500"
+										_hover={{ color: "gray.700" }}
+										aria-label="Reset chat"
+									/>
+								</Tooltip>
+							</Flex>
+						)}
 						<div ref={messagesEndRef} />
 					</VStack>
 				</Container>
