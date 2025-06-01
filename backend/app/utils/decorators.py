@@ -80,7 +80,7 @@ def check_daily_token_limit(f):
     def decorated(*args, **kwargs):
         user_id = get_user_id_from_auth_header()
         if current_app.orchestrator.user_has_exceeded_daily_token_limit(user_id):
-            return jsonify({"error": "You have exceeded your daily token limit"}), 403
+            return jsonify({"error": "You have run out of free messages for today. Please come back again tomorrow."}), 403
 
         return f(*args, **kwargs)
 
