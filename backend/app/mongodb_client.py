@@ -347,9 +347,9 @@ class MongoDBClient:
             logger.error("Error incrementing token usage: %s", str(e))
             raise
 
-    def get_todays_token_usage(self, user_id: str) -> TokenUsage:
+    def get_todays_token_usage(self, user_id: str) -> TokenUsage | None:
         """
-        Get today's token usage for a given user.
+        Get today's token usage for a given user. Returns None if the user doesn't have an entry in the database for today.
         """
         self._ensure_connection()
         try:
@@ -358,7 +358,7 @@ class MongoDBClient:
                 {"user_id": user_id},
                 {f"token_usage.{todays_date}": 1, "_id": 0}
             )
-            return result.get("token_usage", {}).get(todays_date, {}) if result else {}
+            return result.get("token_usage", None).get(todays_date, None)
         except Exception as e:
             logger.error("Error retrieving token usage for user '%s': %s", user_id, str(e))
             raise

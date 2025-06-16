@@ -41,6 +41,7 @@ class ChatOrchestrator:
             normalize_embeddings=True,
             show_progress_bar=False
         )
+
         return embedding.tolist()
 
     def _get_token_count(
@@ -48,6 +49,7 @@ class ChatOrchestrator:
         text: str,
     ):
         encoding = self._encoding.encode(text)
+
         return len(encoding)
 
     def _call_openai_model(
@@ -165,11 +167,13 @@ class ChatOrchestrator:
             * token_usage["output_tokens"]
             / 1_000_000
         )
+
         return input_token_cost + output_token_cost
 
     def get_known_board_games(self) -> list[str]:
         if self._known_board_games is None:
             self._known_board_games = self._mongodb_client.get_all_board_games()
+
         return self._known_board_games
 
     def get_message_history(
@@ -207,14 +211,15 @@ class ChatOrchestrator:
         user_id: str,
         question: str
     ):
+        prompt = DETERMINE_BOARD_GAME_PROMPT_TEMPLATE.replace("<QUESTION>", question)
         message = {
-            "content": DETERMINE_BOARD_GAME_PROMPT_TEMPLATE.replace("<QUESTION>", question),
+            "content": prompt,
             "role": "user",
         }
         response = self._call_openai_model([message], stream=False)
 
         token_usage = {
-            "input_tokens": self._get_token_count(message["content"]),
+            "input_tokens": self._get_token_count(prompt),
             "output_tokens": self._get_token_count(response),
         }
         self._mongodb_client.increment_todays_token_usage(
@@ -317,5 +322,9 @@ class ChatOrchestrator:
         user_id: str,
     ):
         token_usage = self._mongodb_client.get_todays_token_usage(user_id)
+        if token_usage is None:
+            return False
+
         cost_usd = self._get_token_usage_cost_usd(token_usage)
+
         return cost_usd > MAX_COST_PER_USER_PER_DAY_USD
