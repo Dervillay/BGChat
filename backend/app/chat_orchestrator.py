@@ -6,7 +6,6 @@ import tiktoken
 from sentence_transformers import SentenceTransformer
 from urllib.parse import quote
 
-from app.config.board_games import BOARD_GAMES
 from app.config.constants import MAX_COST_PER_USER_PER_DAY_USD
 from app.config.models import OPENAI_MODEL_PRICING_USD, OPENAI_MODEL_TO_USE
 from app.config.paths import EMBEDDING_MODEL_PATH
@@ -31,9 +30,7 @@ class ChatOrchestrator:
         self._openai_model_to_use = OPENAI_MODEL_TO_USE
         self._openai_model_pricing_usd = OPENAI_MODEL_PRICING_USD[OPENAI_MODEL_TO_USE]
         self._mongodb_client = MongoDBClient()
-
-        # TODO: Get known board games from MongoDB instead
-        self.known_board_games: list[str] = [board_game["name"] for board_game in BOARD_GAMES]
+        self._known_board_games = None
 
     def _embed_question(
         self,
@@ -170,6 +167,11 @@ class ChatOrchestrator:
         )
         return input_token_cost + output_token_cost
 
+    def get_known_board_games(self) -> list[str]:
+        if self._known_board_games is None:
+            self._known_board_games = self._mongodb_client.get_all_board_games()
+        return self._known_board_games
+
     def get_message_history(
         self,
         user_id: str,
@@ -220,7 +222,7 @@ class ChatOrchestrator:
             token_usage
         )
 
-        if response in self.known_board_games or response == UNKNOWN_VALUE:
+        if response in self.get_known_board_games() or response == UNKNOWN_VALUE:
             return response
 
         raise ValueError(

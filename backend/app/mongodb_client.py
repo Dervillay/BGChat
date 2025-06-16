@@ -363,6 +363,18 @@ class MongoDBClient:
             logger.error("Error retrieving token usage for user '%s': %s", user_id, str(e))
             raise
 
+    def get_all_board_games(self) -> list[str]:
+        """
+        Get a list of all unique board games that have rulebook pages stored in the database.
+        Returns an empty list if no board games are found.
+        """
+        self._ensure_connection()
+        try:
+            board_games = self.db.rulebook_pages.distinct("board_game")
+            return sorted(board_games)
+        except Exception as e:
+            logger.error("Error retrieving board games list: %s", str(e))
+            raise
 
     def __del__(self):
         """Cleanup MongoDB connection on object deletion."""

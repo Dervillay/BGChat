@@ -28,7 +28,7 @@ orchestrator_bp = Blueprint("orchestrator", __name__)
 @orchestrator_bp.route("/known-board-games", methods=["GET"])
 @validate_auth_token
 def get_known_board_games():
-    return jsonify(current_app.orchestrator.known_board_games), 200
+    return jsonify(current_app.orchestrator.get_known_board_games()), 200
 
 
 @orchestrator_bp.route("/message-history", methods=["POST"])
@@ -38,7 +38,7 @@ def get_message_history():
     data = request.get_json()
 
     board_game = data["board_game"]
-    if board_game not in current_app.orchestrator.known_board_games:
+    if board_game not in current_app.orchestrator.get_known_board_games():
         return jsonify({"error": "Unrecognised board game"}), 400
 
     user_id = get_user_id_from_auth_header()
@@ -96,7 +96,7 @@ def ask_question():
         return jsonify({"error": "Question must be a non-empty string"}), 400
 
     board_game = data["board_game"]
-    if board_game not in current_app.orchestrator.known_board_games:
+    if board_game not in current_app.orchestrator.get_known_board_games():
         return jsonify({"error": "Unrecognised board game"}), 400
 
     user_id = get_user_id_from_auth_header()
@@ -135,7 +135,7 @@ def delete_messages_from_index():
         return jsonify({"error": "Index must be non-negative"}), 400
 
     board_game = data["board_game"]
-    if board_game not in current_app.orchestrator.known_board_games:
+    if board_game not in current_app.orchestrator.get_known_board_games():
         return jsonify({"error": "Unrecognised board game"}), 400
 
     user_id = get_user_id_from_auth_header()
@@ -156,7 +156,7 @@ def clear_message_history():
     data = request.get_json()
 
     board_game = data["board_game"]
-    if board_game not in current_app.orchestrator.known_board_games:
+    if board_game not in current_app.orchestrator.get_known_board_games():
         return jsonify({"error": "Unrecognised board game"}), 400
 
     user_id = get_user_id_from_auth_header()
