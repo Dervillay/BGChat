@@ -2,10 +2,9 @@ import os
 import requests
 from tqdm import tqdm
 from pypdf import PdfReader
-from sentence_transformers import SentenceTransformer
+import openai
 
-from app.config.paths import RULEBOOKS_PATH, EMBEDDING_MODEL_PATH
-from app.config.models import EMBEDDING_MODEL_TO_USE
+from app.config.paths import RULEBOOKS_PATH
 from app.config.board_games import BOARD_GAMES
 from app.config.constants import DEFAULT_TIMEOUT_SECONDS
 from app.mongodb_client import MongoDBClient
@@ -58,28 +57,9 @@ def download_rulebooks():
     print()
 
 
-def download_embedding_model():
-    os.makedirs(EMBEDDING_MODEL_PATH, exist_ok=True)
-
-    print_bold("Downloading embedding model...")
-    if os.listdir(EMBEDDING_MODEL_PATH):
-        print("Detected an existing embedding model, will use that")
-    else:
-        temp_model = SentenceTransformer(EMBEDDING_MODEL_TO_USE, verbose=False)
-        temp_model.save(EMBEDDING_MODEL_PATH)
-    print()
-
-
-def initialise_embedding_model():
-    print_bold("Initialising embedding model...")
-    model = SentenceTransformer(EMBEDDING_MODEL_PATH)
-    print("Done\n")
-    return model
-
-
 def process_and_store_rulebook_text(
     mongodb_client: MongoDBClient,
-    model: SentenceTransformer
+    openai_client: openai.OpenAI
 ):
     print_bold("Processing and storing text from rulebooks...")
     for board_game in BOARD_GAMES:
@@ -107,26 +87,27 @@ def process_and_store_rulebook_text(
                 ) as progress_bar:
                     pages_to_store = []
                     for page_num, page in enumerate(reader.pages, start=1):
-
                         text = page.extract_text()
 
-                        # e5-large-v2 is trained to encode queries and passages for semantic search
-                        # which requires prepending "query" or "passage" before encoding
-                        embedding = model.encode(
-                            f"passage: {text}",
-                            normalize_embeddings=True,
-                            show_progress_bar=False
-                        )
+                        try:
+                            response = openai_client.embeddings.create(
+                                model="text-embedding-ada-002",
+                                input=text
+                            )
+                            embedding = response.data[0].embedding
 
-                        pages_to_store.append({
-                            "board_game": board_game["name"],
-                            "rulebook_name": rulebook["name"],
-                            "page_num": page_num,
-                            "text": text,
-                            "embedding": embedding.tolist()
-                        })
+                            pages_to_store.append({
+                                "board_game": board_game["name"],
+                                "rulebook_name": rulebook["name"],
+                                "page_num": page_num,
+                                "text": text,
+                                "embedding": embedding
+                            })
 
-                        progress_bar.update(1)
+                            progress_bar.update(1)
+                        except Exception as e:
+                            print(f"Error creating embedding for page {page_num}: {e}")
+                            continue
 
                 mongodb_client.store_rulebook_pages(pages_to_store)
 
@@ -138,8 +119,6 @@ def process_and_store_rulebook_text(
 if __name__ == "__main__":
     # TODO: Get rid of logging when running this script
     download_rulebooks()
-    download_embedding_model()
-
     mongodb_client = MongoDBClient()
-    embedding_model = initialise_embedding_model()
-    process_and_store_rulebook_text(mongodb_client, embedding_model)
+    openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    process_and_store_rulebook_text(mongodb_client, openai_client)

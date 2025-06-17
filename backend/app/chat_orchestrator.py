@@ -5,12 +5,14 @@ import re
 
 import openai
 import tiktoken
-from sentence_transformers import SentenceTransformer
 from urllib.parse import quote
 
 from app.config.constants import MAX_COST_PER_USER_PER_DAY_USD
-from app.config.models import OPENAI_MODEL_PRICING_USD, OPENAI_MODEL_TO_USE
-from app.config.paths import EMBEDDING_MODEL_PATH
+from app.config.models import (
+    OPENAI_MODEL_PRICING_USD,
+    OPENAI_CHAT_MODEL,
+    OPENAI_EMBEDDING_MODEL,
+)
 from app.config.prompts import (
     SYSTEM_PROMPT,
     DETERMINE_BOARD_GAME_PROMPT_TEMPLATE,
@@ -26,25 +28,40 @@ from app.types import Message, TokenUsage
 
 class ChatOrchestrator:
     def __init__(self):
-        self._embedding_model = SentenceTransformer(EMBEDDING_MODEL_PATH)
         self._openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        self._encoding = tiktoken.encoding_for_model(OPENAI_MODEL_TO_USE)
-        self._openai_model_to_use = OPENAI_MODEL_TO_USE
-        self._openai_model_pricing_usd = OPENAI_MODEL_PRICING_USD[OPENAI_MODEL_TO_USE]
+        self._encoding = tiktoken.encoding_for_model(OPENAI_CHAT_MODEL)
+        self._chat_model_name = OPENAI_CHAT_MODEL
+        self._embedding_model_name = OPENAI_EMBEDDING_MODEL
+        # TODO: This is a hack to get the pricing for the chat model. Should store the tokens for each model in the database.
+        self._model_pricing_usd = OPENAI_MODEL_PRICING_USD[OPENAI_CHAT_MODEL]
         self._mongodb_client = MongoDBClient()
         self._known_board_games = None
 
-    def _embed_question(
+    def _get_embedding_and_token_count(
         self,
         question: str,
     ):
-        embedding = self._embedding_model.encode(
-            f"query: {question}",
-            normalize_embeddings=True,
-            show_progress_bar=False
-        )
+        try:
+            response = self._openai_client.embeddings.create(
+                model=self._embedding_model_name,
+                input=question
+            )
+            return response.data[0].embedding, response.usage.prompt_tokens
+        
+        except openai.error.AuthenticationError as e:
+            raise ValueError(f"Authentication failed: {e}") from e
 
-        return embedding.tolist()
+        except openai.error.InvalidRequestError as e:
+            raise ValueError(f"Invalid request: {e}") from e
+
+        except openai.error.RateLimitError as e:
+            raise ValueError(f"Rate limit exceeded: {e}") from e
+
+        except openai.error.OpenAIError as e:
+            raise ValueError(f"An error occurred: {e}") from e
+
+        except Exception as e:
+            raise ValueError(f"An unexpected error occurred: {e}") from e
 
     def _get_token_count(
         self,
@@ -61,7 +78,7 @@ class ChatOrchestrator:
     ):
         try:
             response = self._openai_client.chat.completions.create(
-                model=self._openai_model_to_use,
+                model=self._chat_model_name,
                 messages=messages,
                 stream=stream
             )
@@ -83,20 +100,6 @@ class ChatOrchestrator:
 
         except Exception as e:
             raise ValueError(f"An unexpected error occurred: {e}") from e
-
-    def _get_similar_rulebook_pages(
-        self,
-        board_game: str,
-        question: str,
-    ):
-        embedding = self._embed_question(question)
-        results = self._mongodb_client.get_similar_rulebook_pages(
-            board_game,
-            embedding,
-            limit=5
-        )
-
-        return results
 
     def _construct_rulebook_link(
         self,
@@ -160,12 +163,12 @@ class ChatOrchestrator:
         token_usage: TokenUsage,
     ):
         input_token_cost = (
-            self._openai_model_pricing_usd["one_million_input_tokens"]
+            self._model_pricing_usd["one_million_input_tokens"]
             * token_usage["input_tokens"]
             / 1_000_000
         )
         output_token_cost = (
-            self._openai_model_pricing_usd["one_million_output_tokens"]
+            self._model_pricing_usd["one_million_output_tokens"]
             * token_usage["output_tokens"]
             / 1_000_000
         )
@@ -242,9 +245,20 @@ class ChatOrchestrator:
         board_game: str,
         question: str,
     ):
+        embedding, token_count = self._get_embedding_and_token_count(question)
+        token_usage = {
+            "input_tokens": token_count,
+            "output_tokens": 0
+        }
+        self._mongodb_client.increment_todays_token_usage(user_id, token_usage)
+        
         # Get N most relevant pages of rulebooks for the selected board game
         # and construct a prompt with these pages in them
-        rulebook_pages = self._get_similar_rulebook_pages(board_game, question)
+        rulebook_pages = self._mongodb_client.get_similar_rulebook_pages(
+            board_game,
+            embedding,
+            limit=5
+        )
 
         rulebook_pages_as_string = "\n".join(
             json.dumps(page)
