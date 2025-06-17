@@ -1,7 +1,9 @@
-import openai
+import os
 import json
 import ast
-import regex as re
+import re
+
+import openai
 import tiktoken
 from sentence_transformers import SentenceTransformer
 from urllib.parse import quote
@@ -25,7 +27,7 @@ from app.types import Message, TokenUsage
 class ChatOrchestrator:
     def __init__(self):
         self._embedding_model = SentenceTransformer(EMBEDDING_MODEL_PATH)
-        self._openai_client = openai.OpenAI()
+        self._openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         self._encoding = tiktoken.encoding_for_model(OPENAI_MODEL_TO_USE)
         self._openai_model_to_use = OPENAI_MODEL_TO_USE
         self._openai_model_pricing_usd = OPENAI_MODEL_PRICING_USD[OPENAI_MODEL_TO_USE]
