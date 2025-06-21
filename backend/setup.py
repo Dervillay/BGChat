@@ -133,7 +133,6 @@ def process_and_store_rulebook_text(
 
 
 if __name__ == "__main__":
-    # TODO: Get rid of logging when running this script
     download_rulebooks()
     mongodb_client = initialise_mongodb_client()
     openai_client = initialise_openai_client()

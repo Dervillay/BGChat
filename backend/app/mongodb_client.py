@@ -130,7 +130,6 @@ class MongoDBClient:
             logger.error("Error storing messages: %s", str(e))
             raise
 
-    # TODO: Add pagination
     def get_message_history(
             self,
             user_id: str,
