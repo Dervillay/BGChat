@@ -92,16 +92,14 @@ class MongoDBClient:
             logger.error(error_message)
             raise ValueError(error_message)
 
-    def append_messages_and_increment_todays_token_usage(
+    def append_messages(
         self,
         user_id: str,
         board_game: str,
         messages: list[Message],
-        token_usage: TokenUsage,
     ) -> None:
         """
         Append messages to the message history for a given user and board game.
-        Also updates that user's token usage for today.
 
         If the user does not exist, creates and populates a new document for them.
         If the user exists, updates the last_active field.
@@ -109,8 +107,6 @@ class MongoDBClient:
         self._ensure_connection()
         try:
             request_datetime_utc = self._get_current_datetime_utc()
-            todays_date = request_datetime_utc.strftime("%Y-%m-%d")
-
             self.db.user_data.update_one(
                 {"user_id": user_id},
                 {
@@ -125,10 +121,6 @@ class MongoDBClient:
                         f"messages.{board_game}": {
                             "$each": messages
                         }
-                    },
-                    "$inc": {
-                        f"token_usage.{todays_date}.input_tokens": token_usage["input_tokens"],
-                        f"token_usage.{todays_date}.output_tokens": token_usage["output_tokens"],
                     }
                 },
                 upsert=True
@@ -312,7 +304,9 @@ class MongoDBClient:
     def increment_todays_token_usage(
         self,
         user_id: str,
-        token_usage: TokenUsage,
+        model_name: str,
+        input_tokens: int,
+        output_tokens: int,
     ) -> None:
         """
         Increment today's token usage for a given user.
@@ -336,8 +330,8 @@ class MongoDBClient:
                         "last_active": request_datetime_utc
                     },
                     "$inc": {
-                        f"token_usage.{todays_date}.input_tokens": token_usage["input_tokens"],
-                        f"token_usage.{todays_date}.output_tokens": token_usage["output_tokens"],
+                        f"token_usage.{todays_date}.{model_name}.input_tokens": input_tokens,
+                        f"token_usage.{todays_date}.{model_name}.output_tokens": output_tokens,
                     }
                 },
                 upsert=True
@@ -347,9 +341,12 @@ class MongoDBClient:
             logger.error("Error incrementing token usage: %s", str(e))
             raise
 
-    def get_todays_token_usage(self, user_id: str) -> TokenUsage | None:
+    def get_todays_token_usage(self, user_id: str) -> dict[str, TokenUsage]:
         """
-        Get today's token usage for a given user. Returns None if the user doesn't have an entry in the database for today.
+        Get today's token usage broken down by model for a given user.
+
+        Returns a dictionary of model names to token usage.
+        Returns None if the user doesn't have an entry in the database for today.
         """
         self._ensure_connection()
         try:
@@ -358,7 +355,11 @@ class MongoDBClient:
                 {"user_id": user_id},
                 {f"token_usage.{todays_date}": 1, "_id": 0}
             )
-            return result.get("token_usage", None).get(todays_date, None)
+
+            if result is None:
+                return {}
+
+            return result.get("token_usage", {}).get(todays_date, {})
         except Exception as e:
             logger.error("Error retrieving token usage for user '%s': %s", user_id, str(e))
             raise

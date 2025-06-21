@@ -8,6 +8,6 @@ OPENAI_MODEL_PRICING_USD = {
     },
     "text-embedding-ada-002": {
         "one_million_input_tokens": 0.10,
-        "one_million_output_tokens": 0.10,
+        "one_million_output_tokens": 0.0,  # Embedding models don't have output tokens
     },
 }

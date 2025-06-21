@@ -12,6 +12,6 @@ class RulebookPage(TypedDict):
     text: str
 
 class TokenUsage(TypedDict):
-    """Type definition for token usage."""
+    """Type definition for token usage for a single model."""
     input_tokens: int
     output_tokens: int

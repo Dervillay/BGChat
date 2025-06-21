@@ -2,6 +2,7 @@ import os
 import json
 import ast
 import re
+import logging
 
 import openai
 import tiktoken
@@ -26,16 +27,37 @@ from app.config.prompts import (
 from app.mongodb_client import MongoDBClient
 from app.types import Message, TokenUsage
 
+logger = logging.getLogger(__name__)
+
 class ChatOrchestrator:
     def __init__(self):
         self._openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         self._encoding = tiktoken.encoding_for_model(OPENAI_CHAT_MODEL)
         self._chat_model_name = OPENAI_CHAT_MODEL
+        self._chat_model_pricing_usd = OPENAI_MODEL_PRICING_USD[OPENAI_CHAT_MODEL]
         self._embedding_model_name = OPENAI_EMBEDDING_MODEL
-        # TODO: This is a hack to get the pricing for the chat model. Should store the tokens for each model in the database.
-        self._model_pricing_usd = OPENAI_MODEL_PRICING_USD[OPENAI_CHAT_MODEL]
+        self._embedding_model_pricing_usd = OPENAI_MODEL_PRICING_USD[OPENAI_EMBEDDING_MODEL]
         self._mongodb_client = MongoDBClient()
         self._known_board_games = None
+
+    def _handle_openai_error(
+        self,
+        error: Exception,
+        operation: str,
+    ) -> None:
+        if isinstance(error, openai.error.AuthenticationError):
+            raise ValueError(f"Authentication failed during {operation}: {error}") from error
+
+        if isinstance(error, openai.error.InvalidRequestError):
+            raise ValueError(f"Invalid request during {operation}: {error}") from error
+
+        if isinstance(error, openai.error.RatimitError):
+            raise ValueError(f"Rate limit exceeded during {operation}: {error}") from error
+
+        if isinstance(error, openai.error.OpenAIError):
+            raise ValueError(f"OpenAI error during {operation}: {error}") from error
+
+        raise ValueError(f"Unexpected error during {operation}: {error}") from error
 
     def _get_embedding_and_token_count(
         self,
@@ -47,21 +69,9 @@ class ChatOrchestrator:
                 input=question
             )
             return response.data[0].embedding, response.usage.prompt_tokens
-        
-        except openai.error.AuthenticationError as e:
-            raise ValueError(f"Authentication failed: {e}") from e
-
-        except openai.error.InvalidRequestError as e:
-            raise ValueError(f"Invalid request: {e}") from e
-
-        except openai.error.RateLimitError as e:
-            raise ValueError(f"Rate limit exceeded: {e}") from e
-
-        except openai.error.OpenAIError as e:
-            raise ValueError(f"An error occurred: {e}") from e
 
         except Exception as e:
-            raise ValueError(f"An unexpected error occurred: {e}") from e
+            self._handle_openai_error(e, "embedding creation")
 
     def _get_token_count(
         self,
@@ -86,20 +96,8 @@ class ChatOrchestrator:
                 return response
             return response.choices[0].message.content
 
-        except openai.error.AuthenticationError as e:
-            raise ValueError(f"Authentication failed: {e}") from e
-
-        except openai.error.InvalidRequestError as e:
-            raise ValueError(f"Invalid request: {e}") from e
-
-        except openai.error.RateLimitError as e:
-            raise ValueError(f"Rate limit exceeded: {e}") from e
-
-        except openai.error.OpenAIError as e:
-            raise ValueError(f"An error occurred: {e}") from e
-
         except Exception as e:
-            raise ValueError(f"An unexpected error occurred: {e}") from e
+            self._handle_openai_error(e, "chat completion")
 
     def _construct_rulebook_link(
         self,
@@ -160,20 +158,34 @@ class ChatOrchestrator:
 
     def _get_token_usage_cost_usd(
         self,
-        token_usage: TokenUsage,
+        model_token_usages: dict[str, TokenUsage],
     ):
-        input_token_cost = (
-            self._model_pricing_usd["one_million_input_tokens"]
-            * token_usage["input_tokens"]
-            / 1_000_000
-        )
-        output_token_cost = (
-            self._model_pricing_usd["one_million_output_tokens"]
-            * token_usage["output_tokens"]
-            / 1_000_000
-        )
+        total_cost = 0.0
 
-        return input_token_cost + output_token_cost
+        for model_name, model_usage in model_token_usages.items():
+            if model_name not in OPENAI_MODEL_PRICING_USD:
+                logger.warning(
+                    "Unknown model pricing for %s, skipping cost calculation",
+                    model_name
+                )
+                continue
+
+            model_pricing = OPENAI_MODEL_PRICING_USD[model_name]
+
+            input_token_cost = (
+                model_pricing["one_million_input_tokens"]
+                * model_usage["input_tokens"]
+                / 1_000_000
+            )
+            output_token_cost = (
+                model_pricing["one_million_output_tokens"]
+                * model_usage["output_tokens"]
+                / 1_000_000
+            )
+
+            total_cost += input_token_cost + output_token_cost
+
+        return total_cost
 
     def get_known_board_games(self) -> list[str]:
         if self._known_board_games is None:
@@ -223,13 +235,11 @@ class ChatOrchestrator:
         }
         response = self._call_openai_model([message], stream=False)
 
-        token_usage = {
-            "input_tokens": self._get_token_count(prompt),
-            "output_tokens": self._get_token_count(response),
-        }
         self._mongodb_client.increment_todays_token_usage(
-            user_id,
-            token_usage
+            user_id=user_id,
+            model_name=self._chat_model_name,
+            input_tokens=self._get_token_count(prompt),
+            output_tokens=self._get_token_count(response),
         )
 
         if response in self.get_known_board_games() or response == UNKNOWN_VALUE:
@@ -246,12 +256,13 @@ class ChatOrchestrator:
         question: str,
     ):
         embedding, token_count = self._get_embedding_and_token_count(question)
-        token_usage = {
-            "input_tokens": token_count,
-            "output_tokens": 0
-        }
-        self._mongodb_client.increment_todays_token_usage(user_id, token_usage)
-        
+        self._mongodb_client.increment_todays_token_usage(
+            user_id=user_id,
+            model_name=self._embedding_model_name,
+            input_tokens=token_count,
+            output_tokens=0,
+        )
+
         # Get N most relevant pages of rulebooks for the selected board game
         # and construct a prompt with these pages in them
         rulebook_pages = self._mongodb_client.get_similar_rulebook_pages(
@@ -282,10 +293,13 @@ class ChatOrchestrator:
             "content": prompt,
             "role": "user"
         }
+        input_tokens = self._get_token_count(prompt)
+
         stream = self._call_openai_model(
-            message_history + [user_message],
+            messages=message_history + [user_message],
             stream=True
         )
+
         full_response = ""
         citation_buffer = ""
         in_citation = False
@@ -320,27 +334,28 @@ class ChatOrchestrator:
             "content": full_response,
             "role": "assistant"
         }
+        output_tokens = self._get_token_count(full_response)
 
-        token_usage = {
-            "input_tokens": self._get_token_count(user_message["content"]),
-            "output_tokens": self._get_token_count(assistant_message["content"]),
-        }
-
-        self._mongodb_client.append_messages_and_increment_todays_token_usage(
-            user_id,
-            board_game,
-            [user_message, assistant_message],
-            token_usage
+        self._mongodb_client.append_messages(
+            user_id=user_id,
+            board_game=board_game,
+            messages=[user_message, assistant_message],
+        )
+        self._mongodb_client.increment_todays_token_usage(
+            user_id=user_id,
+            model_name=self._chat_model_name,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
         )
 
     def user_has_exceeded_daily_token_limit(
         self,
         user_id: str,
     ):
-        token_usage = self._mongodb_client.get_todays_token_usage(user_id)
-        if token_usage is None:
+        model_token_usages = self._mongodb_client.get_todays_token_usage(user_id)
+        if not model_token_usages:
             return False
 
-        cost_usd = self._get_token_usage_cost_usd(token_usage)
+        cost_usd = self._get_token_usage_cost_usd(model_token_usages)
 
         return cost_usd > MAX_COST_PER_USER_PER_DAY_USD
