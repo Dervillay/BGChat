@@ -3,5 +3,4 @@ backend/resources
 backend/app/database.json
 backend/myenv
 frontend/node_modules
-frontend/.env
-backend/.env
+*/.env*
