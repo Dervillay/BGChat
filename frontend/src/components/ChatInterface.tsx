@@ -219,6 +219,10 @@ const ChatInterface = () => {
 		}
 	};
 
+	const handleCloseError = (index: number) => {
+		setMessages(prev => prev.filter((_, i) => i !== index));
+	};
+
 	return (
 		<Container maxW="container.xl" h="100vh" p={4} display="flex" flexDirection="column">
 			<Flex direction="column" h="100vh">
@@ -253,7 +257,7 @@ const ChatInterface = () => {
 								</Flex>
 							) : message.role === "error" ? (
 								<Box key={index} w="100%" position="relative">
-									<ErrorMessage content={message.content} />
+									<ErrorMessage content={message.content} onClose={() => handleCloseError(index)} />
 								</Box>
 							) : (
 								<Box key={index} w="100%" position="relative">
@@ -264,7 +268,7 @@ const ChatInterface = () => {
 							)
 						))}
 						{isThinking && <ThinkingPlaceholder />}
-						{messages.length >= 2 && !isLoading && (
+						{messages.length >= 2 && !isLoading && messages.some(msg => msg.role === "user") && (
 							<Flex justify="flex-end" w="100%" mt={1}>
 								<Tooltip 
 									label="Reset chat"

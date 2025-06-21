@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Box, Text, Container, Flex, Icon } from "@chakra-ui/react";
+import { Box, Text, Container, Flex, Icon, IconButton } from "@chakra-ui/react";
 import { keyframes } from "@emotion/react";
-import { FiAlertCircle } from "react-icons/fi";
+import { FiAlertCircle, FiX } from "react-icons/fi";
 import { theme } from "../theme/index.ts";
 
 const fadeIn = keyframes`
@@ -18,9 +18,10 @@ const errorTitles = [
 
 interface ErrorMessageProps {
     content: string;
+    onClose?: () => void;
 }
 
-export const ErrorMessage: React.FC<ErrorMessageProps> = ({ content }) => {
+export const ErrorMessage: React.FC<ErrorMessageProps> = ({ content, onClose }) => {
     const [title, setTitle] = useState(errorTitles[0]);
 
     useEffect(() => {
@@ -63,15 +64,20 @@ export const ErrorMessage: React.FC<ErrorMessageProps> = ({ content }) => {
                         bgGradient={theme.gradients.purpleToRed}
                         borderTopRadius="lg"
                     />
-                    <Icon 
-                        as={FiAlertCircle} 
-                        position="absolute"
-                        top={4}
-                        right={4}
-                        color="gray.400"
-                        w={5}
-                        h={5}
-                    />
+                    {onClose && (
+                        <IconButton
+                            icon={<FiX />}
+                            position="absolute"
+                            top={3}
+                            right={3}
+                            size="sm"
+                            variant="ghost"
+                            color="gray.400"
+                            _hover={{ color: "gray.600" }}
+                            onClick={onClose}
+                            aria-label="Close"
+                        />
+                    )}
                     <Flex alignItems="center" mb={3}>
                         <Text 
                             bgGradient={theme.gradients.purpleToRed}
