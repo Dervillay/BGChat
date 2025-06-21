@@ -57,6 +57,22 @@ def download_rulebooks():
     print()
 
 
+def initialise_mongodb_client():
+    print_bold("Initializing MongoDB client...")
+    mongodb_client = MongoDBClient()
+    print("Done\n")
+
+    return mongodb_client
+
+
+def initialise_openai_client():
+    print_bold("Initializing OpenAI client...")
+    openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    print("Done\n")
+
+    return openai_client
+
+
 def process_and_store_rulebook_text(
     mongodb_client: MongoDBClient,
     openai_client: openai.OpenAI
@@ -119,6 +135,6 @@ def process_and_store_rulebook_text(
 if __name__ == "__main__":
     # TODO: Get rid of logging when running this script
     download_rulebooks()
-    mongodb_client = MongoDBClient()
-    openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    mongodb_client = initialise_mongodb_client()
+    openai_client = initialise_openai_client()
     process_and_store_rulebook_text(mongodb_client, openai_client)
