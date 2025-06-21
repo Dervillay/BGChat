@@ -7,6 +7,8 @@ import {
     ModalBody,
     IconButton,
     Text,
+    Flex,
+    Spinner,
 } from "@chakra-ui/react";
 import { FiX } from "react-icons/fi";
 import { theme } from "../theme/index.ts";
@@ -14,18 +16,27 @@ import { useState, useEffect } from "react";
 import { withError } from "../utils/withError.ts";
 import { useFetchWithAuth } from "../utils/fetchWithAuth.ts";
 import { usePDFViewer } from "../contexts/PDFViewerContext.tsx";
-import { borderChase } from "../theme/animations.ts";
 
 export const PDFViewerModal: React.FC = () => {
     const { isOpen, url, title, pageNumber, closeViewer } = usePDFViewer();
     const [blobUrl, setBlobUrl] = useState<string>();
     const [iframeSrc, setIframeSrc] = useState<string>();
+    const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
     const fetchWithAuth = useFetchWithAuth();
 
     const handleUpdateBlobUrl = async (newUrl: string) => {
+        setIsLoading(true);
+        setError(null);
+        
         try {
             const response = await withError(() => fetchWithAuth(newUrl));
             const blob = await (response as Response).blob();
+            
+            if (!blob.type.includes('pdf')) {
+                throw new Error('The requested file is not a PDF');
+            }
+            
             const newBlobUrl = window.URL.createObjectURL(blob);
 
             if (blobUrl) {
@@ -33,9 +44,24 @@ export const PDFViewerModal: React.FC = () => {
             }
 
             setBlobUrl(newBlobUrl);
-        } catch (error) {
-            // TODO: add better error handling
-            console.error("Error fetching PDF:", error);
+        } catch (error: any) {
+            let errorMessage = "Failed to load the PDF file.";
+            
+            if (error.status === 404) {
+                errorMessage = "The PDF file was not found. It may have been moved or deleted.";
+            } else if (error.status === 403) {
+                errorMessage = "You don't have permission to access this PDF file.";
+            } else if (error.status >= 500) {
+                errorMessage = "Server error occurred while loading the PDF. Please try again later.";
+            } else if (error.message === 'The requested file is not a PDF') {
+                errorMessage = "The requested file is not a PDF document.";
+            } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+                errorMessage = "Network error occurred. Please check your connection and try again.";
+            }
+            
+            setError(errorMessage);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -56,6 +82,13 @@ export const PDFViewerModal: React.FC = () => {
         handleUpdateIframeSrc(blobUrl, pageNumber ?? undefined);
     }, [pageNumber, blobUrl]);
 
+    useEffect(() => {
+        if (!isOpen) {
+            setError(null);
+            setIsLoading(false);
+        }
+    }, [isOpen]);
+
     if (!url || !title) return null;
 
     return (
@@ -75,24 +108,8 @@ export const PDFViewerModal: React.FC = () => {
                 h="80vh"
                 flexDirection="column"
                 flex="1"
-                sx={{
-                    _before: {
-                        content: '""',
-                        position: "absolute",
-                        inset: 0,
-                        padding: "0.2rem",
-                        borderRadius: "0.5rem",
-                        background: theme.gradients.purpleToRed,
-                        backgroundSize: "200% 200%",
-                        backgroundPosition: "0% 50%",
-                        animation: `${borderChase} 2s ease infinite`,
-                        WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-                        WebkitMaskComposite: "xor",
-                        maskComposite: "exclude",
-                        zIndex: -1,
-                        pointerEvents: "none"
-                    }
-                }}
+                border="1px solid"
+                borderColor="gray.200"
             >
                 <ModalHeader
                     display="flex"
@@ -126,16 +143,45 @@ export const PDFViewerModal: React.FC = () => {
                     flexDirection="column"
                     flex="1"
                 >
-                    <iframe
-                        src={iframeSrc}
-                        title={title}
-                        style={{
-                            flex: 1,
-                            width: "100%",
-                            height: "100%",
-                            borderRadius: "0 0 0.5rem 0.5rem"
-                        }}
-                    />
+                    {error ? (
+                        <Flex
+                            flex="1"
+                            direction="column"
+                            align="center"
+                            justify="center"
+                            p={8}
+                            textAlign="center"
+                        >
+                            <Text 
+                                color="gray.600"
+                                fontSize="sm"
+                                mb={4}
+                            >
+                                {error}
+                            </Text>
+                        </Flex>
+                    ) : isLoading ? (
+                        <Flex
+                            flex="1"
+                            align="center"
+                            justify="center"
+                            direction="column"
+                            p={8}
+                        >
+                            <Spinner size="xl" color="gray.300" speed="0.65s" />
+                        </Flex>
+                    ) : (
+                        <iframe
+                            src={iframeSrc}
+                            title={title}
+                            style={{
+                                flex: 1,
+                                width: "100%",
+                                height: "100%",
+                                borderRadius: "0 0 0.5rem 0.5rem"
+                            }}
+                        />
+                    )}
                 </ModalBody>
             </ModalContent>
         </Modal>
