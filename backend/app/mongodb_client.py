@@ -1,17 +1,13 @@
 import logging
-import os
 import time
 from datetime import datetime, timezone
 
-from dotenv import load_dotenv
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 from pymongo.results import UpdateResult
 from urllib.parse import quote_plus
 
 from app.types import Message, RulebookPage, TokenUsage
-
-load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -23,13 +19,14 @@ class MongoDBClient:
     _instance = None
     _initialized = False
 
-    def __new__(cls):
+    def __new__(cls, config):
         if cls._instance is None:
             cls._instance = super(MongoDBClient, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self):
+    def __init__(self, config):
         if not self._initialized:
+            self.config = config
             self.client = None
             self.db = None
             self._connect()
@@ -37,9 +34,9 @@ class MongoDBClient:
 
     def _get_mongodb_uri(self) -> str:
         """Get the MongoDB connection URI with proper encoding."""
-        username = quote_plus(os.getenv("MONGODB_USERNAME"))
-        password = quote_plus(os.getenv("MONGODB_PASSWORD"))
-        host = os.getenv("MONGODB_HOST")
+        username = quote_plus(self.config.MONGODB_USERNAME)
+        password = quote_plus(self.config.MONGODB_PASSWORD)
+        host = self.config.MONGODB_HOST
 
         return f"mongodb+srv://{username}:{password}@{host}/?retryWrites=true&w=majority"
 
@@ -53,8 +50,8 @@ class MongoDBClient:
                 self.client.admin.command("ping")
                 logger.info("Successfully connected to MongoDB server")
 
-                self.db = self.client[os.getenv("MONGODB_DB_NAME")]
-                logger.info("Successfully loaded database '%s'", os.getenv("MONGODB_DB_NAME"))
+                self.db = self.client[self.config.MONGODB_DB_NAME]
+                logger.info("Successfully loaded database '%s'", self.config.MONGODB_DB_NAME)
 
                 return
 

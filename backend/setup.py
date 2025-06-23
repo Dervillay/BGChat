@@ -1,5 +1,7 @@
 import os
 import requests
+import logging
+
 from tqdm import tqdm
 from pypdf import PdfReader
 import openai
@@ -8,12 +10,22 @@ from app.config.paths import RULEBOOKS_PATH
 from app.config.board_games import BOARD_GAMES
 from app.config.constants import DEFAULT_TIMEOUT_SECONDS
 from app.mongodb_client import MongoDBClient
+from config import config
+
+logging.getLogger('httpx').setLevel(logging.WARNING)
 
 DOWNLOAD_BLOCK_SIZE = 1024
 
-
 def print_bold(text):
     print(f"\033[1m{text}\033[0m")
+
+
+def get_environment_config():
+    """Get the appropriate configuration based on FLASK_ENV."""
+    env = os.environ.get('FLASK_ENV', 'development')
+    print_bold(f"Using {env} environment configuration\n")
+
+    return config[env]()
 
 
 def download_rulebooks():
@@ -57,17 +69,17 @@ def download_rulebooks():
     print()
 
 
-def initialise_mongodb_client():
+def initialise_mongodb_client(env_config):
     print_bold("Initializing MongoDB client...")
-    mongodb_client = MongoDBClient()
+    mongodb_client = MongoDBClient(config=env_config)
     print("Done\n")
 
     return mongodb_client
 
 
-def initialise_openai_client():
+def initialise_openai_client(env_config):
     print_bold("Initializing OpenAI client...")
-    openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    openai_client = openai.OpenAI(api_key=env_config.OPENAI_API_KEY)
     print("Done\n")
 
     return openai_client
@@ -134,6 +146,9 @@ def process_and_store_rulebook_text(
 
 if __name__ == "__main__":
     download_rulebooks()
-    mongodb_client = initialise_mongodb_client()
-    openai_client = initialise_openai_client()
+
+    env_config = get_environment_config()
+    mongodb_client = initialise_mongodb_client(env_config)
+    openai_client = initialise_openai_client(env_config)
+
     process_and_store_rulebook_text(mongodb_client, openai_client)

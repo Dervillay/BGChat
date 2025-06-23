@@ -3,54 +3,53 @@ from dotenv import load_dotenv
 
 class Config:
     """Base configuration class."""
-    SECRET_KEY = os.environ.get('SECRET_KEY') or os.urandom(24)
-    SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'True').lower() == 'true'
-    SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = 'Lax'
-    
-    # MongoDB
-    MONGODB_HOST = os.environ.get('MONGODB_HOST')
-    MONGODB_USERNAME = os.environ.get('MONGODB_USERNAME')
-    MONGODB_PASSWORD = os.environ.get('MONGODB_PASSWORD')
-    MONGODB_DB_NAME = os.environ.get('MONGODB_DB_NAME')
-    
-    # OpenAI
-    OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
-    
-    # Auth0
-    AUTH0_DOMAIN = os.environ.get('AUTH0_DOMAIN')
-    AUTH0_AUDIENCE = os.environ.get('AUTH0_AUDIENCE')
-    ALGORITHM = os.environ.get('ALGORITHM', 'RS256')
+
+    def __init__(self):
+        # Load environment variables first
+        self._load_env_vars()
+
+    def _load_env_vars(self):
+        """Load environment variables into class attributes."""
+        self.SECRET_KEY = os.environ.get('SECRET_KEY') or os.urandom(24)
+        self.SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'True').lower() == 'true'
+        self.SESSION_COOKIE_HTTPONLY = True
+        self.SESSION_COOKIE_SAMESITE = 'Lax'
+
+        # MongoDB
+        self.MONGODB_HOST = os.environ.get('MONGODB_HOST')
+        self.MONGODB_USERNAME = os.environ.get('MONGODB_USERNAME')
+        self.MONGODB_PASSWORD = os.environ.get('MONGODB_PASSWORD')
+        self.MONGODB_DB_NAME = os.environ.get('MONGODB_DB_NAME')
+
+        # OpenAI
+        self.OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+
+        # Auth0
+        self.AUTH0_DOMAIN = os.environ.get('AUTH0_DOMAIN')
+        self.AUTH0_AUDIENCE = os.environ.get('AUTH0_AUDIENCE')
+        self.ALGORITHM = os.environ.get('ALGORITHM', 'RS256')
 
 class DevelopmentConfig(Config):
     """Development configuration."""
-    DEBUG = True
-    SESSION_COOKIE_SECURE = False
-    
+
     def __init__(self):
         load_dotenv('.env.development')
+        super().__init__()
+        self.DEBUG = True
+        self.SESSION_COOKIE_SECURE = False
 
 class ProductionConfig(Config):
     """Production configuration."""
-    DEBUG = False
-    SESSION_COOKIE_SECURE = True
-    
+
     def __init__(self):
         load_dotenv('.env.production')
-
-class TestingConfig(Config):
-    """Testing configuration."""
-    TESTING = True
-    DEBUG = True
-    SESSION_COOKIE_SECURE = False
-    
-    def __init__(self):
-        load_dotenv('.env.testing')
+        super().__init__()
+        self.DEBUG = False
+        self.SESSION_COOKIE_SECURE = True
 
 # Configuration mapping
 config = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,
-    'testing': TestingConfig,
     'default': DevelopmentConfig
-} 
+}
