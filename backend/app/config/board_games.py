@@ -44,6 +44,15 @@ BOARD_GAMES = [
             }
         ]
     },
+    {
+        "name": "Brass: Birmingham",
+        "rulebooks": [
+            {
+                "name": "Brass: Birmingham Rulebook",
+                "download_url": "https://cdn.1j1ju.com/medias/60/39/64-brass-birmingham-rulebook.pdf",
+            }
+        ]
+    },
 ]
 
 BOARD_GAMES_STRING_LIST = "\n".join([f"- {board_game['name']}" for board_game in BOARD_GAMES])
