@@ -1,4 +1,3 @@
-import os
 import json
 import ast
 import re
@@ -30,14 +29,14 @@ from app.types import Message, TokenUsage
 logger = logging.getLogger(__name__)
 
 class ChatOrchestrator:
-    def __init__(self):
-        self._openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    def __init__(self, config):
+        self._openai_client = openai.OpenAI(api_key=config.OPENAI_API_KEY)
         self._encoding = tiktoken.encoding_for_model(OPENAI_CHAT_MODEL)
         self._chat_model_name = OPENAI_CHAT_MODEL
         self._chat_model_pricing_usd = OPENAI_MODEL_PRICING_USD[OPENAI_CHAT_MODEL]
         self._embedding_model_name = OPENAI_EMBEDDING_MODEL
         self._embedding_model_pricing_usd = OPENAI_MODEL_PRICING_USD[OPENAI_EMBEDDING_MODEL]
-        self._mongodb_client = MongoDBClient()
+        self._mongodb_client = MongoDBClient(config=config)
         self._known_board_games = None
 
     def _handle_openai_error(

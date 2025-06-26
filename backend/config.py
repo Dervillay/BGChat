@@ -1,11 +1,11 @@
 import os
 from dotenv import load_dotenv
 
+
 class Config:
     """Base configuration class."""
 
     def __init__(self):
-        # Load environment variables first
         self._load_env_vars()
 
     def _load_env_vars(self):
@@ -29,6 +29,7 @@ class Config:
         self.AUTH0_AUDIENCE = os.environ.get('AUTH0_AUDIENCE')
         self.ALGORITHM = os.environ.get('ALGORITHM', 'RS256')
 
+
 class DevelopmentConfig(Config):
     """Development configuration."""
 
@@ -36,7 +37,7 @@ class DevelopmentConfig(Config):
         load_dotenv('.env.development')
         super().__init__()
         self.DEBUG = True
-        self.SESSION_COOKIE_SECURE = False
+
 
 class ProductionConfig(Config):
     """Production configuration."""
@@ -45,11 +46,10 @@ class ProductionConfig(Config):
         load_dotenv('.env.production')
         super().__init__()
         self.DEBUG = False
-        self.SESSION_COOKIE_SECURE = True
+
 
 # Configuration mapping
 config = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,
-    'default': DevelopmentConfig
 }

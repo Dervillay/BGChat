@@ -1,15 +1,10 @@
 import json
-import os
 
 import jwt
 import requests
-from flask import request, jsonify
+from flask import request, jsonify, current_app
 
 from app.config.constants import DEFAULT_TIMEOUT_SECONDS
-
-AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN")
-AUTH0_AUDIENCE = os.getenv("AUTH0_AUDIENCE")
-ALGORITHM = os.getenv("ALGORITHM")
 
 
 def get_user_id_from_auth_header() -> str:
@@ -56,13 +51,21 @@ def get_token_from_auth_header():
 
     return parts[1]
 
+
 def validate_jwt(token):
     """
     Validates the JWT token against the Auth0 JWKS.
     Returns an appropriate error response if the token is invalid.
     """
+    auth0_domain = current_app.config.get('AUTH0_DOMAIN')
+    auth0_audience = current_app.config.get('AUTH0_AUDIENCE')
+    algorithm = current_app.config.get('ALGORITHM', 'RS256')
+
+    if not auth0_domain or not auth0_audience:
+        return jsonify({"error": "Auth0 configuration is not properly set up"}), 500
+
     # TODO: Implement caching of JWKS with expiry of one hour
-    jwks_url = f"https://{AUTH0_DOMAIN}/.well-known/jwks.json"
+    jwks_url = f"https://{auth0_domain}/.well-known/jwks.json"
     jwks_response = requests.get(jwks_url, timeout=DEFAULT_TIMEOUT_SECONDS)
     jwks_response.raise_for_status()
     jwks = jwks_response.json()
@@ -90,9 +93,9 @@ def validate_jwt(token):
         jwt.decode(
             token,
             jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(rsa_key)),
-            algorithms=[ALGORITHM],
-            audience=AUTH0_AUDIENCE,
-            issuer=f"https://{AUTH0_DOMAIN}/"
+            algorithms=[algorithm],
+            audience=auth0_audience,
+            issuer=f"https://{auth0_domain}/"
         )
     except Exception as e:
         return jsonify({"error": f"Invalid token: {str(e)}"}), 401
