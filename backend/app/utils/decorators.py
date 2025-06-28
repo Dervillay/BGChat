@@ -9,7 +9,7 @@ from app.utils.responses import validation_error, authentication_error, authoriz
 
 
 # Input validation patterns
-BOARD_GAME_PATTERN = re.compile(r'^[a-zA-Z0-9\s\-_&%$*#]+$')
+BOARD_GAME_PATTERN = re.compile(r'^[a-zA-Z0-9\s\-_&%$*#:]+$')
 QUESTION_PATTERN = re.compile(r'^[a-zA-Z0-9\s\-_.,!?()&%$*#]+$')
 MAX_QUESTION_LENGTH = 1000
 MAX_BOARD_GAME_LENGTH = 100
