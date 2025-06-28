@@ -1,10 +1,11 @@
 import json
 import time
 import threading
+import re
 
 import jwt
 import requests
-from flask import request, jsonify, current_app
+from flask import request, current_app
 
 from app.config.constants import DEFAULT_TIMEOUT_SECONDS
 
@@ -12,6 +13,32 @@ from app.config.constants import DEFAULT_TIMEOUT_SECONDS
 _jwks_cache = {}
 _jwks_cache_lock = threading.Lock()
 JWKS_CACHE_DURATION = 3600
+
+# User ID validation pattern - Auth0 user IDs are typically in format: auth0|1234567890abcdef
+USER_ID_PATTERN = re.compile(r'^[a-zA-Z0-9_\-|]+$')
+MAX_USER_ID_LENGTH = 128
+
+
+class AuthenticationError(Exception):
+    """Raised when authentication fails."""
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
+
+
+def _validate_user_id(user_id: str) -> None:
+    """
+    Validate user ID format and length.
+    Raises ValueError if validation fails.
+    """
+    if not user_id:
+        raise ValueError("User ID cannot be empty")
+
+    if len(user_id) > MAX_USER_ID_LENGTH:
+        raise ValueError(f"User ID too long (max {MAX_USER_ID_LENGTH} characters)")
+
+    if not USER_ID_PATTERN.match(user_id):
+        raise ValueError("Invalid user ID format")
 
 
 def _get_cached_jwks(auth0_domain: str) -> dict | None:
@@ -44,9 +71,8 @@ def _set_cached_jwks(auth0_domain: str, jwks: dict):
 def get_user_id_from_auth_header() -> str:
     """
     Extract the user's ID from the token in the request's Authorization header.
-
-    Note: This function does not validate the token, so should only be used
-    in routes already protected by the `@validate_auth_token` decorator.
+    Does not validate the token, so must only be used after validate_jwt has been called.
+    Raises AuthenticationError if validation fails.
     """
     try:
         token = get_token_from_auth_header()
@@ -56,32 +82,41 @@ def get_user_id_from_auth_header() -> str:
         )
 
         if "sub" not in unverified_claims:
-            return jsonify({"error": "Token does not contain a user ID"}), 401
+            raise AuthenticationError("Token does not contain a user ID")
 
-        return unverified_claims["sub"]
+        user_id = unverified_claims["sub"]
 
+        try:
+            _validate_user_id(user_id)
+        except ValueError as e:
+            raise AuthenticationError(f"Invalid user ID: {str(e)}")
+
+        return user_id
+
+    except AuthenticationError:
+        raise
     except Exception as e:
-        return jsonify({"error": f"Error extracting user ID: {str(e)}"}), 401
+        raise AuthenticationError(f"Error extracting user ID: {str(e)}")
 
 
 def get_token_from_auth_header() -> str:
     """
     Extracts the JWT token from the Authorization header.
-    Returns an appropriate error response if the header is missing or invalid.
+    Raises AuthenticationError if the header is missing or invalid.
     """
     auth_header = request.headers.get("Authorization", None)
 
     if not auth_header:
-        return jsonify({"error": "Authorization header expected but not found"}), 401
+        raise AuthenticationError("Authorization header expected but not found")
 
     parts = auth_header.split()
 
     if parts[0].lower() != "bearer":
-        return jsonify({"error": "Authorization header must start with 'Bearer'"}), 401
+        raise AuthenticationError("Authorization header must start with 'Bearer'")
     if len(parts) == 1:
-        return jsonify({"error": "Token not found"}), 401
+        raise AuthenticationError("Token not found")
     if len(parts) > 2:
-        return jsonify({"error": "Authorization header must be Bearer token"}), 401
+        raise AuthenticationError("Authorization header must be Bearer token")
 
     return parts[1]
 
@@ -89,14 +124,14 @@ def get_token_from_auth_header() -> str:
 def validate_jwt(token: str) -> None:
     """
     Validates the JWT token against the Auth0 JWKS.
-    Returns an appropriate error response if the token is invalid.
+    Raises AuthenticationError if the token is invalid.
     """
     auth0_domain = current_app.config.get('AUTH0_DOMAIN')
     auth0_audience = current_app.config.get('AUTH0_AUDIENCE')
     algorithm = current_app.config.get('ALGORITHM', 'RS256')
 
     if not auth0_domain or not auth0_audience:
-        return jsonify({"error": "Auth0 configuration is not properly set up"}), 500
+        raise Exception("Auth0 configuration is not properly set up")
 
     jwks = _get_cached_jwks(auth0_domain)
 
@@ -110,7 +145,7 @@ def validate_jwt(token: str) -> None:
 
     unverified_header = jwt.get_unverified_header(token)
     if "kid" not in unverified_header:
-        return jsonify({"error": "Invalid header: No KID"}), 401
+        raise AuthenticationError("Invalid header: No KID")
 
     rsa_key = {}
     for key in jwks["keys"]:
@@ -125,7 +160,7 @@ def validate_jwt(token: str) -> None:
             break
 
     if not rsa_key:
-        return jsonify({"error": "Unable to find appropriate key"}), 401
+        raise AuthenticationError("Unable to find appropriate key")
 
     try:
         jwt.decode(
@@ -136,4 +171,4 @@ def validate_jwt(token: str) -> None:
             issuer=f"https://{auth0_domain}/"
         )
     except Exception as e:
-        return jsonify({"error": f"Invalid token: {str(e)}"}), 401
+        raise AuthenticationError(f"Invalid token: {str(e)}")

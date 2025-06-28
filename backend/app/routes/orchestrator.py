@@ -8,16 +8,14 @@ import json
 from flask import (
     Blueprint,
     request,
-    jsonify,
-    send_from_directory,
     current_app,
     Response,
     stream_with_context,
 )
 
 from app.config.paths import RULEBOOKS_PATH
-from app.utils.auth import get_user_id_from_auth_header
 from app.utils.decorators import check_daily_token_limit, validate_auth_token, validate_json_body
+from app.utils.responses import success_response, validation_error, not_found_error, internal_error
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -28,42 +26,79 @@ orchestrator_bp = Blueprint("orchestrator", __name__)
 @orchestrator_bp.route("/known-board-games", methods=["GET"])
 @validate_auth_token
 def get_known_board_games():
-    return jsonify(current_app.orchestrator.get_known_board_games()), 200
+    try:
+        board_games = current_app.orchestrator.get_known_board_games()
+        return success_response(data=board_games)
+    except Exception as e:
+        logger.error("Error getting board games: %s", str(e))
+        return internal_error("Failed to retrieve board games")
 
 
 @orchestrator_bp.route("/message-history", methods=["POST"])
 @validate_json_body(board_game=str)
 @validate_auth_token
 def get_message_history():
-    data = request.get_json()
+    try:
+        data = request.get_json()
+        board_game = data["board_game"]
 
-    board_game = data["board_game"]
-    if board_game not in current_app.orchestrator.get_known_board_games():
-        return jsonify({"error": "Unrecognised board game"}), 400
+        if board_game not in current_app.orchestrator.get_known_board_games():
+            return validation_error("Unrecognised board game")
 
-    user_id = get_user_id_from_auth_header()
+        message_history = current_app.orchestrator.get_message_history(request.user_id, board_game)
 
-    message_history = current_app.orchestrator.get_message_history(
-        user_id,
-        board_game
-    )
-
-    return jsonify(message_history), 200
+        return success_response(data=message_history)
+    except Exception as e:
+        logger.error("Error getting message history: %s", str(e))
+        return internal_error("Failed to retrieve message history")
 
 
 @orchestrator_bp.route("/pdfs/<path:filepath>")
 @validate_auth_token
 def serve_pdf(filepath: str):
     logger.info("Attempting to serve PDF at: %s", filepath)
-    directory = os.path.join(RULEBOOKS_PATH, os.path.dirname(filepath))
-    filename = os.path.basename(filepath)
 
-    return send_from_directory(
-        directory,
-        filename,
-        mimetype="application/pdf",
-        as_attachment=False,
-    )
+    try:
+        # Security: Prevent path traversal attacks with comprehensive validation
+        normalized_filepath = os.path.normpath(filepath)
+
+        # Security check: ensure the normalized path doesn't contain path traversal attempts
+        if '..' in normalized_filepath or normalized_filepath.startswith('/') or normalized_filepath.startswith('\\'):
+            logger.warning("Path traversal attempt detected: %s", filepath)
+            return validation_error("Invalid file path")
+
+        # Ensure the path is within the rulebooks directory using realpath
+        full_path = os.path.join(RULEBOOKS_PATH, normalized_filepath)
+        real_path = os.path.realpath(full_path)
+        rulebooks_real_path = os.path.realpath(RULEBOOKS_PATH)
+
+        # Security check: ensure the real path is still within RULEBOOKS_PATH
+        if not real_path.startswith(rulebooks_real_path):
+            logger.warning("Path traversal attempt detected (realpath): %s -> %s", filepath, real_path)
+            return validation_error("Invalid file path")
+
+        # Check if file exists and is a PDF
+        if not os.path.exists(real_path):
+            logger.warning("File not found: %s", real_path)
+            return not_found_error("File not found")
+
+        if not real_path.lower().endswith('.pdf'):
+            logger.warning("Invalid file type requested: %s", real_path)
+            return validation_error("Invalid file type")
+
+        # Use the real path for serving the file
+        directory = os.path.dirname(real_path)
+        filename = os.path.basename(real_path)
+
+        return current_app.send_from_directory(
+            directory,
+            filename,
+            mimetype="application/pdf",
+            as_attachment=False,
+        )
+    except Exception as e:
+        logger.error("Error serving PDF: %s", str(e))
+        return internal_error("Error serving file")
 
 
 @orchestrator_bp.route("/determine-board-game", methods=["POST"])
@@ -71,17 +106,15 @@ def serve_pdf(filepath: str):
 @check_daily_token_limit
 @validate_auth_token
 def determine_board_game():
-    data = request.get_json()
+    try:
+        data = request.get_json()
+        question = data["question"]
+        board_game = current_app.orchestrator.determine_board_game(request.user_id, question)
 
-    question = data["question"]
-    if not question.strip():
-        return jsonify({"error": "Question must be a non-empty string"}), 400
-
-    user_id = get_user_id_from_auth_header()
-
-    board_game = current_app.orchestrator.determine_board_game(user_id, question)
-
-    return jsonify(board_game), 200
+        return success_response(data=board_game)
+    except Exception as e:
+        logger.error("Error determining board game: %s", str(e))
+        return internal_error("Failed to determine board game")
 
 
 @orchestrator_bp.route("/ask-question", methods=["POST"])
@@ -89,101 +122,101 @@ def determine_board_game():
 @check_daily_token_limit
 @validate_auth_token
 def ask_question():
-    data = request.get_json()
+    try:
+        data = request.get_json()
+        question = data["question"]
+        board_game = data["board_game"]
 
-    question = data["question"]
-    if not question.strip():
-        return jsonify({"error": "Question must be a non-empty string"}), 400
+        if board_game not in current_app.orchestrator.get_known_board_games():
+            return validation_error("Unrecognised board game")
 
-    board_game = data["board_game"]
-    if board_game not in current_app.orchestrator.get_known_board_games():
-        return jsonify({"error": "Unrecognised board game"}), 400
+        logger.info("Received question from user %s for %s", request.user_id, board_game)
 
-    user_id = get_user_id_from_auth_header()
-    logger.info("Received question from user %s for %s", user_id, board_game)
+        def generate():
+            try:
+                response = current_app.orchestrator.ask_question(request.user_id, board_game, question)
+                for chunk in response:
+                    yield f"data: {json.dumps({'chunk': chunk})}\n\n"
+                yield f"data: {json.dumps({'done': True})}\n\n"
+            except Exception as e:
+                logger.error("Error in streaming response: %s", str(e))
+                yield f"data: {json.dumps({'error': 'An error occurred while processing your question'})}\n\n"
 
-    def generate():
-        response = current_app.orchestrator.ask_question(
-            user_id,
-            board_game,
-            question
+        response = Response(
+            stream_with_context(generate()),
+            mimetype="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache, no-transform",
+                "X-Accel-Buffering": "no",
+                "Connection": "keep-alive",
+            }
         )
-        for chunk in response:
-            yield f"data: {json.dumps({"chunk": chunk})}\n\n"
-        yield f"data: {json.dumps({"done": True})}\n\n"
-
-    response = Response(
-        stream_with_context(generate()),
-        mimetype="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache, no-transform",
-            "X-Accel-Buffering": "no",
-            "Connection": "keep-alive",
-        }
-    )
-    return response
+        return response
+    except Exception as e:
+        logger.error("Error asking question: %s", str(e))
+        return internal_error("Failed to process question")
 
 
 @orchestrator_bp.route("/delete-messages-from-index", methods=["POST"])
 @validate_json_body(board_game=str, index=int)
 @validate_auth_token
 def delete_messages_from_index():
-    data = request.get_json()
+    try:
+        data = request.get_json()
+        board_game = data["board_game"]
+        index = data["index"]
 
-    index = data["index"]
-    if index < 0:
-        return jsonify({"error": "Index must be non-negative"}), 400
+        if board_game not in current_app.orchestrator.get_known_board_games():
+            return validation_error("Unrecognised board game")
+        
+        if index < 0:
+            return validation_error("Index must be non-negative")
 
-    board_game = data["board_game"]
-    if board_game not in current_app.orchestrator.get_known_board_games():
-        return jsonify({"error": "Unrecognised board game"}), 400
+        current_app.orchestrator.delete_messages_from_index(request.user_id, board_game, index)
 
-    user_id = get_user_id_from_auth_header()
-
-    current_app.orchestrator.delete_messages_from_index(
-        user_id,
-        board_game,
-        index
-    )
-
-    return jsonify({"success": True}), 200
+        return success_response()
+    except Exception as e:
+        logger.error("Error deleting messages: %s", str(e))
+        return internal_error("Failed to delete messages")
 
 
 @orchestrator_bp.route("/clear-message-history", methods=["POST"])
 @validate_json_body(board_game=str)
 @validate_auth_token
 def clear_message_history():
-    data = request.get_json()
+    try:
+        data = request.get_json()
+        board_game = data["board_game"]
 
-    board_game = data["board_game"]
-    if board_game not in current_app.orchestrator.get_known_board_games():
-        return jsonify({"error": "Unrecognised board game"}), 400
+        if board_game not in current_app.orchestrator.get_known_board_games():
+            return validation_error("Unrecognised board game")
 
-    user_id = get_user_id_from_auth_header()
+        current_app.orchestrator.clear_message_history(request.user_id, board_game)
 
-    current_app.orchestrator.clear_message_history(
-        user_id,
-        board_game
-    )
-    return jsonify({"success": True}), 200
+        return success_response()
+    except Exception as e:
+        logger.error("Error clearing message history: %s", str(e))
+        return internal_error("Failed to clear message history")
 
 
+# Global error handlers
 @orchestrator_bp.errorhandler(404)
 def resource_not_found(e):
-    return jsonify({"error": "Resource not found: " + str(e)}), 404
+    return not_found_error("Resource not found")
 
 
 @orchestrator_bp.errorhandler(405)
 def method_not_allowed(e):
-    return jsonify({"error": "Method not allowed: " + str(e)}), 405
+    return validation_error("Method not allowed", status_code=405)
 
 
 @orchestrator_bp.errorhandler(500)
 def internal_server_error(e):
-    return jsonify({"error": "Internal server error: " + str(e)}), 500
+    logger.error("Internal server error: %s", str(e))
+    return internal_error("Internal server error")
 
 
 @orchestrator_bp.errorhandler(Exception)
 def unexpected_error(e):
     logger.error("An unexpected error occurred: %s", str(e))
-    return jsonify({"error": "An unexpected error occurred: " + str(e)}), 500
+    return internal_error("An unexpected error occurred")
