@@ -44,7 +44,7 @@ const ChatInterface = () => {
 	const handleGetKnownBoardGames = async () => {
 		try {
 			const response = await withError(() => fetchWithAuth(
-				"/known-board-games",
+				`${process.env.REACT_APP_BACKEND_URL}/known-board-games`,
 				{ method: "GET" }
 			));
 			const knownBoardGames = await response.json();
@@ -58,7 +58,7 @@ const ChatInterface = () => {
 		setIsLoading(true);
 		try {
 			const response = await withError(() => fetchWithAuth(
-				"/message-history",
+				`${process.env.REACT_APP_BACKEND_URL}/message-history`,
 				{ method: "POST", body: JSON.stringify({ board_game: boardGame }) }
 			));
 			const data = await response.json();
@@ -73,7 +73,7 @@ const ChatInterface = () => {
 	const handleEditMessage = async (index: number, newContent: string) => {
 		try {
 			await withError(() => fetchWithAuth(
-				"/delete-messages-from-index",
+				`${process.env.REACT_APP_BACKEND_URL}/delete-messages-from-index`,
 				{ 
 					method: "POST",
 					body: JSON.stringify({
@@ -91,10 +91,13 @@ const ChatInterface = () => {
 	};
 
 	const handleDetermineBoardGame = async (message: string) => {
-		const response = await withError(() => fetchWithAuth("/determine-board-game", {
-			method: "POST",
-			body: JSON.stringify({ question: message }),
-		}));
+		const response = await withError(() => fetchWithAuth(
+			`${process.env.REACT_APP_BACKEND_URL}/determine-board-game`, 
+			{
+				method: "POST",
+				body: JSON.stringify({ question: message })
+			}
+		));
 		const boardGame = await response.json();
 
 		if (knownBoardGames.includes(boardGame)) {
@@ -142,7 +145,7 @@ const ChatInterface = () => {
 			}
 
 			const response = await withError(() => fetchWithAuth(
-				"/ask-question", 
+				`${process.env.REACT_APP_BACKEND_URL}/ask-question`, 
 				{ 
 					method: "POST", 
 					body: JSON.stringify({ 
@@ -206,7 +209,7 @@ const ChatInterface = () => {
 		try {
 			if (selectedBoardGame) {
 				await withError(() => fetchWithAuth(
-					"/clear-message-history",
+					`${process.env.REACT_APP_BACKEND_URL}/clear-message-history`,
 					{ 
 						method: "POST",
 						body: JSON.stringify({ board_game: selectedBoardGame })
