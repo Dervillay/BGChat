@@ -1,10 +1,44 @@
 import json
+import time
+import threading
 
 import jwt
 import requests
 from flask import request, jsonify, current_app
 
 from app.config.constants import DEFAULT_TIMEOUT_SECONDS
+
+
+_jwks_cache = {}
+_jwks_cache_lock = threading.Lock()
+JWKS_CACHE_DURATION = 3600
+
+
+def _get_cached_jwks(auth0_domain: str) -> dict | None:
+    """
+    Get JWKS from cache if it's still valid, otherwise return None.
+    Thread-safe implementation.
+    """
+    with _jwks_cache_lock:
+        if auth0_domain in _jwks_cache:
+            cached_data = _jwks_cache[auth0_domain]
+            if time.time() - cached_data['timestamp'] < JWKS_CACHE_DURATION:
+                return cached_data['jwks']
+            else:
+                del _jwks_cache[auth0_domain]
+    return None
+
+
+def _set_cached_jwks(auth0_domain: str, jwks: dict):
+    """
+    Store JWKS in cache with current timestamp.
+    Thread-safe implementation.
+    """
+    with _jwks_cache_lock:
+        _jwks_cache[auth0_domain] = {
+            'jwks': jwks,
+            'timestamp': time.time()
+        }
 
 
 def get_user_id_from_auth_header() -> str:
@@ -30,10 +64,10 @@ def get_user_id_from_auth_header() -> str:
         return jsonify({"error": f"Error extracting user ID: {str(e)}"}), 401
 
 
-def get_token_from_auth_header():
+def get_token_from_auth_header() -> str:
     """
     Extracts the JWT token from the Authorization header.
-    Raises an AuthError if the header is missing or invalid.
+    Returns an appropriate error response if the header is missing or invalid.
     """
     auth_header = request.headers.get("Authorization", None)
 
@@ -52,7 +86,7 @@ def get_token_from_auth_header():
     return parts[1]
 
 
-def validate_jwt(token):
+def validate_jwt(token: str) -> None:
     """
     Validates the JWT token against the Auth0 JWKS.
     Returns an appropriate error response if the token is invalid.
@@ -64,11 +98,15 @@ def validate_jwt(token):
     if not auth0_domain or not auth0_audience:
         return jsonify({"error": "Auth0 configuration is not properly set up"}), 500
 
-    # TODO: Implement caching of JWKS with expiry of one hour
-    jwks_url = f"https://{auth0_domain}/.well-known/jwks.json"
-    jwks_response = requests.get(jwks_url, timeout=DEFAULT_TIMEOUT_SECONDS)
-    jwks_response.raise_for_status()
-    jwks = jwks_response.json()
+    jwks = _get_cached_jwks(auth0_domain)
+
+    if jwks is None:
+        jwks_url = f"https://{auth0_domain}/.well-known/jwks.json"
+        jwks_response = requests.get(jwks_url, timeout=DEFAULT_TIMEOUT_SECONDS)
+        jwks_response.raise_for_status()
+        jwks = jwks_response.json()
+
+        _set_cached_jwks(auth0_domain, jwks)
 
     unverified_header = jwt.get_unverified_header(token)
     if "kid" not in unverified_header:
