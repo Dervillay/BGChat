@@ -8,6 +8,7 @@ from pymongo.results import UpdateResult
 from urllib.parse import quote_plus
 
 from app.types import Message, RulebookPage, TokenUsage
+from config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -19,12 +20,12 @@ class MongoDBClient:
     _instance = None
     _initialized = False
 
-    def __new__(cls, config):
+    def __new__(cls, config: Config):
         if cls._instance is None:
             cls._instance = super(MongoDBClient, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, config):
+    def __init__(self, config: Config):
         if not self._initialized:
             self.config = config
             self.client = None

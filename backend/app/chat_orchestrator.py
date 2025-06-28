@@ -25,11 +25,12 @@ from app.config.prompts import (
 )
 from app.mongodb_client import MongoDBClient
 from app.types import Message, TokenUsage
+from config import Config
 
 logger = logging.getLogger(__name__)
 
 class ChatOrchestrator:
-    def __init__(self, config):
+    def __init__(self, config: Config):
         self._openai_client = openai.OpenAI(api_key=config.OPENAI_API_KEY)
         self._encoding = tiktoken.encoding_for_model(OPENAI_CHAT_MODEL)
         self._chat_model_name = OPENAI_CHAT_MODEL

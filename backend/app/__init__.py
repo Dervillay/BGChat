@@ -8,21 +8,28 @@ from app.routes.orchestrator import orchestrator_bp
 from config import config
 
 
-def create_app(config_name=None):
+def create_app():
     app = Flask(__name__)
+
+    flask_env = os.environ.get('FLASK_ENV')
+    loaded_config = config[flask_env]()
+
+    allowed_origins = []
+    if loaded_config.FRONTEND_URL:
+        allowed_origins.append(loaded_config.FRONTEND_URL)
+    if flask_env == 'development':
+        allowed_origins.append('http://localhost:3000')
+        allowed_origins.append('http://127.0.0.1:3000')
+
     CORS(
         app,
+        origins=allowed_origins,
         supports_credentials=True,
         allow_headers=["Content-Type", "Authorization"],
     )
 
-    if config_name is None:
-        config_name = os.environ.get('FLASK_ENV', 'development')
-
-    app_config = config[config_name]()
-    app.config.from_object(app_config)
-
+    app.config.from_object(loaded_config)
+    app.orchestrator = ChatOrchestrator(config=loaded_config)
     app.register_blueprint(orchestrator_bp)
-    app.orchestrator = ChatOrchestrator(config=app_config)
 
     return app

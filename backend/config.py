@@ -7,9 +7,11 @@ class Config:
 
     def __init__(self):
         self._load_env_vars()
+        # TODO: Validate env vars
 
     def _load_env_vars(self):
         """Load environment variables into class attributes."""
+        self.FRONTEND_URL = os.environ.get('FRONTEND_URL')
         self.SECRET_KEY = os.environ.get('SECRET_KEY') or os.urandom(24)
         self.SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'True').lower() == 'true'
         self.SESSION_COOKIE_HTTPONLY = True
@@ -37,6 +39,8 @@ class DevelopmentConfig(Config):
         if os.path.exists('.env.development'):
             load_dotenv('.env.development')
         super().__init__()
+        self.FLASK_ENV = 'development'
+        self.FLASK_DEBUG = True
 
 
 class ProductionConfig(Config):
@@ -46,7 +50,8 @@ class ProductionConfig(Config):
         if os.path.exists('.env.production'):
             load_dotenv('.env.production')
         super().__init__()
-
+        self.FLASK_ENV = 'production'
+        self.FLASK_DEBUG = False
 
 config = {
     'development': DevelopmentConfig,

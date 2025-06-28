@@ -22,10 +22,14 @@ def print_bold(text):
 
 def get_environment_config():
     """Get the appropriate configuration based on FLASK_ENV."""
-    env = os.environ.get('FLASK_ENV', 'development')
-    print_bold(f"Using {env} environment configuration\n")
+    flask_env = os.environ.get('FLASK_ENV')
 
-    return config[env]()
+    if flask_env is None:
+        raise ValueError("FLASK_ENV environment variable is not set")
+
+    print_bold(f"Using {flask_env} environment configuration\n")
+
+    return config[flask_env]()
 
 
 def download_rulebooks():
