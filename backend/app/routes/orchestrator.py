@@ -11,6 +11,7 @@ from flask import (
     current_app,
     Response,
     stream_with_context,
+    send_from_directory,
 )
 
 from app.config.paths import RULEBOOKS_PATH
@@ -90,7 +91,7 @@ def serve_pdf(filepath: str):
         directory = os.path.dirname(real_path)
         filename = os.path.basename(real_path)
 
-        return current_app.send_from_directory(
+        return send_from_directory(
             directory,
             filename,
             mimetype="application/pdf",
