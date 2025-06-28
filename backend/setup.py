@@ -70,7 +70,7 @@ def download_rulebooks():
 
 
 def initialise_mongodb_client(env_config):
-    print_bold("Initializing MongoDB client...")
+    print_bold("Initialising MongoDB client...")
     mongodb_client = MongoDBClient(config=env_config)
     print("Done\n")
 
