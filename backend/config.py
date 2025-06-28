@@ -34,21 +34,20 @@ class DevelopmentConfig(Config):
     """Development configuration."""
 
     def __init__(self):
-        load_dotenv('.env.development')
+        if os.path.exists('.env.development'):
+            load_dotenv('.env.development')
         super().__init__()
-        self.DEBUG = True
 
 
 class ProductionConfig(Config):
     """Production configuration."""
 
     def __init__(self):
-        load_dotenv('.env.production')
+        if os.path.exists('.env.production'):
+            load_dotenv('.env.production')
         super().__init__()
-        self.DEBUG = False
 
 
-# Configuration mapping
 config = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,
