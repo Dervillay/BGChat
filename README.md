@@ -1,48 +1,71 @@
-# BGChat Development & Production Setup
+# BGChat
 
-This guide explains how to run BGChat in development and production modes.
+BGChat is an AI-powered tool that helps users understand board game rules and situations by analyzing rulebook PDFs and providing contextual answers to questions.
+
+**[Check it out here](https://bg-chat.com)** 🎲
+
+## 🔧 Key Features
+
+- **AI-Powered Q&A**: Uses GPT-4 to answer board game questions
+- **Semantic Search**: Finds relevant rulebook sections using embeddings
+- **Streaming Responses**: Real-time AI responses
+- **PDF Integration**: Direct access to rulebook PDFs
+- **User Authentication**: Secure Auth0 integration
+- **Message History**: Persistent chat history per user
+- **Token Management**: Daily usage limits and tracking
 
 ## 🏗️ Architecture Overview
 
-- **Frontend**: React app (port 3000 in dev, built static files in prod)
-- **Backend**: Flask API (port 5000)
-- **Database**: MongoDB
+- **Frontend**: React 19 with TypeScript, Chakra UI, deployed on Vercel
+- **Backend**: Flask 3.1 API with Python 3.12, deployed on Railway
+- **Database**: MongoDB Atlas
 - **Authentication**: Auth0
+- **AI**: OpenAI API
 
 ## 🚀 Quick Start
 
-### Development Mode
-```bash
-# Make scripts executable
-chmod +x start-dev.sh start-prod.sh
+### Prerequisites
+- Node.js 18+ and npm
+- Python 3.12+
+- MongoDB Atlas account
+- Auth0 account
+- OpenAI API key
 
-# Start development servers
-./start-dev.sh
+### Development Setup
+
+1. **Clone the repository**
+```bash
+git clone <repository-url>
+cd BGChat
 ```
 
-### Production Mode
+2. **Backend Setup**
 ```bash
-# Start production servers
-./start-prod.sh
+cd backend
+python3 -m venv myenv
+source myenv/bin/activate  # On Windows: myenv\Scripts\activate
+pip install -r requirements.txt
 ```
 
-## 📁 Environment Configuration
+3. **Frontend Setup**
+```bash
+cd frontend
+npm install
+```
 
-### Backend Environment Files
+4. **Environment Configuration**
 
-Create these files in the `backend/` directory:
-
-#### `.env.development`
+Create `.env.development` in the `backend/` directory:
 ```env
 FLASK_ENV=development
 FLASK_DEBUG=True
 FLASK_APP=run.py
 
-# Database
+# MongoDB
 MONGODB_HOST=your-dev-mongodb-host
 MONGODB_USERNAME=your-dev-username
 MONGODB_PASSWORD=your-dev-password
-MONGODB_DB_NAME=bgchat_dev
+MONGODB_DB_NAME=you-dev-db-name
 
 # OpenAI
 OPENAI_API_KEY=your-openai-api-key
@@ -54,39 +77,9 @@ ALGORITHM=RS256
 
 # Security
 SECRET_KEY=dev-secret-key-change-in-production
-SESSION_COOKIE_SECURE=False
 ```
 
-#### `.env.production`
-```env
-FLASK_ENV=production
-FLASK_DEBUG=False
-FLASK_APP=run.py
-
-# Database
-MONGODB_HOST=your-prod-mongodb-host
-MONGODB_USERNAME=your-prod-username
-MONGODB_PASSWORD=your-prod-password
-MONGODB_DB_NAME=bgchat_prod
-
-# OpenAI
-OPENAI_API_KEY=your-openai-api-key
-
-# Auth0
-AUTH0_DOMAIN=your-prod-auth0-domain
-AUTH0_AUDIENCE=your-prod-audience
-ALGORITHM=RS256
-
-# Security
-SECRET_KEY=your-secure-production-secret-key
-SESSION_COOKIE_SECURE=True
-```
-
-### Frontend Environment Files
-
-Create these files in the `frontend/` directory:
-
-#### `.env.development`
+Create `.env.development` in the `frontend/` directory:
 ```env
 REACT_APP_ENVIRONMENT=development
 REACT_APP_API_URL=http://localhost:5000
@@ -95,85 +88,19 @@ REACT_APP_AUTH0_CLIENT_ID=your-dev-client-id
 REACT_APP_AUTH0_AUDIENCE=your-dev-audience
 ```
 
-#### `.env.production`
-```env
-REACT_APP_ENVIRONMENT=production
-REACT_APP_API_URL=https://your-production-api.com
-REACT_APP_AUTH0_DOMAIN=your-prod-auth0-domain
-REACT_APP_AUTH0_CLIENT_ID=your-prod-client-id
-REACT_APP_AUTH0_AUDIENCE=your-prod-audience
-```
-
-## 🔧 Manual Setup
-
-### Development Mode
-
-#### Backend
+5. **Start Development Servers**
 ```bash
-cd backend
-export FLASK_ENV=development
-python3 run.py
+./start-dev.sh
 ```
 
-#### Frontend
-```bash
-cd frontend
-export REACT_APP_ENVIRONMENT=development
-npm start
-```
+## 🤝 Contributing
 
-### Production Mode
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
-#### Backend
-```bash
-cd backend
-export FLASK_ENV=production
-gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 120 run:app
-```
+## 📄 License
 
-#### Frontend
-```bash
-cd frontend
-export REACT_APP_ENVIRONMENT=production
-npm run build
-# Serve the build folder with a web server like nginx
-```
-
-## 🌍 Environment Variables
-
-### Backend Variables
-- `FLASK_ENV`: Environment name (development/production/testing)
-- `MONGODB_*`: MongoDB connection details
-- `OPENAI_API_KEY`: OpenAI API key
-- `AUTH0_*`: Auth0 configuration
-- `SECRET_KEY`: Flask secret key
-- `SESSION_COOKIE_SECURE`: HTTPS requirement for cookies
-
-### Frontend Variables
-- `REACT_APP_ENVIRONMENT`: Environment name
-- `REACT_APP_API_URL`: Backend API URL
-- `REACT_APP_AUTH0_*`: Auth0 configuration
-
-## 📝 Best Practices
-
-1. **Never commit `.env` files** - Add them to `.gitignore`
-2. **Use different databases** for dev/prod
-3. **Use different Auth0 applications** for dev/prod
-4. **Set secure secret keys** in production
-5. **Enable HTTPS** in production
-6. **Use environment variables** for all configuration
-7. **Test production builds** locally before deployment
-
-## 🚨 Troubleshooting
-
-### Common Issues
-
-1. **Port conflicts**: Ensure ports 3000 and 5000 are available
-2. **Environment variables**: Check that all required variables are set
-3. **Database connection**: Verify MongoDB connection details
-4. **Auth0 configuration**: Ensure Auth0 settings match environment
-
-### Debug Mode
-- Backend: Check Flask debug output
-- Frontend: Check browser console and network tab
-- Environment: Verify environment variables are loaded correctly 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
