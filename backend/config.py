@@ -13,9 +13,11 @@ class Config:
         """Load environment variables into class attributes."""
         self.FRONTEND_URL = os.environ.get('FRONTEND_URL')
         self.SECRET_KEY = os.environ.get('SECRET_KEY')
-        self.SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'True').lower() == 'true'
+        self.SESSION_COOKIE_SECURE = True
         self.SESSION_COOKIE_HTTPONLY = True
-        self.SESSION_COOKIE_SAMESITE = 'Lax'
+        self.SESSION_COOKIE_SAMESITE = 'Strict'
+        self.SESSION_COOKIE_MAX_AGE = 3600
+        self.PERMANENT_SESSION_LIFETIME = 3600
 
         # MongoDB
         self.MONGODB_HOST = os.environ.get('MONGODB_HOST')
@@ -35,7 +37,7 @@ class Config:
         """Validate environment variables."""
         missing_vars = []
 
-        # SECRET_KEY is critical for security
+        # Security
         if not self.SECRET_KEY:
             missing_vars.append('SECRET_KEY')
         elif len(self.SECRET_KEY) < 32:
@@ -85,6 +87,7 @@ class ProductionConfig(Config):
         super().__init__()
         self.FLASK_ENV = 'production'
         self.FLASK_DEBUG = False
+
 
 config = {
     'development': DevelopmentConfig,
