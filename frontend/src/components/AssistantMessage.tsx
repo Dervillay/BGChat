@@ -17,11 +17,9 @@ export const AssistantMessage: React.FC<AssistantMessageProps> = ({ content }) =
 			</Text>
 		),
 		a: (props: { href?: string; children: React.ReactNode }) => (
-			<Box>
-				<RulebookLink href={props.href} text={props.children?.toString()}>
-					{props.children}
-				</RulebookLink>
-			</Box>
+			<RulebookLink href={props.href} text={props.children?.toString()}>
+				{props.children}
+			</RulebookLink>
 		),
 		blockquote: (props: { children: React.ReactNode }) => (
 			<Box 
