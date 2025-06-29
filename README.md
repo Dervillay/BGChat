@@ -4,6 +4,14 @@ BGChat is an AI-powered tool that helps users understand board game rules and si
 
 **[Check it out here](https://bg-chat.com)** 🎲
 
+## Support the Project
+
+If BGChat helps you settle board game disputes, consider supporting its development.
+Your support helps keep BGChat free for all members of the board game community.
+
+[![Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/dervillay)
+
+
 ## 🔧 Key Features
 
 - **AI-Powered Q&A**: Uses GPT-4 to answer board game questions
