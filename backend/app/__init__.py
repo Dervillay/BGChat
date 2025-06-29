@@ -15,13 +15,30 @@ def add_security_headers(response):
     response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
     response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
-    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.auth0.com https://api.openai.com;"
+    response.headers['X-Frame-Options'] = 'DENY'
+
+    csp_parts = [
+        "default-src 'self'",
+        "script-src 'self'",
+        "style-src 'self'",
+        "connect-src 'self' https://*.auth0.com https://api.openai.com",
+        "img-src 'self' data: https:",
+        "font-src 'self'",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "frame-ancestors 'none'",
+        "upgrade-insecure-requests"
+    ]
+    response.headers['Content-Security-Policy'] = "; ".join(csp_parts)
 
     # Only allow iframe embedding for PDF routes
     if '/pdfs/' in request.path:
         response.headers['X-Frame-Options'] = 'SAMEORIGIN'
-    else:
-        response.headers['X-Frame-Options'] = 'DENY'
+        response.headers['Content-Security-Policy'] = response.headers['Content-Security-Policy'].replace(
+            "frame-ancestors 'none'", 
+            "frame-ancestors 'self'"
+        )
 
     return response
 
