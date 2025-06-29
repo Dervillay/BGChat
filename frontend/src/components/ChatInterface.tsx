@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Box, Container, VStack, Text, Flex, IconButton, Tooltip } from "@chakra-ui/react";
+import { Box, Container, VStack, Text, Flex, IconButton, Tooltip, Link, Button, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalCloseButton, useDisclosure } from "@chakra-ui/react";
 import { AssistantMessage } from "./AssistantMessage.tsx";
 import { ChatInput } from "./ChatInput.tsx";
 import { ThinkingPlaceholder } from "./ThinkingPlaceholder.tsx";
 import { ErrorMessage } from "./ErrorMessage.tsx";
+import GitHubLink from "./GitHubLink.tsx";
+import SupportLink from "./SupportLink.tsx";
 import { theme } from "../theme/index.ts";
 import { FiRefreshCw } from 'react-icons/fi';
 import { useFetchWithAuth } from "../utils/fetchWithAuth.ts";
@@ -305,6 +307,10 @@ const ChatInterface = () => {
 							knownBoardGames={knownBoardGames}
 							onSelectBoardGame={handleSelectBoardGame}
 						/>
+						<Flex justify="flex-start" m={0} align="flex-start" gap={0}>
+							<SupportLink />
+							<GitHubLink />
+						</Flex>
 					</Container>
 				</Box>
 			</Flex>
