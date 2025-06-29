@@ -51,6 +51,8 @@ export const PDFViewerModal: React.FC = () => {
                 errorMessage = "The PDF file was not found. It may have been moved or deleted.";
             } else if (error.status === 403) {
                 errorMessage = "You don't have permission to access this PDF file.";
+            } else if (error.status === 401) {
+                errorMessage = "Authentication required. Please log in again.";
             } else if (error.status >= 500) {
                 errorMessage = "Server error occurred while loading the PDF. Please try again later.";
             } else if (error.message === 'The requested file is not a PDF') {
@@ -66,7 +68,7 @@ export const PDFViewerModal: React.FC = () => {
     };
 
     const handleUpdateIframeSrc = (blobUrl: string, pageNumber?: string) => {
-        const baseParams = "toolbar=1&navpanes=1&view=FitH";
+        const baseParams = "toolbar=1&navpanes=0&scrollbar=0";
         const pageParams = pageNumber ? `&page=${pageNumber}` : "";
         const fullUrl = `${blobUrl}#${baseParams}${pageParams}`;
         setIframeSrc(fullUrl);
@@ -171,16 +173,22 @@ export const PDFViewerModal: React.FC = () => {
                             <Spinner size="xl" color="gray.300" speed="0.65s" />
                         </Flex>
                     ) : (
-                        <iframe
-                            src={iframeSrc}
-                            title={title}
+                        <object
+                            data={blobUrl}
+                            type="application/pdf"
                             style={{
                                 flex: 1,
                                 width: "100%",
                                 height: "100%",
                                 borderRadius: "0 0 0.5rem 0.5rem"
                             }}
-                        />
+                        >
+                            <p>Your browser does not support PDF viewing. 
+                                <a href={blobUrl} target="_blank" rel="noopener noreferrer">
+                                    Click here to download the PDF
+                                </a>
+                            </p>
+                        </object>
                     )}
                 </ModalBody>
             </ModalContent>
