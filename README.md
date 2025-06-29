@@ -35,7 +35,7 @@ BGChat is an AI-powered tool that helps users understand board game rules and si
 
 1. **Clone the repository**
 ```bash
-git clone <repository-url>
+git clone https://github.com/Dervillay/BGChat.git
 cd BGChat
 ```
 
