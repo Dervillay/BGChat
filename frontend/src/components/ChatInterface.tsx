@@ -247,7 +247,11 @@ const ChatInterface = () => {
 					<Text bgGradient={theme.gradients.purpleToRed} bgClip="text" fontSize="4xl" fontWeight="extrabold">
 						BGChat
 					</Text>
-					<UserProfileMenu />
+					<Flex align="center" gap={4}>
+						<GitHubLink />
+						<SupportLink />
+						<UserProfileMenu />
+					</Flex>
 				</Box>
 
 				<Container maxW="48rem" flex="1" display="flex" mt="4rem">
@@ -307,10 +311,6 @@ const ChatInterface = () => {
 							knownBoardGames={knownBoardGames}
 							onSelectBoardGame={handleSelectBoardGame}
 						/>
-						<Flex justify="flex-start" m={0} align="flex-start" gap={0}>
-							<SupportLink />
-							<GitHubLink />
-						</Flex>
 					</Container>
 				</Box>
 			</Flex>

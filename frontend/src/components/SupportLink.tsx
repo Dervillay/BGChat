@@ -1,24 +1,28 @@
 import React, { useState } from "react";
-import { Button, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody } from "@chakra-ui/react";
+import { Link, Text, Modal, ModalOverlay, ModalContent, ModalBody, Flex, Icon } from "@chakra-ui/react";
 import { FiHeart } from 'react-icons/fi';
 
 const SupportLink: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const iconColor = isHovered ? "gray.500" : "gray.400";
 
   return (
     <>
-      <Button
-        leftIcon={<FiHeart />}
-        size="sm"
-        variant="ghost"
-        color="gray.400"
-        _hover={{ color: "gray.500" }}
-        _active={{ transform: "none" }}
-        aria-label="Support the project"
-        onClick={() => setIsModalOpen(true)}
+      <Link 
+        onClick={() => setIsModalOpen(true)} 
+        _hover={{ textDecoration: "none" }} 
+        cursor="pointer"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
-        <span style={{ fontSize: '0.75rem', color: 'inherit', fontWeight: '100' }}>Support the project</span>
-      </Button>
+        <Flex align="center" gap={1}>
+          <Icon as={FiHeart} boxSize={3} color={iconColor} />
+          <Text fontSize="sm" color={iconColor} fontWeight="thin">
+            Support me
+          </Text>
+        </Flex>
+      </Link>
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} size="md" isCentered>
         <ModalOverlay bg="blackAlpha.600" />
