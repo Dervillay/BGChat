@@ -32,8 +32,9 @@ export const BoardGameSelect: FC<BoardGameSelectProps> = ({
 					border: 'none',
 					boxShadow: 'none',
 					minWidth: 'fit-content',
-					maxWidth: '15rem',
+					minWidth: { base: '10.5rem', md: '11.5rem' },
 					color: 'gray.600',
+					fontSize: { base: 'xs', md: 'sm' },
 					'&:hover': {
 						boxShadow: 'none',
 						border: '1px',
@@ -50,7 +51,7 @@ export const BoardGameSelect: FC<BoardGameSelectProps> = ({
 				}),
 				menu: (provided) => ({
 					...provided,
-					minWidth: '14rem',
+					minWidth: { base: '13rem', md: '18rem' },
 					borderRadius: '10px',
 					right: 0,
 				}),
@@ -64,6 +65,7 @@ export const BoardGameSelect: FC<BoardGameSelectProps> = ({
 					fontWeight: 'normal',
 					backgroundColor: 'transparent',
 					color: 'gray.600',
+					fontSize: { base: 'xs', md: 'sm' },
 					'&:hover': {
 						backgroundColor: 'gray.50',
 						borderRadius: '5px',
@@ -75,7 +77,7 @@ export const BoardGameSelect: FC<BoardGameSelectProps> = ({
 				dropdownIndicator: (provided) => ({
 					...provided,
 					color: 'gray.600',
-					marginLeft: '-1rem',
+					marginLeft: '-2rem',
 				}),
 			}}
 		/>

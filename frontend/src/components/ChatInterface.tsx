@@ -229,33 +229,33 @@ const ChatInterface = () => {
 	};
 
 	return (
-		<Container maxW="container.xl" h="100vh" p={4} display="flex" flexDirection="column">
+		<Container maxW="container.xl" h="100vh" p={{ base: 2, md: 4 }} display="flex" flexDirection="column">
 			<Flex direction="column" h="100vh">
 				<Box
 					position="fixed"
 					top={0}
 					left={0}
 					right={0}
-					h="4rem"
+					h={{ base: "3.5rem", md: "4rem" }}
 					bgGradient="linear(to bottom, rgba(255, 255, 255, 1) 50%, rgba(255, 255, 255, 0) 100%)"
 					display="flex"
 					alignItems="center"
 					justifyContent="space-between"
-					px={5}
+					px={{ base: 3, md: 5 }}
 					zIndex={1}
 				>
-					<Text bgGradient={theme.gradients.purpleToRed} bgClip="text" fontSize="4xl" fontWeight="extrabold">
+					<Text bgGradient={theme.gradients.purpleToRed} bgClip="text" fontSize={{ base: "2xl", md: "4xl" }} fontWeight="extrabold">
 						BGChat
 					</Text>
-					<Flex align="center" gap={4}>
+					<Flex align="center" gap={{ base: 3, md: 4 }}>
 						<GitHubLink />
 						<SupportLink />
 						<UserProfileMenu />
 					</Flex>
 				</Box>
 
-				<Container maxW="48rem" flex="1" display="flex" mt="4rem">
-					<VStack flex="1" overflowY="auto" w="100%" pb="5.5rem">
+				<Container maxW="48rem" flex="1" display="flex" mt={{ base: "3.5rem", md: "4rem" }}>
+					<VStack flex="1" overflowY="auto" w="100%" pb={{ base: "6rem", md: "5.5rem" }}>
 						{messages.map((message, index) => (
 							message.role === "user" ? (
 								<Flex key={index} justifyContent="flex-end" w="100%" role="group">
@@ -300,8 +300,8 @@ const ChatInterface = () => {
 					</VStack>
 				</Container>
 
-				<Box position="relative" p={4}>
-					<Container maxW="48rem" position="fixed" bottom="1rem" left="50%" transform="translateX(-50%)">
+				<Box position="relative" p={{ base: 2, md: 4 }}>
+					<Container maxW="48rem" position="fixed" bottom={{ base: "0.5rem", md: "1rem" }} left="50%" transform="translateX(-50%)" px={{ base: 2, md: 4 }}>
 						<ChatInput
 							inputValue={inputValue}
 							isLoading={isLoading}

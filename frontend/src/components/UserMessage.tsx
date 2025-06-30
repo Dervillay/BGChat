@@ -3,7 +3,6 @@ import { Box, Text, IconButton, Input, Flex, InputGroup } from "@chakra-ui/react
 import { FiEdit2, FiCheck, FiX } from "react-icons/fi";
 
 const commonButtonProps = {
-    size: "sm",
     variant: "ghost",
     color: "gray.500",
     _hover: { color: "gray.700" }
@@ -60,7 +59,7 @@ export const UserMessage: React.FC<UserMessageProps> = ({ content, onEdit }) => 
 
     if (isEditing) {
         return (
-            <Box maxW="70%" display="flex" flexDirection="column" alignItems="flex-end" w="100%">
+            <Box maxW={{ base: "85%", md: "70%" }} display="flex" flexDirection="column" alignItems="flex-end" w="100%">
                 <InputGroup>
                     <Input
                         as="textarea"
@@ -72,6 +71,7 @@ export const UserMessage: React.FC<UserMessageProps> = ({ content, onEdit }) => 
                         pl="1rem"
                         pr="1rem"
                         pb="1rem"
+                        fontSize={{ base: "sm", md: "md" }}
                     />
                 </InputGroup>
                 <Flex justify="flex-end" w="100%">
@@ -79,12 +79,14 @@ export const UserMessage: React.FC<UserMessageProps> = ({ content, onEdit }) => 
                         aria-label="Save edit"
                         icon={<FiCheck />}
                         onClick={handleSave}
+                        size={{ base: "xs", md: "sm" }}
                         {...commonButtonProps}
                     />
                     <IconButton
                         aria-label="Cancel edit"
                         icon={<FiX />}
                         onClick={handleCancel}
+                        size={{ base: "xs", md: "sm" }}
                         {...commonButtonProps}
                     />
                 </Flex>
@@ -94,8 +96,8 @@ export const UserMessage: React.FC<UserMessageProps> = ({ content, onEdit }) => 
 
     return (
         <Box position="relative" display="flex" flexDirection="column" alignItems="flex-end" w="100%">
-            <Box maxW="70%" bg="gray.800" color="white" px={5} py={2.5} borderRadius="1.5rem">
-                <Text>{content}</Text>
+            <Box maxW={{ base: "85%", md: "70%" }} bg="gray.800" color="white" px={{ base: 3, md: 5 }} py={{ base: 2, md: 2.5 }} borderRadius="1.5rem">
+                <Text fontSize={{ base: "sm", md: "md" }}>{content}</Text>
             </Box>
             <Flex justify="flex-end" w="100%" h="1.5rem" mt={0}>
                 <IconButton
@@ -104,6 +106,7 @@ export const UserMessage: React.FC<UserMessageProps> = ({ content, onEdit }) => 
                     onClick={handleEdit}
                     opacity={0}
                     _groupHover={{ opacity: 1 }}
+                    size={{ base: "xs", md: "sm" }}
                     {...commonButtonProps}
                 />
             </Flex>

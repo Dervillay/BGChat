@@ -54,13 +54,22 @@ export const ChatInput: FC<ChatInputProps> = ({
 				_disabled={{ bg: "white", opacity: 1 }}
 				pt="1rem"
 				pl="1rem"
-				pr="8rem"
+				pr={{ base: "6rem", md: "8rem" }}
 				pb="1rem"
 				variant="chat"
 				minH="6rem"
+				fontSize={{ base: "sm", md: "md" }}
 			/>
 			<InputRightElement h="100%" position="absolute">
-				<Flex align="center" gap={2} position="absolute" minWidth="15rem" bottom="1rem" right="1rem" justify="flex-end">
+				<Flex 
+					align="center" 
+					gap={{ base: 1, md: 2 }} 
+					position="absolute" 
+					minWidth={{ base: "12rem", md: "15rem" }} 
+					bottom={{ base: "0.5rem", md: "1rem" }} 
+					right={{ base: "0.5rem", md: "1rem" }} 
+					justify="flex-end"
+				>
 					<BoardGameSelect
 						selectedBoardGame={selectedBoardGame}
 						knownBoardGames={knownBoardGames}
@@ -72,6 +81,10 @@ export const ChatInput: FC<ChatInputProps> = ({
 						disabled={!inputValue.trim() || isLoading}
 						aria-label="Send message"
 						variant="send"
+						size="md"
+						borderRadius="full"
+						w="2.5rem"
+						h="2.5rem"
 					/>
 				</Flex>
 			</InputRightElement>

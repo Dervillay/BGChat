@@ -19,7 +19,7 @@ const SupportLink: React.FC = () => {
         <Flex align="center" gap={1}>
           <Icon as={FiHeart} boxSize={3} color={iconColor} />
           <Text fontSize="sm" color={iconColor} fontWeight="thin">
-            Support me
+            Support the project
           </Text>
         </Flex>
       </Link>
