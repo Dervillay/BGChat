@@ -50,8 +50,8 @@ def create_app():
     loaded_config = config[flask_env]()
 
     allowed_origins = []
-    if loaded_config.FRONTEND_URL:
-        allowed_origins.append(loaded_config.FRONTEND_URL)
+    if loaded_config.FRONTEND_URLS:
+        allowed_origins.extend(loaded_config.FRONTEND_URLS)
     if flask_env == 'development':
         allowed_origins.append('http://localhost:3000')
         allowed_origins.append('http://127.0.0.1:3000')

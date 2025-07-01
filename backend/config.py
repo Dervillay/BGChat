@@ -11,7 +11,8 @@ class Config:
 
     def _load_env_vars(self):
         """Load environment variables into class attributes."""
-        self.FRONTEND_URL = os.environ.get('FRONTEND_URL')
+        frontend_urls = os.environ.get('FRONTEND_URLS', '')
+        self.FRONTEND_URLS = [url.strip() for url in frontend_urls.split(',') if url.strip()]
         self.SECRET_KEY = os.environ.get('SECRET_KEY')
         self.SESSION_COOKIE_SECURE = True
         self.SESSION_COOKIE_HTTPONLY = True
