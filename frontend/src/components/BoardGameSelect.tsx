@@ -32,7 +32,8 @@ export const BoardGameSelect: FC<BoardGameSelectProps> = ({
 					border: 'none',
 					boxShadow: 'none',
 					minWidth: 'fit-content',
-					minWidth: { base: '10.5rem', md: '11.5rem' },
+					maxWidth: { base: '10.5rem', md: '11.5rem' },
+					paddingRight: '1.25rem',
 					color: 'gray.600',
 					fontSize: { base: 'xs', md: 'sm' },
 					'&:hover': {
@@ -48,6 +49,19 @@ export const BoardGameSelect: FC<BoardGameSelectProps> = ({
 						border: '1px',
 						borderColor: 'gray.200',
 					}),
+				}),
+				singleValue: (provided, state) => ({
+					...provided,
+					overflow: 'hidden',
+					textOverflow: 'ellipsis',
+					whiteSpace: 'nowrap',
+					maxWidth: '100%',
+				}),
+				dropdownIndicator: (provided) => ({
+					...provided,
+					color: 'gray.600',
+					marginRight: '0',
+					position: 'absolute',
 				}),
 				menu: (provided) => ({
 					...provided,
@@ -73,11 +87,6 @@ export const BoardGameSelect: FC<BoardGameSelectProps> = ({
 					...(state.isSelected && {
 						color: 'gray.900',
 					}),
-				}),
-				dropdownIndicator: (provided) => ({
-					...provided,
-					color: 'gray.600',
-					marginLeft: '-2rem',
 				}),
 			}}
 		/>
