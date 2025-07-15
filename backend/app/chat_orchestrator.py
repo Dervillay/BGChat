@@ -45,17 +45,17 @@ class ChatOrchestrator:
         error: Exception,
         operation: str,
     ) -> None:
-        if isinstance(error, openai.error.AuthenticationError):
+        if isinstance(error, openai.AuthenticationError):
             raise ValueError(f"Authentication failed during {operation}: {error}") from error
 
-        if isinstance(error, openai.error.InvalidRequestError):
-            raise ValueError(f"Invalid request during {operation}: {error}") from error
+        if isinstance(error, openai.BadRequestError):
+            raise ValueError(f"Bad request during {operation}: {error}") from error
 
-        if isinstance(error, openai.error.RatimitError):
+        if isinstance(error, openai.RateLimitError):
             raise ValueError(f"Rate limit exceeded during {operation}: {error}") from error
 
-        if isinstance(error, openai.error.OpenAIError):
-            raise ValueError(f"OpenAI error during {operation}: {error}") from error
+        if isinstance(error, openai.APIConnectionError):
+            raise ValueError(f"API connection error during {operation}: {error}") from error
 
         raise ValueError(f"Unexpected error during {operation}: {error}") from error
 

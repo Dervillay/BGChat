@@ -196,6 +196,9 @@ const ChatInterface = () => {
 						else if (data.done) {
 							setIsLoading(false);
 						}
+						else if (data.error) {
+							messageQueue.push({ content: data.error, role: "error" });
+						}
 					}
 				}
 			}
