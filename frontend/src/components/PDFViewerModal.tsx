@@ -114,16 +114,26 @@ export const PDFViewerModal: React.FC = () => {
             <ModalOverlay />
             <ModalContent
                 ref={modalContentRef}
-                bg="white"
-                borderRadius={isMobile ? 0 : "xl"}
-                boxShadow={isMobile ? undefined : "xl"}
+                bg="chakra-body-bg"
                 position="relative"
+                borderRadius="1rem"
                 maxW={isMobile ? "100vw" : "80vw"}
                 h={isMobile ? "100vh" : "95vh"}
                 flexDirection="column"
                 flex="1"
-                border={isMobile ? undefined : "1px solid"}
-                borderColor={isMobile ? undefined : "gray.200"}
+                _before={{
+                    content: '""',
+                    position: "absolute",
+                    inset: 0,
+                    padding: "2px",
+                    borderColor: theme.gradients.cosmic,
+                    borderRadius: isMobile ? 0 : "1rem",
+                    background: theme.gradients.cosmic,
+                    opacity: 0.75,
+                    WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+                    WebkitMaskComposite: "xor",
+                    maskComposite: "exclude",
+                }}
             >
                 <ModalHeader
                     display="flex"
@@ -131,15 +141,14 @@ export const PDFViewerModal: React.FC = () => {
                     justifyContent="space-between"
                     pl={5}
                     pr={2}
-                    py={1}
+                    pt={2}
+                    pb={0}
                     position="relative"
-                    zIndex={1}
                 >
                     <Text
                         fontSize="lg"
-                        fontWeight="semibold"
-                        bgGradient={theme.gradients.purpleToRed}
-                        bgClip="text"
+                        fontWeight="normal"
+                        color="chakra-body-text"
                     >
                         {title}
                     </Text>
@@ -152,6 +161,13 @@ export const PDFViewerModal: React.FC = () => {
                                 onClick={handleToggleFullscreen}
                                 color="gray.500"
                                 _hover={{ color: "gray.700" }}
+                                _dark={{
+                                    color: "#a0a0a0",
+                                    _hover: { 
+                                        color: "#e0e0e0",
+                                        filter: "brightness(1.3)"
+                                    }
+                                }}
                                 size="md"
                             />
                         )}
@@ -163,16 +179,25 @@ export const PDFViewerModal: React.FC = () => {
                                 onClick={handleClose}
                                 color="gray.500"
                                 _hover={{ color: "gray.700" }}
+                                _dark={{
+                                    color: "#a0a0a0",
+                                    _hover: { 
+                                        color: "#e0e0e0",
+                                        filter: "brightness(1.3)"
+                                    }
+                                }}
                                 size="md"
                             />
                         </Box>
                     </Flex>
                 </ModalHeader>
                 <ModalBody
-                    p={1}
+                    p={2}
                     display="flex"
                     flexDirection="column"
                     flex="1"
+                    bg="chakra-body-bg"
+                    borderRadius="0 0 1rem 1rem"
                 >
                     {error ? (
                         <Flex
@@ -184,7 +209,7 @@ export const PDFViewerModal: React.FC = () => {
                             textAlign="center"
                         >
                             <Text 
-                                color="gray.600"
+                                color="chakra-body-text"
                                 fontSize="sm"
                                 mb={4}
                             >
@@ -210,7 +235,6 @@ export const PDFViewerModal: React.FC = () => {
                                 flex: 1,
                                 width: "100%",
                                 height: "100%",
-                                borderRadius: isMobile ? 0 : "0 0 0.5rem 0.5rem"
                             }}
                         >
                             <p>Your browser does not support PDF viewing. 

@@ -8,15 +8,28 @@ export const Link = {
   },
   variants: {
     rulebookLink: {
-      backgroundImage: gradients.purpleToRed,
-      backgroundSize: "200% 200%",
-      backgroundPosition: "30% 80%",
+      backgroundImage: gradients.cosmic,
+      backgroundSize: "300% 300%",
+      backgroundPosition: "0% 50%",
       backgroundClip: "text",
-      transition: "background-position 0.1s ease",
+      transition: "all 0.4s ease",
+      _hover: {
+        backgroundPosition: "100% 50%",
+        transform: "translateY(-1px)",
+        filter: "brightness(1.1)",
+      },
       sx: {
         WebkitBackgroundClip: "text",
         WebkitTextFillColor: "transparent",
+        "&.mouse-moving": {
+          animation: "shimmerHover 1.2s ease-in-out infinite",
+        },
+        "@keyframes shimmerHover": {
+          "0%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+          "100%": { backgroundPosition: "0% 50%" }
+        }
       }
-    }
+    },
   }
 };

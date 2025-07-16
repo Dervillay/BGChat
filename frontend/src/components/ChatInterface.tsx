@@ -4,8 +4,7 @@ import { AssistantMessage } from "./AssistantMessage.tsx";
 import { ChatInput } from "./ChatInput.tsx";
 import { ThinkingPlaceholder } from "./ThinkingPlaceholder.tsx";
 import { ErrorMessage } from "./ErrorMessage.tsx";
-import GitHubLink from "./GitHubLink.tsx";
-import SupportLink from "./SupportLink.tsx";
+import { DarkModeToggle } from "./DarkModeToggle.tsx";
 import { theme } from "../theme/index.ts";
 import { FiRefreshCw } from 'react-icons/fi';
 import { useFetchWithAuth } from "../utils/fetchWithAuth.ts";
@@ -240,19 +239,18 @@ const ChatInterface = () => {
 					left={0}
 					right={0}
 					h={{ base: "3.5rem", md: "4rem" }}
-					bgGradient="linear(to bottom, rgba(255, 255, 255, 1) 50%, rgba(255, 255, 255, 0) 100%)"
+					bgGradient={`linear(to bottom, var(--chakra-colors-chakra-body-bg) 50%, transparent 100%)`}
 					display="flex"
 					alignItems="center"
 					justifyContent="space-between"
 					px={{ base: 3, md: 5 }}
 					zIndex={1}
 				>
-					<Text bgGradient={theme.gradients.purpleToRed} bgClip="text" fontSize={{ base: "2xl", md: "4xl" }} fontWeight="extrabold">
+					<Text bgGradient={theme.gradients.cosmic} bgClip="text" fontSize={{ base: "xl", md: "2xl" }} fontWeight="extrabold">
 						BGChat
 					</Text>
-					<Flex align="center" gap={{ base: 3, md: 4 }}>
-						<GitHubLink />
-						<SupportLink />
+					<Flex align="center" gap={2}>
+						<DarkModeToggle />
 						<UserProfileMenu />
 					</Flex>
 				</Box>
@@ -294,6 +292,13 @@ const ChatInterface = () => {
 										variant="ghost"
 										color="gray.500"
 										_hover={{ color: "gray.700" }}
+										_dark={{
+											color: "#a0a0a0",
+											_hover: { 
+												color: "#e0e0e0",
+												filter: "brightness(1.3)"
+											}
+										}}
 										aria-label="Reset chat"
 									/>
 								</Tooltip>

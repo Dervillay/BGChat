@@ -34,20 +34,20 @@ export const ErrorMessage: React.FC<ErrorMessageProps> = ({ content, onClose }) 
             <Flex justifyContent="flex-start">
                 <Box 
                     maxW="100%" 
-                    bg="white"
+                    bg="chakra-body-bg"
                     border="1px" 
-                    borderColor="red.100" 
+                    borderColor="chakra-body-border" 
                     borderRadius="lg" 
                     p={5}
                     position="relative"
-                    boxShadow="sm"
+                    
                     _before={{
                         content: '""',
                         position: "absolute",
                         inset: 0,
                         borderRadius: "lg",
                         padding: "1px",
-                        background: theme.gradients.purpleToRed,
+                        background: theme.gradients.cosmic,
                         opacity: 0.5,
                         WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
                         WebkitMaskComposite: "xor",
@@ -61,7 +61,7 @@ export const ErrorMessage: React.FC<ErrorMessageProps> = ({ content, onClose }) 
                         left={0}
                         right={0}
                         h="4px"
-                        bgGradient={theme.gradients.purpleToRed}
+                        bgGradient={theme.gradients.cosmic}
                         borderTopRadius="lg"
                     />
                     {onClose && (
@@ -74,13 +74,20 @@ export const ErrorMessage: React.FC<ErrorMessageProps> = ({ content, onClose }) 
                             variant="ghost"
                             color="gray.400"
                             _hover={{ color: "gray.600" }}
+                            _dark={{
+                                color: "#a0a0a0",
+                                _hover: { 
+                                    color: "#e0e0e0",
+                                    filter: "brightness(1.3)"
+                                }
+                            }}
                             onClick={onClose}
                             aria-label="Close"
                         />
                     )}
                     <Flex alignItems="center" mb={3}>
                         <Text 
-                            bgGradient={theme.gradients.purpleToRed}
+                            bgGradient={theme.gradients.cosmic}
                             bgClip="text"
                             fontWeight="semibold"
                             fontSize="sm"
@@ -90,7 +97,7 @@ export const ErrorMessage: React.FC<ErrorMessageProps> = ({ content, onClose }) 
                         </Text>
                     </Flex>
                     <Text 
-                        color="gray.700"
+                        color="chakra-body-text"
                         fontSize="sm"
                         lineHeight="tall"
                     >

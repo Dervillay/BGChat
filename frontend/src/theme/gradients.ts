@@ -1,3 +1,3 @@
 export const gradients = {
-    purpleToRed: "linear-gradient(to right,rgb(182, 24, 255), #FF0080)",
+    cosmic: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
 }; 

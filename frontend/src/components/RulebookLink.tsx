@@ -26,7 +26,7 @@ export const RulebookLink: React.FC<RulebookLinkProps> = ({ href, text, children
 			const y = ((e.clientY - rect.top) / rect.height) * 100;
 
 			requestAnimationFrame(() => {
-				link.style.backgroundImage = theme.gradients.purpleToRed;
+				link.style.backgroundImage = theme.gradients.cosmic;
 				link.style.backgroundPosition = `${x}% ${y}%`;
 			});
 		};

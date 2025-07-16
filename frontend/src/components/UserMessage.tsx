@@ -5,7 +5,14 @@ import { FiEdit2, FiCheck, FiX } from "react-icons/fi";
 const commonButtonProps = {
     variant: "ghost",
     color: "gray.500",
-    _hover: { color: "gray.700" }
+    _hover: { color: "gray.700" },
+    _dark: {
+        color: "#a0a0a0",
+        _hover: { 
+            color: "#e0e0e0",
+            filter: "brightness(1.3)"
+        }
+    }
 };
 
 interface UserMessageProps {
@@ -96,7 +103,15 @@ export const UserMessage: React.FC<UserMessageProps> = ({ content, onEdit }) => 
 
     return (
         <Box position="relative" display="flex" flexDirection="column" alignItems="flex-end" w="100%">
-            <Box maxW={{ base: "85%", md: "70%" }} bg="gray.800" color="white" px={{ base: 3, md: 5 }} py={{ base: 2, md: 2.5 }} borderRadius="1.5rem">
+            <Box 
+                maxW={{ base: "85%", md: "70%" }}
+                bg="gray.800"
+                _dark={{ bg: "#2a2a2a" }}
+                color="white"
+                px={{ base: 3, md: 5 }}
+                py={{ base: 2, md: 2.5 }}
+                borderRadius="1.5rem"
+            >
                 <Text fontSize={{ base: "sm", md: "md" }}>{content}</Text>
             </Box>
             <Flex justify="flex-end" w="100%" h="1.5rem" mt={0}>

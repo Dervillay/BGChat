@@ -34,23 +34,25 @@ export const BoardGameSelect: FC<BoardGameSelectProps> = ({
 					minWidth: 'fit-content',
 					maxWidth: { base: '10.5rem', md: '11.5rem' },
 					paddingRight: '1.25rem',
-					color: 'gray.600',
+					color: 'chakra-body-text',
 					fontSize: { base: 'xs', md: 'sm' },
 					'&:hover': {
 						boxShadow: 'none',
 						border: '1px',
-						borderColor: 'gray.200',
+						borderColor: 'chakra-body-border-focus',
 						cursor: 'pointer',
 					},
 					'&:focus-within': {
 						boxShadow: 'none',
+						border: '1px',
+						borderColor: 'chakra-body-border-focus',
 					},
 					...(state.isFocused && {
 						border: '1px',
-						borderColor: 'gray.200',
+						borderColor: 'chakra-body-border-focus',
 					}),
 				}),
-				singleValue: (provided, state) => ({
+				singleValue: (provided) => ({
 					...provided,
 					overflow: 'hidden',
 					textOverflow: 'ellipsis',
@@ -59,7 +61,7 @@ export const BoardGameSelect: FC<BoardGameSelectProps> = ({
 				}),
 				dropdownIndicator: (provided) => ({
 					...provided,
-					color: 'gray.600',
+					color: 'chakra-body-text',
 					marginRight: '0',
 					position: 'absolute',
 				}),
@@ -68,25 +70,41 @@ export const BoardGameSelect: FC<BoardGameSelectProps> = ({
 					minWidth: { base: '13rem', md: '18rem' },
 					borderRadius: '10px',
 					right: 0,
+					borderColor: 'chakra-body-border',
 				}),
 				menuList: (provided) => ({
 					...provided,
 					borderRadius: '10px',
 					padding: '0.3rem',
+					backgroundColor: 'chakra-body-bg',
+					_dark: {
+						backgroundColor: 'chakra-body-message-bg',
+					}
 				}),
 				option: (provided, state) => ({
 					...provided,
 					fontWeight: 'normal',
 					backgroundColor: 'transparent',
-					color: 'gray.600',
+					color: 'chakra-body-text',
 					fontSize: { base: 'xs', md: 'sm' },
 					'&:hover': {
-						backgroundColor: 'gray.50',
+						backgroundColor: 'chakra-body-message-bg',
 						borderRadius: '5px',
 					},
+					_dark: {
+						'&:hover': {
+							backgroundColor: 'chakra-body-border',
+						},
+					},
 					...(state.isSelected && {
-						color: 'gray.900',
+						color: 'chakra-body-text-highlight',
 					}),
+				}),
+				placeholder: (provided) => ({
+					...provided,
+					_dark: {
+						color: '#a0a0a0',
+					},
 				}),
 			}}
 		/>

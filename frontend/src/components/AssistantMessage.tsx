@@ -36,7 +36,7 @@ export const AssistantMessage: React.FC<AssistantMessageProps> = ({ content }) =
 					bottom: 0,
 					height: "100%",
 					width: "3px",
-					background: theme.gradients.purpleToRed,
+					background: theme.gradients.cosmic,
 				}}
 			>
 				{props.children}
