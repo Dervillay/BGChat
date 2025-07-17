@@ -12,7 +12,12 @@ interface AssistantMessageProps {
 export const AssistantMessage: React.FC<AssistantMessageProps> = ({ content }) => {
 	const markdown = {
 		p: (props: { children: React.ReactNode }) => (
-			<Text mt={4} lineHeight={1.7} fontSize={{ base: "sm", md: "md" }}>
+			<Text 
+				mt={4}
+				lineHeight={1.7}
+				fontSize={{ base: "sm", md: "md" }}
+				_first={{ mt: 0 }}
+			>
 				{props.children}
 			</Text>
 		),
