@@ -7,6 +7,11 @@
     <title>BGChat</title>
   </head>
   <body>
+    <script>
+      (function() {
+        document.body.style.background = localStorage.getItem('chakra-ui-color-mode') === 'dark' ? '#101010' : 'white';
+      })();
+    </script>
     <div id="root"></div>
   </body>
 </html>
