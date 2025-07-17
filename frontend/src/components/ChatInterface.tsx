@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Box, Container, VStack, Text, Flex, IconButton, Tooltip, Link, Button, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalCloseButton, useDisclosure } from "@chakra-ui/react";
+import { useState, useEffect, useRef } from "react";
+import { Box, Container, VStack, Text, Flex, IconButton, Tooltip } from "@chakra-ui/react";
 import { AssistantMessage } from "./AssistantMessage.tsx";
 import { ChatInput } from "./ChatInput.tsx";
 import { ThinkingPlaceholder } from "./ThinkingPlaceholder.tsx";
@@ -27,6 +27,7 @@ const ChatInterface = () => {
 	const [inputValue, setInputValue] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [isThinking, setIsThinking] = useState(false);
+	const [hasInteracted, setHasInteracted] = useState(false);
 
 	const fetchWithAuth = useFetchWithAuth();
 	const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -56,6 +57,7 @@ const ChatInterface = () => {
 	};
 
 	const handleSelectBoardGame = async (boardGame: string) => {
+		setHasInteracted(true);
 		setIsLoading(true);
 		try {
 			const response = await withError(() => fetchWithAuth(
@@ -126,6 +128,7 @@ const ChatInterface = () => {
 	}
 
 	const handleSendMessage = async (message: string) => {
+		setHasInteracted(true);
 		setIsLoading(true);
 		setIsThinking(true);
 		setMessages((prev) => [
@@ -233,94 +236,142 @@ const ChatInterface = () => {
 	return (
 		<Container maxW="container.xl" h="100vh" p={{ base: 2, md: 4 }} display="flex" flexDirection="column">
 			<Flex direction="column" h="100vh">
-				<Box
-					position="fixed"
-					top={0}
-					left={0}
-					right={0}
-					h={{ base: "3.5rem", md: "4rem" }}
-					bgGradient={`linear(to bottom, var(--chakra-colors-chakra-body-bg) 50%, transparent 100%)`}
-					display="flex"
-					alignItems="center"
-					justifyContent="space-between"
-					px={{ base: 3, md: 5 }}
-					zIndex={1}
-				>
-					<Text bgGradient={theme.gradients.cosmic} bgClip="text" fontSize={{ base: "xl", md: "2xl" }} fontWeight="extrabold">
-						BGChat
-					</Text>
-					<Flex align="center" gap={2}>
-						<DarkModeToggle />
-						<UserProfileMenu />
+				{!hasInteracted ? (
+					// Centered layout
+					<Flex 
+						direction="column" 
+						justify="center" 
+						align="center"
+						gap={2}
+						h="100vh" 
+						position="relative"
+					>
+						<Text 
+							bgGradient={theme.gradients.cosmic} 
+							bgClip="text" 
+							fontSize={{ base: "5xl", md: "7xl" }} 
+							fontWeight="regular"
+							textAlign="center"
+						>
+							BGChat
+						</Text>
+						<Container maxW="48rem" px={{ base: 2, md: 4 }}>
+							<ChatInput
+								inputValue={inputValue}
+								isLoading={isLoading}
+								selectedBoardGame={selectedBoardGame}
+								setInputValue={setInputValue}
+								onMessageSend={handleSendMessage}
+								knownBoardGames={knownBoardGames}
+								onSelectBoardGame={handleSelectBoardGame}
+							/>
+						</Container>
 					</Flex>
-				</Box>
-
-				<Container maxW="48rem" flex="1" display="flex" mt={{ base: "3.5rem", md: "4rem" }}>
-					<VStack flex="1" overflowY="auto" w="100%" pb={{ base: "6rem", md: "5.5rem" }}>
-						{messages.map((message, index) => (
-							message.role === "user" ? (
-								<Flex key={index} justifyContent="flex-end" w="100%" role="group">
-									<UserMessage
-										content={message.content}
-										onEdit={(newContent) => handleEditMessage(index, newContent)}
-									/>
-								</Flex>
-							) : message.role === "error" ? (
-								<Box key={index} w="100%" position="relative">
-									<ErrorMessage content={message.content} onClose={() => handleCloseError(index)} />
-								</Box>
-							) : (
-								<Box key={index} w="100%" position="relative">
-									<AssistantMessage 
-										content={message.content}
-									/>
-								</Box>
-							)
-						))}
-						{isThinking && <ThinkingPlaceholder />}
-						{messages.length >= 2 && !isLoading && messages.some(msg => msg.role === "user") && (
-							<Flex justify="flex-end" w="100%" mt={1}>
-								<Tooltip 
-									label="Reset chat"
-									placement="bottom"
-									offset={[0, 0]}
-								>
-									<IconButton
-										icon={<FiRefreshCw />}
-										onClick={handleClearChat}
-										size="sm"
-										variant="ghost"
-										color="gray.500"
-										_hover={{ color: "gray.700" }}
-										_dark={{
-											color: "#a0a0a0",
-											_hover: { 
-												color: "#e0e0e0",
-												filter: "brightness(1.3)"
-											}
-										}}
-										aria-label="Reset chat"
-									/>
-								</Tooltip>
+				) : (
+					// Normal layout
+					<>
+						<Box
+							position="fixed"
+							top={0}
+							left={0}
+							right={0}
+							h={{ base: "3.5rem", md: "4rem" }}
+							bgGradient={`linear(to bottom, var(--chakra-colors-chakra-body-bg) 50%, transparent 100%)`}
+							display="flex"
+							alignItems="center"
+							justifyContent="space-between"
+							px={{ base: 3, md: 5 }}
+							zIndex={1}
+						>
+							<Text 
+								bgGradient={theme.gradients.cosmic} 
+								bgClip="text" 
+								fontSize={{ base: "2xl", md: "3xl" }} 
+								fontWeight="regular"
+							>
+								BGChat
+							</Text>
+							<Flex align="center" gap={2}>
+								<DarkModeToggle />
+								<UserProfileMenu />
 							</Flex>
-						)}
-						<div ref={messagesEndRef} />
-					</VStack>
-				</Container>
+						</Box>
 
-				<Box position="relative" p={{ base: 2, md: 4 }}>
-					<Container maxW="48rem" position="fixed" bottom={{ base: "0.5rem", md: "1rem" }} left="50%" transform="translateX(-50%)" px={{ base: 2, md: 4 }}>
-						<ChatInput
-							inputValue={inputValue}
-							isLoading={isLoading}
-							selectedBoardGame={selectedBoardGame}
-							setInputValue={setInputValue}
-							onMessageSend={handleSendMessage}
-							knownBoardGames={knownBoardGames}
-							onSelectBoardGame={handleSelectBoardGame}
-						/>
-					</Container>
-				</Box>
+						<Container maxW="48rem" flex="1" display="flex" mt={{ base: "3.5rem", md: "4rem" }}>
+							<VStack flex="1" overflowY="auto" w="100%" pb={{ base: "6rem", md: "5.5rem" }}>
+								{messages.map((message, index) => (
+									message.role === "user" ? (
+										<Flex key={index} justifyContent="flex-end" w="100%" role="group">
+											<UserMessage
+												content={message.content}
+												onEdit={(newContent) => handleEditMessage(index, newContent)}
+											/>
+										</Flex>
+									) : message.role === "error" ? (
+										<Box key={index} w="100%" position="relative">
+											<ErrorMessage content={message.content} onClose={() => handleCloseError(index)} />
+										</Box>
+									) : (
+										<Box key={index} w="100%" position="relative">
+											<AssistantMessage 
+												content={message.content}
+											/>
+										</Box>
+									)
+								))}
+								{isThinking && <ThinkingPlaceholder />}
+								{messages.length >= 2 && !isLoading && messages.some(msg => msg.role === "user") && (
+									<Flex justify="flex-end" w="100%" mt={1}>
+										<Tooltip 
+											label="Reset chat"
+											placement="bottom"
+											offset={[0, 0]}
+										>
+											<IconButton
+												icon={<FiRefreshCw />}
+												onClick={handleClearChat}
+												size="sm"
+												variant="ghost"
+												color="gray.500"
+												_hover={{ color: "gray.700" }}
+												_dark={{
+													color: "#a0a0a0",
+													_hover: { 
+														color: "#e0e0e0",
+														filter: "brightness(1.3)"
+													}
+												}}
+												aria-label="Reset chat"
+											/>
+										</Tooltip>
+									</Flex>
+								)}
+								<div ref={messagesEndRef} />
+							</VStack>
+						</Container>
+
+						<Box position="relative" p={{ base: 2, md: 4 }}>
+							<Container 
+								maxW="48rem" 
+								position="fixed" 
+								bottom={{ base: "0.5rem", md: "1rem" }} 
+								left="50%" 
+								transform="translateX(-50%)" 
+								px={{ base: 2, md: 4 }}
+							>
+								<ChatInput
+									inputValue={inputValue}
+									isLoading={isLoading}
+									selectedBoardGame={selectedBoardGame}
+									setInputValue={setInputValue}
+									onMessageSend={handleSendMessage}
+									knownBoardGames={knownBoardGames}
+									onSelectBoardGame={handleSelectBoardGame}
+								/>
+							</Container>
+						</Box>
+					</>
+				)}
 			</Flex>
 		</Container>
 	);
