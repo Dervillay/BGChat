@@ -81,10 +81,9 @@ export const ChatInput: FC<ChatInputProps> = ({
 						disabled={!inputValue.trim() || isLoading}
 						aria-label="Send message"
 						variant="send"
-						size="md"
 						borderRadius="full"
-						w="2.5rem"
-						h="2.5rem"
+						w="2.25rem"
+						h="2.25rem"
 					/>
 				</Flex>
 			</InputRightElement>
