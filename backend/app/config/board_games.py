@@ -45,11 +45,11 @@ BOARD_GAMES = [
         ]
     },
     {
-        "name": "Brass: Birmingham",
+        "name": "Diplomacy",
         "rulebooks": [
             {
-                "name": "Brass: Birmingham Rulebook",
-                "download_url": "https://cdn.1j1ju.com/medias/60/39/64-brass-birmingham-rulebook.pdf",
+                "name": "The Rules of Diplomacy",
+                "download_url": "https://media.wizards.com/2015/downloads/ah/diplomacy_rules.pdf",
             }
         ]
     },
