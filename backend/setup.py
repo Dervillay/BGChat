@@ -33,23 +33,16 @@ def get_environment_config():
 
 
 def download_rulebooks():
-    print(f"RULEBOOKS_PATH: {RULEBOOKS_PATH}")
-    print(f"Current working directory: {os.getcwd()}")
-    print(f"RULEBOOKS_PATH exists before creation: {os.path.exists(RULEBOOKS_PATH)}")
-    
     os.makedirs(RULEBOOKS_PATH, exist_ok=True)
-    print(f"RULEBOOKS_PATH exists after creation: {os.path.exists(RULEBOOKS_PATH)}")
 
     print_bold("Downloading rulebooks for board games...")
     for board_game in BOARD_GAMES:
         print_bold(f'\n{board_game["name"]}')
         board_game_rulebooks_path = f'{RULEBOOKS_PATH}/{board_game["name"]}'
-        print(f"Creating directory: {board_game_rulebooks_path}")
         os.makedirs(board_game_rulebooks_path, exist_ok=True)
 
         for rulebook in board_game["rulebooks"]:
             rulebook_path = f'{board_game_rulebooks_path}/{rulebook["name"]}.pdf'
-            print(f"Rulebook path: {rulebook_path}")
 
             if not os.path.exists(rulebook_path):
                 try:
@@ -71,32 +64,13 @@ def download_rulebooks():
                             for chunk in response.iter_content(DOWNLOAD_BLOCK_SIZE):
                                 file.write(chunk)
                                 progress_bar.update(len(chunk))
-                    
-                    print(f"Downloaded: {rulebook_path}")
-                    print(f"File exists after download: {os.path.exists(rulebook_path)}")
-                    print(f"File size: {os.path.getsize(rulebook_path)} bytes")
-                    
                 except requests.exceptions.HTTPError as error:
                     print(
                         f'Failed to download "{rulebook["name"]}" for "{board_game["name"]}": {error}'
                     )
             else:
                 print(f'"{rulebook_path}" already exists')
-                print(f"File size: {os.path.getsize(rulebook_path)} bytes")
     print()
-    
-    # List all downloaded files
-    print("Final file structure:")
-    if os.path.exists(RULEBOOKS_PATH):
-        for root, dirs, files in os.walk(RULEBOOKS_PATH):
-            level = root.replace(RULEBOOKS_PATH, '').count(os.sep)
-            indent = ' ' * 2 * level
-            print(f"{indent}{os.path.basename(root)}/")
-            subindent = ' ' * 2 * (level + 1)
-            for file in files:
-                print(f"{subindent}{file}")
-    else:
-        print("RULEBOOKS_PATH does not exist!")
 
 
 def initialise_mongodb_client(env_config):
