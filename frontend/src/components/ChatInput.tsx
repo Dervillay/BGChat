@@ -1,7 +1,8 @@
 import React, { FC, ChangeEvent, KeyboardEvent } from "react";
-import { Input, InputGroup, InputRightElement, IconButton, Spinner, Flex } from "@chakra-ui/react";
+import { Input, IconButton, Spinner, Flex } from "@chakra-ui/react";
 import { FaArrowUp } from "react-icons/fa";
 import { BoardGameSelect } from "./BoardGameSelect.tsx";
+import { theme } from "../theme/index.ts";
 
 interface ChatInputProps {
 	inputValue: string;
@@ -43,50 +44,32 @@ export const ChatInput: FC<ChatInputProps> = ({
 	};
 
 	return (
-		<InputGroup>
-			<Input
-				as="textarea"
-				value={inputValue}
-				onChange={handleChange}
-				onKeyDown={handleKeyPress}
-				placeholder={`Ask about the rules for ${selectedBoardGame || "any board game"}`}
-				disabled={isLoading}
-				_disabled={{ opacity: 1 }}
-				pt="1rem"
-				pl="1rem"
-				pr={{ base: "6rem", md: "8rem" }}
-				pb="1rem"
-				variant="chat"
-				minH="6rem"
-				fontSize={{ base: "sm", md: "md" }}
-			/>
-			<InputRightElement h="100%" position="absolute">
-				<Flex 
-					align="center" 
-					gap={{ base: 1, md: 2 }} 
-					position="absolute" 
-					minWidth={{ base: "12rem", md: "15rem" }} 
-					bottom={{ base: "0.5rem", md: "1rem" }} 
-					right={{ base: "0.5rem", md: "1rem" }} 
-					justify="flex-end"
-				>
-					<BoardGameSelect
-						selectedBoardGame={selectedBoardGame}
-						knownBoardGames={knownBoardGames}
-						onSelectBoardGame={onSelectBoardGame}
+		<Flex {...theme.components.ChatInput.baseStyle.container}>
+			<Flex {...theme.components.ChatInput.baseStyle.inputContainer}>
+				<Input
+					as="textarea"
+					value={inputValue}
+					onChange={handleChange}
+					onKeyDown={handleKeyPress}
+					placeholder={`Ask about the rules for ${selectedBoardGame || "any board game"}`}
+					disabled={isLoading}
+					_disabled={{ opacity: 1 }}
+					{...theme.components.ChatInput.baseStyle.input}
 					/>
-					<IconButton
-						icon={isLoading ? <Spinner /> : <FaArrowUp />}
-						onClick={handleSend}
-						disabled={!inputValue.trim() || isLoading}
-						aria-label="Send message"
-						variant="send"
-						borderRadius="full"
-						w="2.25rem"
-						h="2.25rem"
-					/>
-				</Flex>
-			</InputRightElement>
-		</InputGroup>
+			</Flex>
+			<Flex {...theme.components.ChatInput.baseStyle.controls}>
+				<BoardGameSelect
+					selectedBoardGame={selectedBoardGame}
+					knownBoardGames={knownBoardGames}
+					onSelectBoardGame={onSelectBoardGame}
+				/>
+				<IconButton
+					icon={isLoading ? <Spinner /> : <FaArrowUp />}
+					onClick={handleSend}
+					disabled={!inputValue.trim() || isLoading}
+					aria-label="Send message"
+				/>
+			</Flex>
+		</Flex>
 	);
 };
