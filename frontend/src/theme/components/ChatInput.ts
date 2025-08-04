@@ -2,7 +2,8 @@ export const ChatInput = {
   baseStyle: {
     container: {
       direction: "column",
-      minW: "100%",
+      maxW: { base: "100%", md: "48rem" },
+      mx: "auto",
       gap: 1,
       border: "1px solid",
       borderColor: "chakra-body-border",
@@ -10,8 +11,8 @@ export const ChatInput = {
       textColor: "chakra-body-text",
       h: "auto",
       lineHeight: "normal",
-      px: ".75rem",
-      py: "1rem",
+      px: "0.8rem",
+      py: "0.8rem",
       _dark: {
         bg: "chakra-body-message-bg",
       },
@@ -50,6 +51,13 @@ export const ChatInput = {
       gap: { base: 1, md: 2 },
       justify: "flex-end",
       flexShrink: 0
+    }
+  },
+  variants: {
+    bottomFixed: {
+      container: {
+        borderRadius: { base: "1.5rem 1.5rem 0 0", md: "1.5rem" },
+      }
     }
   }
 }; 

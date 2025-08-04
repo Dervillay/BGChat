@@ -51,7 +51,7 @@ const ChatInterface = () => {
 			));
 			const knownBoardGames = await response.json();
 			setKnownBoardGames(knownBoardGames);
-		} catch (error) {
+		} catch (error: any) {
 			messageQueue.push({ content: "Failed to load known board games: " + error.message, role: "error" });
 		}	
 	};
@@ -67,7 +67,7 @@ const ChatInterface = () => {
 			const data = await response.json();
 			setMessages(data);
 			setSelectedBoardGame(boardGame);
-		} catch (error) {
+		} catch (error: any) {
 			messageQueue.push({ content: "Failed to switch board game. Please try again: " + error.message, role: "error" });
 		}
 		setIsLoading(false);
@@ -86,7 +86,7 @@ const ChatInterface = () => {
 				}
 			));
 			setMessages((prev) => prev.slice(0, index));
-		} catch (error) {
+		} catch (error: any) {
 			messageQueue.push({ content: "Failed to edit message: " + error.message, role: "error" });
 		}
 
@@ -204,7 +204,7 @@ const ChatInterface = () => {
 					}
 				}
 			}
-		} catch (error) {
+		} catch (error: any) {
 			messageQueue.push({ content: error.message, role: "error" });
 		} finally {
 			setIsThinking(false);
@@ -224,7 +224,7 @@ const ChatInterface = () => {
 				));
 			}
 			setMessages([]);
-		} catch (error) {
+		} catch (error: any) {
 			messageQueue.push({ content: "Failed to clear chat: " + error.message, role: "error" });
 		}
 	};
@@ -264,12 +264,14 @@ const ChatInterface = () => {
 								onMessageSend={handleSendMessage}
 								knownBoardGames={knownBoardGames}
 								onSelectBoardGame={handleSelectBoardGame}
+								variant="default"
 							/>
 						</Container>
 					</Flex>
 				) : (
-					// Normal layout
+					// Normal layout with fixed header and input
 					<>
+						{/* Fixed top bar */}
 						<Box
 							position="fixed"
 							top={0}
@@ -297,78 +299,90 @@ const ChatInterface = () => {
 							</Flex>
 						</Box>
 
-						<Container maxW="48rem" flex="1" display="flex" mt={{ base: "3.5rem", md: "4rem" }}>
-							<VStack flex="1" overflowY="auto" w="100%" pb={{ base: "6rem", md: "5.5rem" }}>
-								{messages.map((message, index) => (
-									message.role === "user" ? (
-										<Flex key={index} justifyContent="flex-end" w="100%" role="group">
-											<UserMessage
-												content={message.content}
-												onEdit={(newContent) => handleEditMessage(index, newContent)}
-											/>
+						{/* Scrollable messages area between header and input */}
+						<Box
+							position="fixed"
+							pt={{ base: "3.5rem", md: "4rem" }}
+							top={{ base: "0", md: "0" }}
+							bottom={{ base: "6rem", md: "6.5rem" }}
+							left={0}
+							right={0}
+							overflowY="auto"
+						>
+							<Container maxW="48rem" mx="auto" px={{ base: 2, md: 4 }} py={4}>
+								<VStack w="100%" spacing={4}>
+									{messages.map((message, index) => (
+										message.role === "user" ? (
+											<Flex key={index} justifyContent="flex-end" w="100%" role="group">
+												<UserMessage
+													content={message.content}
+													onEdit={(newContent) => handleEditMessage(index, newContent)}
+												/>
+											</Flex>
+										) : message.role === "error" ? (
+											<Box key={index} w="100%" position="relative">
+												<ErrorMessage content={message.content} onClose={() => handleCloseError(index)} />
+											</Box>
+										) : (
+											<Box key={index} w="100%" position="relative">
+												<AssistantMessage 
+													content={message.content}
+												/>
+											</Box>
+										)
+									))}
+									{isThinking && <ThinkingPlaceholder />}
+									{messages.length >= 2 && !isLoading && messages.some(msg => msg.role === "user") && (
+										<Flex justify="flex-end" w="100%" mt={1}>
+											<Tooltip 
+												label="Reset chat"
+												placement="bottom"
+												offset={[0, 0]}
+											>
+												<IconButton
+													icon={<FiRefreshCw />}
+													onClick={handleClearChat}
+													size="sm"
+													variant="ghost"
+													color="gray.500"
+													_hover={{ color: "gray.700" }}
+													_dark={{
+														color: "#a0a0a0",
+														_hover: { 
+															color: "#e0e0e0",
+															filter: "brightness(1.3)"
+														}
+													}}
+													aria-label="Reset chat"
+												/>
+											</Tooltip>
 										</Flex>
-									) : message.role === "error" ? (
-										<Box key={index} w="100%" position="relative">
-											<ErrorMessage content={message.content} onClose={() => handleCloseError(index)} />
-										</Box>
-									) : (
-										<Box key={index} w="100%" position="relative">
-											<AssistantMessage 
-												content={message.content}
-											/>
-										</Box>
-									)
-								))}
-								{isThinking && <ThinkingPlaceholder />}
-								{messages.length >= 2 && !isLoading && messages.some(msg => msg.role === "user") && (
-									<Flex justify="flex-end" w="100%" mt={1}>
-										<Tooltip 
-											label="Reset chat"
-											placement="bottom"
-											offset={[0, 0]}
-										>
-											<IconButton
-												icon={<FiRefreshCw />}
-												onClick={handleClearChat}
-												size="sm"
-												variant="ghost"
-												color="gray.500"
-												_hover={{ color: "gray.700" }}
-												_dark={{
-													color: "#a0a0a0",
-													_hover: { 
-														color: "#e0e0e0",
-														filter: "brightness(1.3)"
-													}
-												}}
-												aria-label="Reset chat"
-											/>
-										</Tooltip>
-									</Flex>
-								)}
-								<div ref={messagesEndRef} />
-							</VStack>
-						</Container>
-
-						<Box position="relative" p={{ base: 2, md: 4 }}>
-							<Container 
-								maxW="48rem" 
-								position="fixed" 
-								bottom={{ base: "0.5rem", md: "1rem" }} 
-								left="50%" 
-								transform="translateX(-50%)" 
-								px={{ base: 2, md: 4 }}
-							>
-								<ChatInput
-									inputValue={inputValue}
-									isLoading={isLoading}
-									selectedBoardGame={selectedBoardGame}
-									setInputValue={setInputValue}
-									onMessageSend={handleSendMessage}
-									knownBoardGames={knownBoardGames}
-									onSelectBoardGame={handleSelectBoardGame}
-								/>
+									)}
+									<div ref={messagesEndRef} />
+								</VStack>
 							</Container>
+						</Box>
+
+						{/* Fixed bottom ChatInput */}
+						<Box 
+							position="fixed" 
+							bottom={0}
+							left={0}
+							right={0}
+							zIndex={1}
+							p={{ base: 0, md: 4 }}
+							bgGradient={`linear(to top, var(--chakra-colors-chakra-body-bg) 50%, transparent 100%)`}
+						>
+							<ChatInput
+								inputValue={inputValue}
+								isLoading={isLoading}
+								selectedBoardGame={selectedBoardGame}
+								setInputValue={setInputValue}
+								onMessageSend={handleSendMessage}
+								knownBoardGames={knownBoardGames}
+								onSelectBoardGame={handleSelectBoardGame}
+								variant="bottomFixed"
+							/>
 						</Box>
 					</>
 				)}

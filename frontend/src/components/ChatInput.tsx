@@ -12,6 +12,7 @@ interface ChatInputProps {
 	onMessageSend: (message: string) => void;
 	knownBoardGames: string[];
 	onSelectBoardGame: (selectedBoardGame: string) => void;
+	variant?: "default" | "bottomFixed";
 }
 
 export const ChatInput: FC<ChatInputProps> = ({
@@ -22,6 +23,7 @@ export const ChatInput: FC<ChatInputProps> = ({
 	setInputValue,
 	onMessageSend,
 	onSelectBoardGame,
+	variant = "default",
 }) => {
 	const handleSend = async () => {
 		const message = inputValue.trim();
@@ -43,20 +45,22 @@ export const ChatInput: FC<ChatInputProps> = ({
 		setInputValue(e.target.value);
 	};
 
+	const containerStyle = variant === "bottomFixed" 
+		? { ...theme.components.ChatInput.baseStyle.container, ...theme.components.ChatInput.variants.bottomFixed.container }
+		: theme.components.ChatInput.baseStyle.container;
+
 	return (
-		<Flex {...theme.components.ChatInput.baseStyle.container}>
-			<Flex {...theme.components.ChatInput.baseStyle.inputContainer}>
-				<Input
-					as="textarea"
-					value={inputValue}
-					onChange={handleChange}
-					onKeyDown={handleKeyPress}
-					placeholder={`Ask about the rules for ${selectedBoardGame || "any board game"}`}
-					disabled={isLoading}
-					_disabled={{ opacity: 1 }}
-					{...theme.components.ChatInput.baseStyle.input}
-					/>
-			</Flex>
+		<Flex {...containerStyle}>
+			<Input
+				as="textarea"
+				value={inputValue}
+				onChange={handleChange}
+				onKeyDown={handleKeyPress}
+				placeholder={`Ask about the rules for ${selectedBoardGame || "any board game"}`}
+				disabled={isLoading}
+				_disabled={{ opacity: 1 }}
+				{...theme.components.ChatInput.baseStyle.input}
+			/>
 			<Flex {...theme.components.ChatInput.baseStyle.controls}>
 				<BoardGameSelect
 					selectedBoardGame={selectedBoardGame}
