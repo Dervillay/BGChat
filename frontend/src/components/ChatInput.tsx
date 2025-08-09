@@ -1,5 +1,5 @@
-import React, { FC, ChangeEvent, KeyboardEvent } from "react";
-import { Input, IconButton, Spinner, Flex } from "@chakra-ui/react";
+import { FC, ChangeEvent, KeyboardEvent } from "react";
+import { Input, IconButton, Spinner, Flex, Box } from "@chakra-ui/react";
 import { FaArrowUp } from "react-icons/fa";
 import { BoardGameSelect } from "./BoardGameSelect.tsx";
 import { theme } from "../theme/index.ts";
@@ -50,7 +50,7 @@ export const ChatInput: FC<ChatInputProps> = ({
 		: theme.components.ChatInput.baseStyle.container;
 
 	return (
-		<Flex {...containerStyle}>
+		<Box {...containerStyle}>
 			<Input
 				as="textarea"
 				value={inputValue}
@@ -74,6 +74,6 @@ export const ChatInput: FC<ChatInputProps> = ({
 					aria-label="Send message"
 				/>
 			</Flex>
-		</Flex>
+		</Box>
 	);
 };

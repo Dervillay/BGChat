@@ -27,6 +27,7 @@ export const ChatInput = {
     input: {
       variant: "unstyled",
       minH: "3rem",
+      maxH: "7rem",
       fontSize: { base: "sm", md: "md" },
       flex: "1",
       border: "none",

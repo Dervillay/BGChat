@@ -371,7 +371,6 @@ const ChatInterface = () => {
 							right={0}
 							zIndex={1}
 							p={{ base: 0, md: 4 }}
-							bgGradient={`linear(to top, var(--chakra-colors-chakra-body-bg) 50%, transparent 100%)`}
 						>
 							<ChatInput
 								inputValue={inputValue}
