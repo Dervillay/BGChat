@@ -8,6 +8,7 @@ export const ChatInput = {
       mx: "auto",
       gap: 1.5,
       border: "1px solid",
+      bg: "chakra-body-bg",
       borderColor: "chakra-body-border",
       borderRadius: "1.5rem",
       textColor: "chakra-body-text",
