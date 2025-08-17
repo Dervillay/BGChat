@@ -53,6 +53,15 @@ BOARD_GAMES = [
             }
         ]
     },
+    {
+        "name": "The Lord of the Rings: Duel for Middle-earth",
+        "rulebooks": [
+            {
+                "name": "Rules",
+                "download_url": "https://cdn.svc.asmodee.net/production-rprod/storage/games/7-wonders-LOTR/rules/7dume-en01-rules-1725540544zdnes.pdf",
+            }
+        ]
+    },
 ]
 
 BOARD_GAMES_STRING_LIST = "\n".join([f"- {board_game['name']}" for board_game in BOARD_GAMES])
