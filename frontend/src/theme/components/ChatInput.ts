@@ -7,9 +7,7 @@ export const ChatInput = {
       maxW: { base: "100%", md: "48rem" },
       mx: "auto",
       gap: 1.5,
-      border: "1px solid",
       bg: "chakra-body-bg",
-      borderColor: "chakra-body-border",
       borderRadius: "1.5rem",
       textColor: "chakra-body-text",
       h: "auto",
@@ -18,6 +16,10 @@ export const ChatInput = {
       py: "1rem",
       _dark: {
         bg: "chakra-body-message-bg",
+      },
+      _light: {
+        border: "1px solid",
+        borderColor: "chakra-body-border",
       },
       _hover: {
         borderColor: "chakra-body-border-focus"
