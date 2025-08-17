@@ -234,151 +234,161 @@ const ChatInterface = () => {
 	};
 
 	return (
-		<Container maxW="container.xl" h="100dvh" display="flex" flexDirection="column">
-			<Flex direction="column">
-				{!hasInteracted ? (
-					// Centered layout
-					<Flex 
-						direction="column" 
-						justify="center" 
-						align="center"
-						gap={2}
-						h="100dvh"
-						position="relative"
+		<Container h="100dvh" display="flex" flexDirection="column" overflow="hidden">
+			{!hasInteracted ? (
+				// Centered layout
+				<Flex 
+					direction="column" 
+					justify="center" 
+					align="center"
+					gap={2}
+					h="100dvh"
+				>
+					<Text 
+						bgGradient={theme.gradients.cosmic} 
+						bgClip="text" 
+						fontSize={{ base: "5xl", md: "7xl" }} 
+						fontWeight="regular"
+						textAlign="center"
+					>
+						BGChat
+					</Text>
+					<ChatInput
+						inputValue={inputValue}
+						isLoading={isLoading}
+						selectedBoardGame={selectedBoardGame}
+						setInputValue={setInputValue}
+						onMessageSend={handleSendMessage}
+						knownBoardGames={knownBoardGames}
+						onSelectBoardGame={handleSelectBoardGame}
+						variant="default"
+					/>
+				</Flex>
+			) : (
+				// Normal layout with fixed header and input
+				<>
+					{/* Fixed top bar */}
+					<Box
+						position="fixed"
+						top={0}
+						left={0}
+						right={0}
+						transform="none"
+						h={{ base: "3.5rem", md: "4rem" }}
+						bgGradient={`linear(to bottom, var(--chakra-colors-chakra-body-bg) 50%, transparent 100%)`}
+						display="flex"
+						alignItems="center"
+						justifyContent="space-between"
+						px={{ base: 3, md: 5 }}
+						zIndex={1}
 					>
 						<Text 
 							bgGradient={theme.gradients.cosmic} 
 							bgClip="text" 
-							fontSize={{ base: "5xl", md: "7xl" }} 
+							fontSize={{ base: "2xl", md: "3xl" }} 
 							fontWeight="regular"
-							textAlign="center"
 						>
 							BGChat
 						</Text>
-							<ChatInput
-								inputValue={inputValue}
-								isLoading={isLoading}
-								selectedBoardGame={selectedBoardGame}
-								setInputValue={setInputValue}
-								onMessageSend={handleSendMessage}
-								knownBoardGames={knownBoardGames}
-								onSelectBoardGame={handleSelectBoardGame}
-								variant="default"
-							/>
-					</Flex>
-				) : (
-					// Normal layout with fixed header and input
-					<Container h="100dvh" display="flex" flexDirection="column">
-						{/* Fixed top bar */}
-						<Box
-							position="fixed"
-							top={0}
-							left={0}
-							right={0}
-							transform="none"
-							h={{ base: "3.5rem", md: "4rem" }}
-							bgGradient={`linear(to bottom, var(--chakra-colors-chakra-body-bg) 50%, transparent 100%)`}
-							display="flex"
-							alignItems="center"
-							justifyContent="space-between"
-							px={{ base: 3, md: 5 }}
-							zIndex={1}
-						>
-							<Text 
-								bgGradient={theme.gradients.cosmic} 
-								bgClip="text" 
-								fontSize={{ base: "2xl", md: "3xl" }} 
-								fontWeight="regular"
-							>
-								BGChat
-							</Text>
-							<Flex align="center" gap={2}>
-								<DarkModeToggle />
-								<UserProfileMenu />
-							</Flex>
-						</Box>
+						<Flex align="center" gap={2}>
+							<DarkModeToggle />
+							<UserProfileMenu />
+						</Flex>
+					</Box>
 
-						{/* Scrollable messages area between header and input */}
-						<Box
-							position="fixed"
-							pt={{ base: "3.5rem", md: "4rem" }}
-							top={{ base: "0", md: "0" }}
-							bottom={{ base: "6rem", md: "6.5rem" }}
-							left={0}
-							right={0}
-							overflowY="auto"
-						>
-							<Container maxW="48rem" mx="auto" px={{ base: 2, md: 4 }} py={4}>
-								<VStack w="100%" spacing={4}>
-									{messages.map((message, index) => (
-										message.role === "user" ? (
-											<UserMessage
-												content={message.content}
-												onEdit={(newContent) => handleEditMessage(index, newContent)}
+					{/* Scrollable messages area between header and input */}
+					<Box
+						position="fixed"
+						pt={{ base: "3.5rem", md: "4rem" }}
+						top={0}
+						bottom={{ base: "6rem", md: "6.5rem" }}
+						left={0}
+						right={0}
+						overflowY="auto"
+						css={{
+							'&::-webkit-scrollbar': {
+								display: 'none'
+							},
+							scrollbarWidth: 'none',
+							msOverflowStyle: 'none'
+						}}
+					>
+						<Container maxW="48rem" mx="auto" px={{ base: 2, md: 4 }} py={4}>
+							<VStack w="100%" spacing={4}>
+								{messages.map((message, index) => (
+									message.role === "user" ? (
+										<UserMessage
+											key={index}
+											content={message.content}
+											onEdit={(newContent) => handleEditMessage(index, newContent)}
+										/>
+									) : message.role === "assistant" ? (
+										<AssistantMessage 
+											key={index}
+											content={message.content}
+										/>
+									) : (
+										<ErrorMessage 
+											key={index}
+											content={message.content} 
+											onClose={() => handleCloseError(index)} 
+										/>
+									)
+								))}
+								{isThinking && <ThinkingPlaceholder />}
+								{messages.length >= 2 && !isLoading && messages.some(msg => msg.role === "user") && (
+									<Flex justify="flex-end" w="100%" mt={1}>
+										<Tooltip 
+											label="Reset chat"
+											placement="bottom"
+											offset={[0, 0]}
+										>
+											<IconButton
+												icon={<FiRefreshCw />}
+												onClick={handleClearChat}
+												size="sm"
+												variant="ghost"
+												color="gray.500"
+												_hover={{ color: "gray.700" }}
+												_dark={{
+													color: "#a0a0a0",
+													_hover: { 
+														color: "#e0e0e0",
+														filter: "brightness(1.3)"
+													}
+												}}
+												aria-label="Reset chat"
 											/>
-										) : message.role === "assistant" ? (
-											<AssistantMessage 
-												content={message.content}
-											/>
-										) : (
-											<ErrorMessage content={message.content} onClose={() => handleCloseError(index)} />
-										)
-									))}
-									{isThinking && <ThinkingPlaceholder />}
-									{messages.length >= 2 && !isLoading && messages.some(msg => msg.role === "user") && (
-										<Flex justify="flex-end" w="100%" mt={1}>
-											<Tooltip 
-												label="Reset chat"
-												placement="bottom"
-												offset={[0, 0]}
-											>
-												<IconButton
-													icon={<FiRefreshCw />}
-													onClick={handleClearChat}
-													size="sm"
-													variant="ghost"
-													color="gray.500"
-													_hover={{ color: "gray.700" }}
-													_dark={{
-														color: "#a0a0a0",
-														_hover: { 
-															color: "#e0e0e0",
-															filter: "brightness(1.3)"
-														}
-													}}
-													aria-label="Reset chat"
-												/>
-											</Tooltip>
-										</Flex>
-									)}
-									<div ref={messagesEndRef} />
-								</VStack>
-							</Container>
-						</Box>
+										</Tooltip>
+									</Flex>
+								)}
+								<div ref={messagesEndRef} />
+							</VStack>
+						</Container>
+					</Box>
 
-						{/* Fixed bottom ChatInput */}
-						<Box 
-							position="fixed" 
-							bottom={0}
-							left={0}
-							right={0}
-							zIndex={1}
-							p={{ base: 0, md: 4 }}
-						>
-							<ChatInput
-								inputValue={inputValue}
-								isLoading={isLoading}
-								selectedBoardGame={selectedBoardGame}
-								setInputValue={setInputValue}
-								onMessageSend={handleSendMessage}
-								knownBoardGames={knownBoardGames}
-								onSelectBoardGame={handleSelectBoardGame}
-								variant="bottomFixed"
-							/>
-						</Box>
-					</Container>
-				)}
-			</Flex>
+					{/* Fixed bottom ChatInput */}
+					<Box 
+						position="fixed" 
+						bottom={0}
+						left={0}
+						right={0}
+						zIndex={1}
+						p={{ base: 0, md: 4 }}
+					>
+						<ChatInput
+							inputValue={inputValue}
+							isLoading={isLoading}
+							selectedBoardGame={selectedBoardGame}
+							setInputValue={setInputValue}
+							onMessageSend={handleSendMessage}
+							knownBoardGames={knownBoardGames}
+							onSelectBoardGame={handleSelectBoardGame}
+							variant="bottomFixed"
+						/>
+					</Box>
+				</>
+			)}
 		</Container>
 	);
 };
