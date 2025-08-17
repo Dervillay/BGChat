@@ -15,7 +15,7 @@ export const AssistantMessage: React.FC<AssistantMessageProps> = ({ content }) =
 			<Text 
 				mt={4}
 				lineHeight={1.7}
-				fontSize={{ base: "sm", md: "md" }}
+				fontSize="md"
 				_first={{ mt: 0 }}
 			>
 				{props.children}

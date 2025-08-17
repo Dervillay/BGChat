@@ -31,11 +31,11 @@ export const BoardGameSelect: FC<BoardGameSelectProps> = ({
 					...provided,
 					border: 'none',
 					boxShadow: 'none',
-					minWidth: selectedBoardGame ? 'fit-content' : { base: '10.25rem', md: '11.5rem' },
-					maxWidth: { base: '11,5rem', md: '11.5rem' },
+					minWidth: selectedBoardGame ? 'fit-content' : '11.5rem',
+					maxWidth: "13rem",
 					paddingRight: '1.25rem',
 					color: 'chakra-body-text',
-					fontSize: { base: 'sm', md: 'sm' },
+					fontSize: 'md',
 					'&:hover': {
 						boxShadow: 'none',
 						border: '1px',
@@ -86,7 +86,7 @@ export const BoardGameSelect: FC<BoardGameSelectProps> = ({
 					fontWeight: 'normal',
 					backgroundColor: 'transparent',
 					color: 'chakra-body-text',
-					fontSize: { base: 'xs', md: 'sm' },
+					fontSize: 'md',
 					'&:hover': {
 						backgroundColor: 'chakra-body-message-bg',
 						borderRadius: '5px',

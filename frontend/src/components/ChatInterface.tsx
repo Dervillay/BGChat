@@ -277,6 +277,7 @@ const ChatInterface = () => {
 							top={0}
 							left={0}
 							right={0}
+							transform="none"
 							h={{ base: "3.5rem", md: "4rem" }}
 							bgGradient={`linear(to bottom, var(--chakra-colors-chakra-body-bg) 50%, transparent 100%)`}
 							display="flex"
@@ -313,22 +314,16 @@ const ChatInterface = () => {
 								<VStack w="100%" spacing={4}>
 									{messages.map((message, index) => (
 										message.role === "user" ? (
-											<Flex key={index} justifyContent="flex-end" w="100%" role="group">
-												<UserMessage
-													content={message.content}
-													onEdit={(newContent) => handleEditMessage(index, newContent)}
-												/>
-											</Flex>
-										) : message.role === "error" ? (
-											<Box key={index} w="100%" position="relative">
-												<ErrorMessage content={message.content} onClose={() => handleCloseError(index)} />
-											</Box>
+											<UserMessage
+												content={message.content}
+												onEdit={(newContent) => handleEditMessage(index, newContent)}
+											/>
+										) : message.role === "assistant" ? (
+											<AssistantMessage 
+												content={message.content}
+											/>
 										) : (
-											<Box key={index} w="100%" position="relative">
-												<AssistantMessage 
-													content={message.content}
-												/>
-											</Box>
+											<ErrorMessage content={message.content} onClose={() => handleCloseError(index)} />
 										)
 									))}
 									{isThinking && <ThinkingPlaceholder />}

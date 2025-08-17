@@ -62,6 +62,10 @@ export const ChatInput = {
       container: {
         borderRadius: { base: "1.5rem 1.5rem 0 0", md: "1.5rem" },
         border: "none",
+        _light: {
+          border: "1px solid",
+          borderColor: "chakra-body-border",
+        }
       }
     }
   }
