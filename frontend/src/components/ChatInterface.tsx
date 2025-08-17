@@ -234,22 +234,8 @@ const ChatInterface = () => {
 	};
 
 	return (
-		<Container 
-			maxW="container.xl" 
-			h="100vh" 
-			p={{ base: 2, md: 4 }} 
-			display="flex" 
-			flexDirection="column"
-			style={{
-				position: 'fixed',
-				top: 0,
-				left: 0,
-				right: 0,
-				bottom: 0,
-				transform: 'none'
-			}}
-		>
-			<Flex direction="column" h="100vh">
+		<Container maxW="container.xl" h="100dvh" p={{ base: 2, md: 4 }} display="flex" flexDirection="column">
+			<Flex direction="column" h="100dvh">
 				{!hasInteracted ? (
 					// Centered layout
 					<Flex 
@@ -257,16 +243,8 @@ const ChatInterface = () => {
 						justify="center" 
 						align="center"
 						gap={2}
-						h="100vh" 
+						h="100dvh" 
 						position="relative"
-						style={{
-							position: 'fixed',
-							top: 0,
-							left: 0,
-							right: 0,
-							bottom: 0,
-							transform: 'none'
-						}}
 					>
 						<Text 
 							bgGradient={theme.gradients.cosmic} 

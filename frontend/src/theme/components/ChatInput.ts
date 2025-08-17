@@ -1,18 +1,20 @@
+import { FaBorderAll } from "react-icons/fa";
+
 export const ChatInput = {
   baseStyle: {
     container: {
       direction: "column",
       maxW: { base: "100%", md: "48rem" },
       mx: "auto",
-      gap: 1,
+      gap: 1.5,
       border: "1px solid",
       borderColor: "chakra-body-border",
       borderRadius: "1.5rem",
       textColor: "chakra-body-text",
       h: "auto",
       lineHeight: "normal",
-      px: "0.8rem",
-      py: "0.8rem",
+      px: "1rem",
+      py: "1rem",
       _dark: {
         bg: "chakra-body-message-bg",
       },
@@ -26,11 +28,12 @@ export const ChatInput = {
     },
     input: {
       variant: "unstyled",
-      minH: "3rem",
-      maxH: "7rem",
-      fontSize: { base: "sm", md: "md" },
+      minH: "2.5rem",
+      maxH: "6rem",
+      fontSize: "md",
       flex: "1",
       border: "none",
+      borderRadius: "0",
       resize: "none",
       overflowY: "auto",
       _dark: {
@@ -58,6 +61,7 @@ export const ChatInput = {
     bottomFixed: {
       container: {
         borderRadius: { base: "1.5rem 1.5rem 0 0", md: "1.5rem" },
+        border: "none",
       }
     }
   }
