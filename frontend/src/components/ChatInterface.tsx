@@ -234,8 +234,8 @@ const ChatInterface = () => {
 	};
 
 	return (
-		<Container maxW="container.xl" h="100dvh" p={{ base: 2, md: 4 }} display="flex" flexDirection="column">
-			<Flex direction="column" h="100dvh">
+		<Container maxW="container.xl" h="100dvh" display="flex" flexDirection="column">
+			<Flex direction="column">
 				{!hasInteracted ? (
 					// Centered layout
 					<Flex 
@@ -243,7 +243,7 @@ const ChatInterface = () => {
 						justify="center" 
 						align="center"
 						gap={2}
-						h="100dvh" 
+						h="100dvh"
 						position="relative"
 					>
 						<Text 
@@ -255,7 +255,6 @@ const ChatInterface = () => {
 						>
 							BGChat
 						</Text>
-						<Container maxW="48rem" px={{ base: 2, md: 4 }}>
 							<ChatInput
 								inputValue={inputValue}
 								isLoading={isLoading}
@@ -266,11 +265,10 @@ const ChatInterface = () => {
 								onSelectBoardGame={handleSelectBoardGame}
 								variant="default"
 							/>
-						</Container>
 					</Flex>
 				) : (
 					// Normal layout with fixed header and input
-					<>
+					<Container h="100dvh" display="flex" flexDirection="column">
 						{/* Fixed top bar */}
 						<Box
 							position="fixed"
@@ -378,7 +376,7 @@ const ChatInterface = () => {
 								variant="bottomFixed"
 							/>
 						</Box>
-					</>
+					</Container>
 				)}
 			</Flex>
 		</Container>

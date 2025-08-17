@@ -9,7 +9,7 @@ export const ThinkingPlaceholder = () => {
         ? "linear-gradient(90deg, rgba(125,125,125,0.3), rgba(125,125,125,0.7), rgba(125,125,125,0.3))"
         : "linear-gradient(90deg, rgba(250,250,250,0.3), rgba(250,250,250,0.7), rgba(250,250,250,0.3))";
     return (
-        <Container maxW="48rem">
+        <Container maxW="48rem" py={0}>
             <Flex justifyContent="flex-start">
                 <Text
                     as="span"
