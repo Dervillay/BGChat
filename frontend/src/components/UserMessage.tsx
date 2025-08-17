@@ -82,9 +82,12 @@ export const UserMessage: React.FC<UserMessageProps> = ({ content, onEdit }) => 
                     value={editedContent}
                     onChange={handleChange}
                     onKeyDown={handleKeyDown}
-                    variant="chat"
                     fontSize="md"
-                    _focus={{ border: "none", boxShadow: "none" }}
+                    borderColor="transparent"
+                    _focus={{
+                        borderColor: "chakra-body-border-focus",
+                        boxShadow: "none"
+                    }}
                     {...messageStyle}
                 />
                 <Flex justify="flex-end" w="100%">
