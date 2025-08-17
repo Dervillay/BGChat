@@ -233,7 +233,7 @@ export const PDFViewerModal: React.FC = () => {
                         ) : (
                             <object
                                 ref={objectRef}
-                                data={blobUrl}
+                                data={pageNumber ? `${blobUrl}#page=${pageNumber}` : blobUrl}
                                 type="application/pdf"
                                 style={{
                                     flex: 1,
