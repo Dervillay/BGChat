@@ -15,6 +15,16 @@ const commonButtonProps = {
     }
 };
 
+const messageStyle = {
+    maxW: { base: "85%", md: "70%" },
+    bg: "gray.800",
+    _dark: { bg: "#2a2a2a" },
+    color: "white",
+    px: { base: 3, md: 5 },
+    py: { base: 2, md: 2.5 },
+    borderRadius: "1.5rem"
+};
+
 interface UserMessageProps {
     content: string;
     onEdit: (newContent: string) => void;
@@ -66,21 +76,17 @@ export const UserMessage: React.FC<UserMessageProps> = ({ content, onEdit }) => 
 
     if (isEditing) {
         return (
-            <Box maxW={{ base: "85%", md: "70%" }} display="flex" flexDirection="column" alignItems="flex-end" w="100%">
-                <InputGroup>
-                    <Input
-                        as="textarea"
-                        value={editedContent}
-                        onChange={handleChange}
-                        onKeyDown={handleKeyDown}
-                        variant="chat"
-                        pt="1rem"
-                        pl="1rem"
-                        pr="1rem"
-                        pb="1rem"
-                        fontSize={{ base: "sm", md: "md" }}
-                    />
-                </InputGroup>
+            <Box position="relative" display="flex" flexDirection="column" alignItems="flex-end" w="100%" role="group">
+                <Input
+                    as="textarea"
+                    value={editedContent}
+                    onChange={handleChange}
+                    onKeyDown={handleKeyDown}
+                    variant="chat"
+                    fontSize="md"
+                    _focus={{ border: "none", boxShadow: "none" }}
+                    {...messageStyle}
+                />
                 <Flex justify="flex-end" w="100%">
                     <IconButton
                         aria-label="Save edit"
@@ -102,17 +108,9 @@ export const UserMessage: React.FC<UserMessageProps> = ({ content, onEdit }) => 
     }
 
     return (
-        <Box position="relative" display="flex" flexDirection="column" alignItems="flex-end" w="100%">
-            <Box 
-                maxW={{ base: "85%", md: "70%" }}
-                bg="gray.800"
-                _dark={{ bg: "#2a2a2a" }}
-                color="white"
-                px={{ base: 3, md: 5 }}
-                py={{ base: 2, md: 2.5 }}
-                borderRadius="1.5rem"
-            >
-                <Text fontSize={{ base: "sm", md: "md" }}>{content}</Text>
+        <Box position="relative" display="flex" flexDirection="column" alignItems="flex-end" w="100%" role="group">
+            <Box {...messageStyle}>
+                <Text fontSize="md">{content}</Text>
             </Box>
             <Flex justify="flex-end" w="100%" h="1.5rem" mt={0}>
                 <IconButton
