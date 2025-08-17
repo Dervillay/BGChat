@@ -13,6 +13,7 @@ import { UserMessage } from "./UserMessage.tsx";
 import { UserProfileMenu } from "./UserProfileMenu.tsx";
 import { MessageQueue } from "../utils/messageQueue.ts";
 import { Message } from "../types/message";
+import { Header } from "./Header.tsx";
 
 declare global {
 	interface Window {
@@ -236,13 +237,11 @@ const ChatInterface = () => {
 	return (
 		<Container h="100dvh" display="flex" flexDirection="column" overflow="hidden">
 			{!hasInteracted ? (
-				// Centered layout
 				<Flex 
 					direction="column" 
 					justify="center" 
 					align="center"
 					gap={2}
-					h="100dvh"
 				>
 					<Text 
 						bgGradient={theme.gradients.cosmic} 
@@ -265,38 +264,8 @@ const ChatInterface = () => {
 					/>
 				</Flex>
 			) : (
-				// Normal layout with fixed header and input
-				<>
-					{/* Fixed top bar */}
-					<Box
-						position="fixed"
-						top={0}
-						left={0}
-						right={0}
-						transform="none"
-						h={{ base: "3.5rem", md: "4rem" }}
-						bgGradient={`linear(to bottom, var(--chakra-colors-chakra-body-bg) 50%, transparent 100%)`}
-						display="flex"
-						alignItems="center"
-						justifyContent="space-between"
-						px={{ base: 3, md: 5 }}
-						zIndex={1}
-					>
-						<Text 
-							bgGradient={theme.gradients.cosmic} 
-							bgClip="text" 
-							fontSize={{ base: "2xl", md: "3xl" }} 
-							fontWeight="regular"
-						>
-							BGChat
-						</Text>
-						<Flex align="center" gap={2}>
-							<DarkModeToggle />
-							<UserProfileMenu />
-						</Flex>
-					</Box>
-
-					{/* Scrollable messages area between header and input */}
+				<Flex direction="column" h="100dvh">
+					<Header />
 					<Box
 						position="fixed"
 						pt={{ base: "3.5rem", md: "4rem" }}
@@ -366,8 +335,6 @@ const ChatInterface = () => {
 							</VStack>
 						</Container>
 					</Box>
-
-					{/* Fixed bottom ChatInput */}
 					<Box 
 						position="fixed" 
 						bottom={0}
@@ -387,7 +354,7 @@ const ChatInterface = () => {
 							variant="bottomFixed"
 						/>
 					</Box>
-				</>
+				</Flex>
 			)}
 		</Container>
 	);
