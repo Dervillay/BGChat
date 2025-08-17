@@ -20,8 +20,12 @@ export const theme = extendTheme({
                 _dark: '#101010',
             },
             'chakra-body-message-bg': {
-                _light: 'gray.100',
+                _light: 'gray.900',
                 _dark: '#2a2a2a',
+            },
+            'chakra-body-message-text': {
+                _light: 'gray.100',
+                _dark: '#e0e0e0',
             },
             'chakra-body-text': {
                 _light: 'gray.700',

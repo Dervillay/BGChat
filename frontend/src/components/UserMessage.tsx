@@ -17,9 +17,9 @@ const commonButtonProps = {
 
 const messageStyle = {
     maxW: { base: "85%", md: "70%" },
-    bg: "gray.800",
-    _dark: { bg: "#2a2a2a" },
-    color: "white",
+    bg: "chakra-body-message-bg",
+    _dark: { bg: "chakra-body-message-bg" },
+    color: "chakra-body-message-text",
     px: { base: 3, md: 5 },
     py: { base: 2, md: 2.5 },
     borderRadius: "1.5rem"

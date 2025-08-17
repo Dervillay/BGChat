@@ -4,13 +4,11 @@ import { AssistantMessage } from "./AssistantMessage.tsx";
 import { ChatInput } from "./ChatInput.tsx";
 import { ThinkingPlaceholder } from "./ThinkingPlaceholder.tsx";
 import { ErrorMessage } from "./ErrorMessage.tsx";
-import { DarkModeToggle } from "./DarkModeToggle.tsx";
 import { theme } from "../theme/index.ts";
-import { FiRefreshCw } from 'react-icons/fi';
+import { FiArrowDown, FiRefreshCw } from 'react-icons/fi';
 import { useFetchWithAuth } from "../utils/fetchWithAuth.ts";
 import { withError } from "../utils/withError.ts";
 import { UserMessage } from "./UserMessage.tsx";
-import { UserProfileMenu } from "./UserProfileMenu.tsx";
 import { MessageQueue } from "../utils/messageQueue.ts";
 import { Message } from "../types/message";
 import { Header } from "./Header.tsx";
@@ -29,9 +27,11 @@ const ChatInterface = () => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [isThinking, setIsThinking] = useState(false);
 	const [hasInteracted, setHasInteracted] = useState(false);
+	const [showScrollButton, setShowScrollButton] = useState(false);
 
 	const fetchWithAuth = useFetchWithAuth();
 	const messagesEndRef = useRef<HTMLDivElement>(null);
+	const scrollableContainerRef = useRef<HTMLDivElement>(null);
 	const messageQueue = new MessageQueue((message) => {
 		setMessages(prev => [...prev, message]);
 	});
@@ -41,8 +41,20 @@ const ChatInterface = () => {
 	}, []);
 
 	useEffect(() => {
-		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+		scrollToBottom();
 	}, [messages]);
+
+	const scrollToBottom = () => {
+		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+	};
+
+	const handleScroll = () => {
+		if (scrollableContainerRef.current) {
+			const { scrollTop, scrollHeight, clientHeight } = scrollableContainerRef.current;
+			const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10;
+			setShowScrollButton(!isAtBottom);
+		}
+	};
 
 	const handleGetKnownBoardGames = async () => {
 		try {
@@ -235,20 +247,19 @@ const ChatInterface = () => {
 	};
 
 	return (
-		<Container h="100dvh" display="flex" flexDirection="column" overflow="hidden">
+		<Container display="flex" flexDirection="column" overflow="hidden">
 			{!hasInteracted ? (
 				<Flex 
 					direction="column" 
 					justify="center" 
 					align="center"
 					gap={2}
-					// h="100dvh"
-					flex="1"
+					h="100dvh"
 				>
 					<Text 
 						bgGradient={theme.gradients.cosmic} 
 						bgClip="text" 
-						fontSize={{ base: "5xl", md: "7xl" }} 
+						fontSize="5xl" 
 						fontWeight="regular"
 						textAlign="center"
 					>
@@ -266,7 +277,7 @@ const ChatInterface = () => {
 					/>
 				</Flex>
 			) : (
-				<Flex direction="column" h="100dvh">
+				<Flex direction="column" h="100dvh" overflow="hidden">
 					<Header />
 					<Box
 						position="fixed"
@@ -276,6 +287,8 @@ const ChatInterface = () => {
 						left={0}
 						right={0}
 						overflowY="auto"
+						onScroll={handleScroll}
+						ref={scrollableContainerRef}
 						css={{
 							'&::-webkit-scrollbar': {
 								display: 'none'
@@ -337,12 +350,32 @@ const ChatInterface = () => {
 							</VStack>
 						</Container>
 					</Box>
+					<Box
+						position="fixed"
+						bottom="7.5rem"
+						left="50%"
+						zIndex={2}
+						opacity={showScrollButton ? 1 : 0}
+						transition="opacity 0.2s ease-in-out, transform 0.2s ease-in-out"
+						transform={showScrollButton ? "translate(-50%, 0)" : "translate(-50%, 10px)"}
+						pointerEvents={showScrollButton ? "auto" : "none"}
+						display={{ base: "block", md: "none" }}
+					>
+						<IconButton
+							icon={<FiArrowDown/>}
+							onClick={scrollToBottom}
+							size="md"
+							aria-label="Scroll to bottom"
+							bg="chakra-body-message-bg"
+							color="chakra-body-message-text"
+							variant="ghost"
+						/>
+					</Box>
 					<Box 
 						position="fixed" 
 						bottom={0}
 						left={0}
 						right={0}
-						zIndex={1}
 						p={{ base: 0, md: 4 }}
 					>
 						<ChatInput

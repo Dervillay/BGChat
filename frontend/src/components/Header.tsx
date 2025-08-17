@@ -18,7 +18,7 @@ export const Header: React.FC = () => {
 			alignItems="center"
 			justifyContent="space-between"
 			px={{ base: 3, md: 5 }}
-			zIndex={9999}
+			zIndex={1}
 			style={{
 				position: 'fixed',
 				top: 0,
