@@ -242,6 +242,8 @@ const ChatInterface = () => {
 					justify="center" 
 					align="center"
 					gap={2}
+					// h="100dvh"
+					flex="1"
 				>
 					<Text 
 						bgGradient={theme.gradients.cosmic} 
