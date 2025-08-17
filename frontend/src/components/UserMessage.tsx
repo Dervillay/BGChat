@@ -86,14 +86,14 @@ export const UserMessage: React.FC<UserMessageProps> = ({ content, onEdit }) => 
                         aria-label="Save edit"
                         icon={<FiCheck />}
                         onClick={handleSave}
-                        size={{ base: "xs", md: "sm" }}
+                        size="sm"
                         {...commonButtonProps}
                     />
                     <IconButton
                         aria-label="Cancel edit"
                         icon={<FiX />}
                         onClick={handleCancel}
-                        size={{ base: "xs", md: "sm" }}
+                        size="sm"
                         {...commonButtonProps}
                     />
                 </Flex>
@@ -119,9 +119,9 @@ export const UserMessage: React.FC<UserMessageProps> = ({ content, onEdit }) => 
                     aria-label="Edit message"
                     icon={<FiEdit2 />}
                     onClick={handleEdit}
-                    opacity={0}
+                    opacity={{ base: 1, md: 0 }}
                     _groupHover={{ opacity: 1 }}
-                    size={{ base: "xs", md: "sm" }}
+                    size="sm"
                     {...commonButtonProps}
                 />
             </Flex>
