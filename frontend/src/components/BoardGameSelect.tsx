@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import { FC } from "react";
 import { Select } from "chakra-react-select";
 
 interface BoardGameSelectProps {
