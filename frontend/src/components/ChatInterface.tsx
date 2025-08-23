@@ -1,17 +1,13 @@
 import { useState, useEffect, useRef } from "react";
-import { Box, Container, VStack, Text, Flex, IconButton, Tooltip } from "@chakra-ui/react";
-import { AssistantMessage } from "./AssistantMessage.tsx";
+import { Text, Flex } from "@chakra-ui/react";
 import { ChatInput } from "./ChatInput.tsx";
-import { ThinkingPlaceholder } from "./ThinkingPlaceholder.tsx";
-import { ErrorMessage } from "./ErrorMessage.tsx";
 import { theme } from "../theme/index.ts";
-import { FiArrowDown, FiRefreshCw } from 'react-icons/fi';
 import { useFetchWithAuth } from "../utils/fetchWithAuth.ts";
 import { withError } from "../utils/withError.ts";
-import { UserMessage } from "./UserMessage.tsx";
 import { MessageQueue } from "../utils/messageQueue.ts";
 import { Message } from "../types/message";
 import { Header } from "./Header.tsx";
+import { MessageContainer } from "./MessageContainer.tsx";
 
 declare global {
 	interface Window {
@@ -247,151 +243,55 @@ const ChatInterface = () => {
 	};
 
 	return (
-		<Container display="flex" flexDirection="column" overflow="hidden">
+		<Flex 
+			direction="column" 
+			justify="center" 
+			align="center"
+			gap={2}
+			h="100dvh"
+			maxW="30rem"
+			mx="auto"
+			overflow="hidden"
+		>
 			{!hasInteracted ? (
-				<Flex 
-					direction="column" 
-					justify="center" 
-					align="center"
-					gap={2}
-					h="100dvh"
+				<Text 
+					bgGradient={theme.gradients.cosmic} 
+					bgClip="text" 
+					fontSize="5xl" 
+					fontWeight="regular"
+					textAlign="center"
 				>
-					<Text 
-						bgGradient={theme.gradients.cosmic} 
-						bgClip="text" 
-						fontSize="5xl" 
-						fontWeight="regular"
-						textAlign="center"
-					>
-						BGChat
-					</Text>
-					<ChatInput
-						inputValue={inputValue}
-						isLoading={isLoading}
-						selectedBoardGame={selectedBoardGame}
-						setInputValue={setInputValue}
-						onMessageSend={handleSendMessage}
-						knownBoardGames={knownBoardGames}
-						onSelectBoardGame={handleSelectBoardGame}
-						variant="default"
-					/>
-				</Flex>
+					BGChat
+				</Text>
 			) : (
-				<Flex direction="column" h="100dvh" overflow="hidden">
+				<>
 					<Header />
-					<Box
-						position="fixed"
-						pt={{ base: "3.5rem", md: "4rem" }}
-						top={0}
-						bottom={{ base: "6rem", md: "6.5rem" }}
-						left={0}
-						right={0}
-						overflowY="auto"
+					<MessageContainer
+						messages={messages}
+						isThinking={isThinking}
+						isLoading={isLoading}
+						showScrollButton={showScrollButton}
+						onEditMessage={handleEditMessage}
+						onCloseError={handleCloseError}
+						onClearChat={handleClearChat}
+						onScrollToBottom={scrollToBottom}
 						onScroll={handleScroll}
-						ref={scrollableContainerRef}
-						css={{
-							'&::-webkit-scrollbar': {
-								display: 'none'
-							},
-							scrollbarWidth: 'none',
-							msOverflowStyle: 'none'
-						}}
-					>
-						<Container maxW="48rem" mx="auto" px={{ base: 2, md: 4 }} py={4}>
-							<VStack w="100%" spacing={4}>
-								{messages.map((message, index) => (
-									message.role === "user" ? (
-										<UserMessage
-											key={index}
-											content={message.content}
-											onEdit={(newContent) => handleEditMessage(index, newContent)}
-										/>
-									) : message.role === "assistant" ? (
-										<AssistantMessage 
-											key={index}
-											content={message.content}
-										/>
-									) : (
-										<ErrorMessage 
-											key={index}
-											content={message.content} 
-											onClose={() => handleCloseError(index)} 
-										/>
-									)
-								))}
-								{isThinking && <ThinkingPlaceholder />}
-								{messages.length >= 2 && !isLoading && messages.some(msg => msg.role === "user") && (
-									<Flex justify="flex-end" w="100%" mt={1}>
-										<Tooltip 
-											label="Reset chat"
-											placement="bottom"
-											offset={[0, 0]}
-										>
-											<IconButton
-												icon={<FiRefreshCw />}
-												onClick={handleClearChat}
-												size="sm"
-												variant="ghost"
-												color="gray.500"
-												_hover={{ color: "gray.700" }}
-												_dark={{
-													color: "#a0a0a0",
-													_hover: { 
-														color: "#e0e0e0",
-														filter: "brightness(1.3)"
-													}
-												}}
-												aria-label="Reset chat"
-											/>
-										</Tooltip>
-									</Flex>
-								)}
-								<div ref={messagesEndRef} />
-							</VStack>
-						</Container>
-					</Box>
-					<Box
-						position="fixed"
-						bottom="7.5rem"
-						left="50%"
-						zIndex={2}
-						opacity={showScrollButton ? 1 : 0}
-						transition="opacity 0.2s ease-in-out, transform 0.2s ease-in-out"
-						transform={showScrollButton ? "translate(-50%, 0)" : "translate(-50%, 10px)"}
-						pointerEvents={showScrollButton ? "auto" : "none"}
-						display={{ base: "block", md: "none" }}
-					>
-						<IconButton
-							icon={<FiArrowDown/>}
-							onClick={scrollToBottom}
-							size="md"
-							aria-label="Scroll to bottom"
-							bg="chakra-body-message-bg"
-							color="chakra-body-message-text"
-							variant="ghost"
-						/>
-					</Box>
-					<Box 
-						position="fixed" 
-						bottom={0}
-						left={0}
-						right={0}
-						p={{ base: 0, md: 4 }}
-					>
-						<ChatInput
-							inputValue={inputValue}
-							isLoading={isLoading}
-							selectedBoardGame={selectedBoardGame}
-							setInputValue={setInputValue}
-							onMessageSend={handleSendMessage}
-							knownBoardGames={knownBoardGames}
-							onSelectBoardGame={handleSelectBoardGame}
-							variant="bottomFixed"
-						/>
-					</Box>
-				</Flex>
+						scrollableContainerRef={scrollableContainerRef}
+						messagesEndRef={messagesEndRef}
+					/>
+				</>
 			)}
-		</Container>
+			<ChatInput
+				inputValue={inputValue}
+				isLoading={isLoading}
+				selectedBoardGame={selectedBoardGame}
+				setInputValue={setInputValue}
+				onMessageSend={handleSendMessage}
+				knownBoardGames={knownBoardGames}
+				onSelectBoardGame={handleSelectBoardGame}
+				variant={hasInteracted ? "bottomFixed" : "default"}
+			/>
+		</Flex>
 	);
 };
 

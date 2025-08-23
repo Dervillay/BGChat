@@ -68,7 +68,9 @@ export const ChatInput = {
         _light: {
           border: "1px solid",
           borderColor: "chakra-body-border",
-        }
+        },
+        position: "fixed",
+        bottom: 0,
       }
     }
   }
