@@ -23,7 +23,6 @@ export const PDFViewerModal: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [isMobile, setIsMobile] = useState(false);
     const objectRef = useRef<HTMLObjectElement>(null);
     const modalContentRef = useRef<HTMLDivElement>(null);
     const fetchWithAuth = useFetchWithAuth();
@@ -67,13 +66,6 @@ export const PDFViewerModal: React.FC = () => {
     }, [url]);
 
     useEffect(() => {
-        const checkMobile = () => setIsMobile(window.innerWidth < 768);
-        checkMobile();
-        window.addEventListener("resize", checkMobile);
-        return () => window.removeEventListener("resize", checkMobile);
-    }, []);
-
-    useEffect(() => {
         document.addEventListener("fullscreenchange", handleFullscreenChange);
 
         return () => {
@@ -107,18 +99,17 @@ export const PDFViewerModal: React.FC = () => {
         <Modal 
             isOpen={isOpen} 
             onClose={handleClose} 
-            size={isMobile ? undefined : "4xl"}
+            size={{ base: "full", md: isFullscreen ? "full" : "6xl" }}
             motionPreset="scale"
-            isCentered
+            isCentered={true}
         >
             <ModalOverlay />
             <ModalContent
                 ref={modalContentRef}
                 bg="chakra-body-bg"
                 position="relative"
-                borderRadius="1rem"
-                maxW={isMobile ? "100vw" : "80vw"}
-                h={isMobile ? "100vh" : "95vh"}
+                maxW={{ base: "100vw", md: isFullscreen ? "100vw" : "90vw" }}
+                h={{ base: "100vh", md: isFullscreen ? "100vh" : "95vh" }}
                 flexDirection="column"
                 flex="1"
                 overflow="hidden"
@@ -128,7 +119,7 @@ export const PDFViewerModal: React.FC = () => {
                         position: 'absolute',
                         inset: 0,
                         zIndex: 0,
-                        borderRadius: '1rem',
+                        borderRadius: { base: '0', md: isFullscreen ? '0' : '1rem' },
                         padding: '2px',
                         background: theme.gradients.cosmic,
                         WebkitMask:
@@ -157,24 +148,23 @@ export const PDFViewerModal: React.FC = () => {
                             {title}
                         </Text>
                         <Flex align="center" position="relative" minW={{ base: "2.5rem", md: "5rem" }}>
-                            {!isMobile && (
-                                <IconButton
-                                    aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
-                                    icon={isFullscreen ? <FiMinimize2 /> : <FiMaximize2 />}
-                                    variant="ghost"
-                                    onClick={handleToggleFullscreen}
-                                    color="gray.500"
-                                    _hover={{ color: "gray.700" }}
-                                    _dark={{
-                                        color: "#a0a0a0",
-                                        _hover: { 
-                                            color: "#e0e0e0",
-                                            filter: "brightness(1.3)"
-                                        }
-                                    }}
-                                    size="md"
-                                />
-                            )}
+                            <IconButton
+                                aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+                                icon={isFullscreen ? <FiMinimize2 /> : <FiMaximize2 />}
+                                variant="ghost"
+                                onClick={handleToggleFullscreen}
+                                color="gray.500"
+                                _hover={{ color: "gray.700" }}
+                                _dark={{
+                                    color: "#a0a0a0",
+                                    _hover: { 
+                                        color: "#e0e0e0",
+                                        filter: "brightness(1.3)"
+                                    }
+                                }}
+                                size="md"
+                                display={{ base: "none", md: "flex" }}
+                            />
                             <Box position="relative">
                                 <IconButton
                                     aria-label="Close modal"
@@ -201,7 +191,7 @@ export const PDFViewerModal: React.FC = () => {
                         flexDirection="column"
                         flex="1"
                         bg="chakra-body-bg"
-                        borderRadius="0 0 1rem 1rem"
+                        borderRadius={{ base: "0", md: "0 0 1rem 1rem" }}
                     >
                         {error ? (
                             <Flex
