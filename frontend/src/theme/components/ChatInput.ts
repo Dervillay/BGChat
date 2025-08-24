@@ -4,7 +4,7 @@ export const ChatInput = {
   baseStyle: {
     container: {
       direction: "column",
-      maxW: { base: "100%", md: "48rem" },
+      maxW: { base: "90%", md: "48rem" },
       mx: "auto",
       gap: 1.5,
       bg: "chakra-body-bg",
@@ -51,7 +51,8 @@ export const ChatInput = {
       _focus: {
         border: "none",
         boxShadow: "none"
-      }
+      },
+      _disabled: { opacity: 1 }
     },
     controls: {
       align: "center",
@@ -63,6 +64,7 @@ export const ChatInput = {
   variants: {
     bottomFixed: {
       container: {
+        maxW: { base: "100%", md: "48rem" },
         borderRadius: { base: "1.5rem 1.5rem 0 0", md: "1.5rem" },
         border: "none",
         _light: {

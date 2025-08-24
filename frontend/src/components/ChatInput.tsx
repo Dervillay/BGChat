@@ -1,5 +1,5 @@
 import { FC, ChangeEvent, KeyboardEvent } from "react";
-import { Input, IconButton, Spinner, Flex, Box, Container } from "@chakra-ui/react";
+import { Input, IconButton, Spinner, Flex, Container } from "@chakra-ui/react";
 import { FaArrowUp } from "react-icons/fa";
 import { BoardGameSelect } from "./BoardGameSelect.tsx";
 import { theme } from "../theme/index.ts";
@@ -58,7 +58,6 @@ export const ChatInput: FC<ChatInputProps> = ({
 				onKeyDown={handleKeyPress}
 				placeholder={`Ask about the rules for ${selectedBoardGame || "any board game"}`}
 				disabled={isLoading}
-				_disabled={{ opacity: 1 }}
 				{...theme.components.ChatInput.baseStyle.input}
 			/>
 			<Flex {...theme.components.ChatInput.baseStyle.controls}>
