@@ -77,6 +77,8 @@ export const BoardGameSelect: FC<BoardGameSelectProps> = ({
 					borderRadius: '10px',
 					padding: '0.3rem',
 					backgroundColor: 'chakra-body-bg',
+					maxHeight: '15rem',
+					overflowY: 'auto',
 					_dark: {
 						backgroundColor: 'chakra-body-message-bg',
 					}
