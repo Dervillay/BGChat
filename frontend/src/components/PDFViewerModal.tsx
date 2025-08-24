@@ -220,8 +220,9 @@ export const PDFViewerModal: React.FC = () => {
                                 <Spinner size="xl" color="gray.300" speed="0.65s" />
                             </Flex>
                         ) : (
-                            <iframe
-                                src={pageNumber ? `${blobUrl}#page=${pageNumber}` : blobUrl}
+                            <object
+                                data={pageNumber ? `${blobUrl}#page=${pageNumber}` : blobUrl}
+                                type="application/pdf"
                                 style={{
                                     flex: 1,
                                     width: "100%",
@@ -229,7 +230,20 @@ export const PDFViewerModal: React.FC = () => {
                                     border: "none",
                                 }}
                                 title={title}
-                            />
+                            >
+                                <Text color="chakra-body-text" fontSize="sm" textAlign="center">
+                                    Your browser doesn't support PDF viewing. 
+                                    <br />
+                                    <a 
+                                        href={blobUrl} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        style={{ color: 'inherit', textDecoration: 'underline' }}
+                                    >
+                                        Click here to download the PDF
+                                    </a>
+                                </Text>
+                            </object>
                         )}
                     </ModalBody>
                 </ModalContent>
