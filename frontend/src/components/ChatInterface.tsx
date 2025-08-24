@@ -252,19 +252,6 @@ const ChatInterface = () => {
 			maxW="30rem"
 			mx="auto"
 			overflow="hidden"
-			position="relative"
-			sx={{
-				// Mobile-specific viewport handling
-				"@media (max-width: 768px)": {
-					height: "100dvh",
-					minHeight: "100dvh",
-					// Prevent viewport changes when keyboard appears
-					"&:focus-within": {
-						height: "100dvh",
-						minHeight: "100dvh"
-					}
-				}
-			}}
 		>
 			{!hasInteracted ? (
 				<Text 

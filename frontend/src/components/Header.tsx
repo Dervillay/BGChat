@@ -18,13 +18,31 @@ export const Header: React.FC = () => {
 			alignItems="center"
 			justifyContent="space-between"
 			px={{ base: 3, md: 5 }}
-			zIndex={1}
+			zIndex={10}
 			style={{
 				position: 'fixed',
 				top: 0,
 				left: 0,
 				right: 0,
 				transform: 'none'
+			}}
+			sx={{
+				// Mobile-specific header handling
+				"@media (max-width: 768px)": {
+					height: "3.5rem",
+					minHeight: "3.5rem",
+					maxHeight: "3.5rem",
+					position: "fixed",
+					top: 0,
+					left: 0,
+					right: 0,
+					// Ensure header stays visible when keyboard appears
+					"&:focus-within": {
+						height: "3.5rem",
+						minHeight: "3.5rem",
+						maxHeight: "3.5rem"
+					}
+				}
 			}}
 		>
 			<Text 

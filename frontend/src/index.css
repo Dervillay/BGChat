@@ -11,3 +11,25 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Prevent mobile browsers from adjusting viewport when keyboard appears */
+@media (max-width: 768px) {
+  html, body {
+    height: 100dvh;
+    height: -webkit-fill-available;
+    overflow: hidden;
+    background-color: var(--chakra-colors-chakra-body-bg);
+  }
+  
+  #root {
+    height: 100dvh;
+    height: -webkit-fill-available;
+    overflow: hidden;
+    background-color: var(--chakra-colors-chakra-body-bg);
+  }
+}
