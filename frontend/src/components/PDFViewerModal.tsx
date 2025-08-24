@@ -98,7 +98,10 @@ export const PDFViewerModal: React.FC = () => {
         <Modal 
             isOpen={isOpen} 
             onClose={handleClose} 
-            size={{ base: "full", md: isFullscreen ? "full" : "6xl" }}
+            size={{ 
+                base: "full", 
+                md: isFullscreen ? "full" : "6xl" 
+            }}
             motionPreset="scale"
             isCentered={true}
         >
@@ -108,7 +111,10 @@ export const PDFViewerModal: React.FC = () => {
                 bg="chakra-body-bg"
                 position="relative"
                 maxW={{ base: "100vw", md: isFullscreen ? "100vw" : "90vw" }}
-                h={{ base: "100vh", md: isFullscreen ? "100vh" : "95vh" }}
+                h={{ 
+                    base: "calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom))", 
+                    md: isFullscreen ? "100vh" : "95vh" 
+                }}
                 flexDirection="column"
                 flex="1"
                 overflow="hidden"
