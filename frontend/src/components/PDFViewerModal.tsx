@@ -23,7 +23,6 @@ export const PDFViewerModal: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const objectRef = useRef<HTMLObjectElement>(null);
     const modalContentRef = useRef<HTMLDivElement>(null);
     const fetchWithAuth = useFetchWithAuth();
 
@@ -221,22 +220,16 @@ export const PDFViewerModal: React.FC = () => {
                                 <Spinner size="xl" color="gray.300" speed="0.65s" />
                             </Flex>
                         ) : (
-                            <object
-                                ref={objectRef}
-                                data={pageNumber ? `${blobUrl}#page=${pageNumber}` : blobUrl}
-                                type="application/pdf"
+                            <iframe
+                                src={pageNumber ? `${blobUrl}#page=${pageNumber}` : blobUrl}
                                 style={{
                                     flex: 1,
                                     width: "100%",
                                     height: "100%",
+                                    border: "none",
                                 }}
-                            >
-                                <p>Your browser does not support PDF viewing. 
-                                    <a href={blobUrl} target="_blank" rel="noopener noreferrer">
-                                        Click here to download the PDF
-                                    </a>
-                                </p>
-                            </object>
+                                title={title}
+                            />
                         )}
                     </ModalBody>
                 </ModalContent>
