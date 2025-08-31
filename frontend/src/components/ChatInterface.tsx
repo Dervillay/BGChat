@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Text, Flex } from "@chakra-ui/react";
+import { Text, Flex, useBreakpointValue } from "@chakra-ui/react";
 import { ChatInput } from "./ChatInput.tsx";
 import { theme } from "../theme/index.ts";
 import { useFetchWithAuth } from "../utils/fetchWithAuth.ts";
@@ -8,6 +8,8 @@ import { MessageQueue } from "../utils/messageQueue.ts";
 import { Message } from "../types/message";
 import { Header } from "./Header.tsx";
 import { MessageContainer } from "./MessageContainer.tsx";
+import { FeedbackModal } from "./FeedbackModal.tsx";
+import { FeedbackLink } from "./FeedbackLink.tsx";
 
 declare global {
 	interface Window {
@@ -20,14 +22,16 @@ const ChatInterface = () => {
 	const [selectedBoardGame, setSelectedBoardGame] = useState<string>("");
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [inputValue, setInputValue] = useState("");
+	const [hasInteracted, setHasInteracted] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const [isThinking, setIsThinking] = useState(false);
-	const [hasInteracted, setHasInteracted] = useState(false);
-	const [showScrollButton, setShowScrollButton] = useState(false);
-
+	const [isScrollButtonVisible, setIsScrollButtonVisible] = useState(false);
+	const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+	
 	const fetchWithAuth = useFetchWithAuth();
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const scrollableContainerRef = useRef<HTMLDivElement>(null);
+	const isUsingMobile = useBreakpointValue({ base: true, md: false });
 	const messageQueue = new MessageQueue((message) => {
 		setMessages(prev => [...prev, message]);
 	});
@@ -48,7 +52,7 @@ const ChatInterface = () => {
 		if (scrollableContainerRef.current) {
 			const { scrollTop, scrollHeight, clientHeight } = scrollableContainerRef.current;
 			const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10;
-			setShowScrollButton(!isAtBottom);
+			setIsScrollButtonVisible(!isAtBottom);
 		}
 	};
 
@@ -242,6 +246,14 @@ const ChatInterface = () => {
 		setMessages(prev => prev.filter((_, i) => i !== index));
 	};
 
+	const handleOpenFeedbackModal = () => {
+		setIsFeedbackModalOpen(true);
+	};
+
+	const handleCloseFeedbackModal = () => {
+		setIsFeedbackModalOpen(false);
+	};
+
 	return (
 		<Flex 
 			direction="column" 
@@ -253,24 +265,27 @@ const ChatInterface = () => {
 			mx="auto"
 			overflow="hidden"
 		>
+			<Header 
+				onOpenFeedbackModal={handleOpenFeedbackModal}
+				isUsingMobile={isUsingMobile}
+			/>
 			{!hasInteracted ? (
-				<Text 
-					bgGradient={theme.gradients.cosmic} 
+				<Text
+					bgGradient={theme.gradients.cosmic}
 					bgClip="text" 
 					fontSize="5xl" 
 					fontWeight="regular"
 					textAlign="center"
 				>
-					BGChat
+					How can I help?
 				</Text>
 			) : (
 				<>
-					<Header />
 					<MessageContainer
 						messages={messages}
 						isThinking={isThinking}
 						isLoading={isLoading}
-						showScrollButton={showScrollButton}
+						isScrollButtonVisible={isScrollButtonVisible}
 						onEditMessage={handleEditMessage}
 						onCloseError={handleCloseError}
 						onClearChat={handleClearChat}
@@ -290,6 +305,14 @@ const ChatInterface = () => {
 				knownBoardGames={knownBoardGames}
 				onSelectBoardGame={handleSelectBoardGame}
 				variant={hasInteracted ? "bottomFixed" : "default"}
+				/>
+			{!isUsingMobile && (
+				<FeedbackLink onClick={handleOpenFeedbackModal} />
+			)}
+			<FeedbackModal
+				isOpen={isFeedbackModalOpen}
+				onClose={handleCloseFeedbackModal}
+				selectedBoardGame={selectedBoardGame}
 			/>
 		</Flex>
 	);

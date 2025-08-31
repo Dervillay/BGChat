@@ -4,7 +4,12 @@ import { DarkModeToggle } from "./DarkModeToggle.tsx";
 import { UserProfileMenu } from "./UserProfileMenu.tsx";
 import { theme } from "../theme/index.ts";
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+	onOpenFeedbackModal: () => void;
+	isUsingMobile: boolean | undefined;
+}
+
+export const Header: React.FC<HeaderProps> = ({ onOpenFeedbackModal, isUsingMobile }) => {
 	return (
 		<Box
 			position="fixed"
@@ -55,7 +60,10 @@ export const Header: React.FC = () => {
 			</Text>
 			<Flex align="center" gap={2}>
 				<DarkModeToggle />
-				<UserProfileMenu />
+				<UserProfileMenu 
+					onOpenFeedbackModal={onOpenFeedbackModal}
+					isUsingMobile={isUsingMobile}
+				/>
 			</Flex>
 		</Box>
 	);

@@ -11,7 +11,7 @@ interface MessageContainerProps {
 	messages: Message[];
 	isThinking: boolean;
 	isLoading: boolean;
-	showScrollButton: boolean;
+	isScrollButtonVisible: boolean;
 	onEditMessage: (index: number, newContent: string) => void;
 	onCloseError: (index: number) => void;
 	onClearChat: () => void;
@@ -25,7 +25,7 @@ export const MessageContainer: React.FC<MessageContainerProps> = ({
 	messages,
 	isThinking,
 	isLoading,
-	showScrollButton,
+	isScrollButtonVisible,
 	onEditMessage,
 	onCloseError,
 	onClearChat,
@@ -111,10 +111,10 @@ export const MessageContainer: React.FC<MessageContainerProps> = ({
 				bottom="7.5rem"
 				left="50%"
 				zIndex={0}
-				opacity={showScrollButton ? 1 : 0}
+				opacity={isScrollButtonVisible ? 1 : 0}
 				transition="opacity 0.2s ease-in-out, transform 0.2s ease-in-out"
-				transform={showScrollButton ? "translate(-50%, 0)" : "translate(-50%, 10px)"}
-				pointerEvents={showScrollButton ? "auto" : "none"}
+				transform={isScrollButtonVisible ? "translate(-50%, 0)" : "translate(-50%, 10px)"}
+				pointerEvents={isScrollButtonVisible ? "auto" : "none"}
 				display={{ base: "block", md: "none" }}
 			>
 				<IconButton

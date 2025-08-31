@@ -72,7 +72,7 @@ export const ChatInput = {
           borderColor: "chakra-body-border",
         },
         position: "fixed",
-        bottom: 0,
+        bottom: { base: "0rem", md: "2rem" },
       }
     }
   }

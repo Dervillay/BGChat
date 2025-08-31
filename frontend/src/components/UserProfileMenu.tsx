@@ -1,4 +1,3 @@
-import React from "react";
 import {
 	Menu,
 	MenuButton,
@@ -11,10 +10,35 @@ import {
 	Link,
 } from "@chakra-ui/react";
 import { useAuth0 } from "@auth0/auth0-react";
-import { FiLogOut, FiGithub, FiHeart } from "react-icons/fi";
+import { FiLogOut, FiGithub, FiHeart, FiMessageSquare } from "react-icons/fi";
 
-export const UserProfileMenu = () => {
+interface UserProfileMenuProps {
+	onOpenFeedbackModal: () => void;
+	isUsingMobile: boolean | undefined;
+}
+
+export const UserProfileMenu = ({ onOpenFeedbackModal, isUsingMobile }: UserProfileMenuProps) => {
 	const { user, logout } = useAuth0();
+
+	const menuItemStyle = {
+		fontWeight: "normal",
+		fontSize: "sm",
+		backgroundColor: "transparent",
+		borderRadius: "5px",
+		color: "gray.600",
+		_dark: {
+			color: "#a0a0a0",
+			_hover: {
+				backgroundColor: "#404040",
+				borderRadius: "5px",
+				filter: "brightness(1.2)"
+			}
+		},
+		_hover: {
+			backgroundColor: "gray.50",
+			borderRadius: "5px",
+		}
+	};
 
 	return (
 		<Menu>
@@ -59,22 +83,9 @@ export const UserProfileMenu = () => {
 					as={Link}
 					href="https://github.com/Dervillay/BGChat"
 					isExternal
-					fontWeight="normal"
-					fontSize="sm"
-					backgroundColor="transparent"
-					borderRadius="5px"
-					color="gray.600"
-					_dark={{
-						color: "#a0a0a0",
-						_hover: {
-							backgroundColor: "#404040",
-							borderRadius: "5px",
-							filter: "brightness(1.2)"
-						}
-					}}
+					{...menuItemStyle}
 					_hover={{
-						backgroundColor: "gray.50",
-						borderRadius: "5px",
+						...menuItemStyle._hover,
 						textDecoration: "none"
 					}}
 					icon={<FiGithub />}
@@ -85,47 +96,27 @@ export const UserProfileMenu = () => {
 					as={Link}
 					href="https://ko-fi.com/dervillay"
 					isExternal
-					fontWeight="normal"
-					fontSize="sm"
-					backgroundColor="transparent"
-					borderRadius="5px"
-					color="gray.600"
-					_dark={{
-						color: "#a0a0a0",
-						_hover: {
-							backgroundColor: "#404040",
-							borderRadius: "5px",
-							filter: "brightness(1.2)"
-						}
-					}}
+					{...menuItemStyle}
 					_hover={{
-						backgroundColor: "gray.50",
-						borderRadius: "5px",
+						...menuItemStyle._hover,
 						textDecoration: "none"
 					}}
 					icon={<FiHeart />}
 				>
 					Support the project
 				</MenuItem>
+				{isUsingMobile && (
+					<MenuItem 
+						onClick={onOpenFeedbackModal}
+						{...menuItemStyle}
+						icon={<FiMessageSquare />}
+					>
+						Give feedback
+					</MenuItem>
+				)}
 				<MenuItem 
 					onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
-					fontWeight="normal"
-					fontSize="sm"
-					backgroundColor="transparent"
-					borderRadius="5px"
-					color="gray.600"
-					_dark={{
-						color: "#a0a0a0",
-						_hover: {
-							backgroundColor: "#404040",
-							borderRadius: "5px",
-							filter: "brightness(1.2)"
-						}
-					}}
-					_hover={{
-						backgroundColor: "gray.50",
-						borderRadius: "5px",
-					}}
+					{...menuItemStyle}
 					icon={<FiLogOut />}
 				>
 					Log out
