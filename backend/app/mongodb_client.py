@@ -374,6 +374,45 @@ class MongoDBClient:
             logger.error("Error retrieving board games list: %s", str(e))
             raise
 
+    def store_feedback(
+        self,
+        user_id: str,
+        content: str,
+        email: str | None = None,
+    ) -> None:
+        """
+        Submit user feedback.
+
+        If the user does not exist, creates and populates a new document for them.
+        If the user already exists, updates their email (if provided) and appends their feedback.
+        """
+        self._ensure_connection()
+        try:
+            request_datetime_utc = self._get_current_datetime_utc()
+            request_date = request_datetime_utc.strftime("%Y-%m-%d")
+            self.db.feedback.update_one(
+                {"user_id": user_id},
+                {
+                    "$setOnInsert": {
+                        "user_id": user_id,
+                    },
+                    "$set": {
+                        "email": email,
+                    },
+                    "$push": {
+                        f"feedback.{request_date}": {
+                            "$each": [content],
+                        }
+                    }
+                },
+                upsert=True
+            )
+            logger.info("Feedback submitted successfully for user %s", user_id)
+            
+        except Exception as e:
+            logger.error("Error submitting feedback for user '%s': %s", user_id, str(e))
+            raise
+
     def __del__(self):
         """Cleanup MongoDB connection on object deletion."""
         try:

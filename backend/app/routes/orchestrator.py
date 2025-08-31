@@ -198,6 +198,27 @@ def clear_message_history():
         return internal_error("Failed to clear message history")
 
 
+@orchestrator_bp.route("/submit-feedback", methods=["POST"])
+@validate_json_body(content=str, email=str | None)
+@validate_auth_token
+def submit_feedback():
+    try:
+        data = request.get_json()
+        content = data["content"]
+        email = data.get("email")
+
+        current_app.orchestrator.submit_feedback(
+            request.user_id,
+            content,
+            email,
+        )
+
+        return success_response()
+    except Exception as e:
+        logger.error("Error submitting feedback: %s", str(e))
+        return internal_error("Failed to submit feedback")
+
+
 # Global error handlers
 @orchestrator_bp.errorhandler(404)
 def resource_not_found(e):

@@ -11,9 +11,10 @@ from app.utils.responses import validation_error, authentication_error, authoriz
 # Input validation patterns
 BOARD_GAME_PATTERN = re.compile(r'^[a-zA-Z0-9\s\-_&%$*#:]+$')
 QUESTION_PATTERN = re.compile(r'^[a-zA-Z0-9\s\-_.,!?()&%$*#]+$')
+EMAIL_PATTERN = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
 MAX_QUESTION_LENGTH = 1000
 MAX_BOARD_GAME_LENGTH = 100
-
+MAX_EMAIL_LENGTH = 100
 
 def _sanitize_string(value: str, max_length: int = None) -> str:
     """
@@ -60,6 +61,21 @@ def _validate_question(value: str) -> str:
 
     if not QUESTION_PATTERN.match(sanitized):
         raise ValueError("Question contains invalid characters")
+
+    return sanitized
+
+def _validate_email(value: str | None) -> str | None:
+    """
+    Validate email format.
+    Raises ValueError if validation fails.
+    """
+    sanitized = _sanitize_string(value, MAX_EMAIL_LENGTH)
+
+    if not sanitized:
+        raise ValueError("Email cannot be empty")
+
+    if not EMAIL_PATTERN.match(sanitized):
+        raise ValueError("Email doesn't match the expected format")
 
     return sanitized
 
@@ -119,12 +135,14 @@ def validate_json_body(**field_types: Type) -> Callable:
                 value = data[field]
                 if not isinstance(value, expected_type):
                     type_errors[field] = f"Must be of type {expected_type.__name__}, got {type(value).__name__}"
-                elif expected_type == str:
+                elif type(value) == str:
                     try:
                         if field == 'board_game':
                             data[field] = _validate_board_game(value)
                         elif field == 'question':
                             data[field] = _validate_question(value)
+                        elif field == 'email':
+                            data[field] = _validate_email(value)
                         else:
                             data[field] = _sanitize_string(value)
                     except ValueError as e:

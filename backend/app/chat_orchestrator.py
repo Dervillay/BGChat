@@ -348,6 +348,18 @@ class ChatOrchestrator:
             output_tokens=output_tokens,
         )
 
+    def submit_feedback(
+        self,
+        user_id: str,
+        content: str,
+        email: str | None = None,
+    ) -> None:
+        self._mongodb_client.store_feedback(
+            user_id=user_id,
+            content=content,
+            email=email,
+        )
+
     def user_has_exceeded_daily_token_limit(
         self,
         user_id: str,
