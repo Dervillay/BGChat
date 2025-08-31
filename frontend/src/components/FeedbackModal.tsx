@@ -14,7 +14,9 @@ import {
   VStack,
   useToast,
   Text,
+  IconButton,
 } from "@chakra-ui/react";
+import { FiX } from "react-icons/fi";
 import { theme } from "../theme/index.ts";
 import { useFetchWithAuth } from "../utils/fetchWithAuth.ts";
 import { withError } from "../utils/withError.ts";
@@ -36,7 +38,9 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const fetchWithAuth = useFetchWithAuth();
-  const toast = useToast();
+  const toast = useToast({
+    position: "top",
+  });
 
   const handleSubmit = async () => {
     if (!content.trim() || content.trim().length < 10) {
@@ -113,44 +117,33 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} isCentered size="md">
-      <ModalOverlay backdropFilter="blur(10px)" bg="blackAlpha.300" />
-      <ModalContent
-        bg="chakra-body-bg"
-        border="1px solid"
-        borderColor="chakra-body-border"
-        borderRadius="xl"
-        boxShadow="xl"
-        mx={4}
-      >
-        <ModalHeader
-          bgGradient={theme.gradients.cosmic}
-          bgClip="text"
-          textAlign="center"
-          fontSize="2xl"
-          fontWeight="semibold"
-        >
-          Share Your Feedback
+      <ModalOverlay {...theme.components.FeedbackModal.baseStyle.overlay} />
+      <ModalContent {...theme.components.FeedbackModal.baseStyle.content}>
+        <ModalHeader {...theme.components.FeedbackModal.baseStyle.header}>
+          <Text {...theme.components.FeedbackModal.baseStyle.headerText}>
+            Share Your Feedback
+          </Text>
+          <IconButton
+            aria-label="Close modal"
+            icon={<FiX />}
+            onClick={handleClose}
+            {...theme.components.FeedbackModal.baseStyle.closeButton}
+          />
         </ModalHeader>
         
         <ModalBody>
           <VStack spacing={6} align="stretch">
             <FormControl isRequired>
-              <FormLabel fontWeight="medium" color="chakra-body-text">
+              <FormLabel {...theme.components.FeedbackModal.baseStyle.formLabel}>
                 Your Feedback
               </FormLabel>
               <Textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Tell us what you think, what we can improve, or what new features you'd like to see..."
-                minH="120px"
-                resize="vertical"
-                bg="chakra-body-bg"
-                borderColor="chakra-body-border"
-                _hover={{ borderColor: "chakra-body-border-focus" }}
-                _focus={{ borderColor: "chakra-body-border-focus", boxShadow: "outline" }}
-                _placeholder={{ color: "chakra-body-text", opacity: 0.6 }}
+                placeholder="Tell us what you think, what we can improve, or what new board games you'd like to see..."
+                {...theme.components.FeedbackModal.baseStyle.textarea}
               />
-              <Text fontSize="sm" color="chakra-body-text" mt={1}>
+              <Text {...theme.components.FeedbackModal.baseStyle.helperText}>
                 {content.length}/1000 characters (minimum 10)
               </Text>
             </FormControl>
@@ -160,44 +153,30 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
                 Email (Optional)
               </FormLabel>
               <Text fontSize="sm" color="chakra-body-text" mb={4}>
-                Provide your email if you'd like us to follow up on your feedback
+                Provide your email if you're happy to receive updates
               </Text>
               <Input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="your.email@example.com"
-                bg="chakra-body-bg"
                 borderColor="chakra-body-border"
                 _hover={{ borderColor: "chakra-body-border-focus" }}
                 _focus={{ borderColor: "chakra-body-border-focus", boxShadow: "outline" }}
-                _placeholder={{ color: "chakra-body-text", opacity: 0.6 }}
               />
             </FormControl>
           </VStack>
         </ModalBody>
 
-        <ModalFooter gap={3}>
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            isDisabled={isSubmitting}
-            borderColor="chakra-body-border"
-            color="chakra-body-text"
-            _hover={{ bg: "chakra-body-message-bg" }}
-          >
-            Cancel
-          </Button>
+        <ModalFooter justifyContent="flex-end">
           <Button
             bgGradient={theme.gradients.cosmic}
             color="white"
             onClick={handleSubmit}
             isLoading={isSubmitting}
-            loadingText="Submitting..."
-            _hover={{ transform: "translateY(-1px)", boxShadow: "lg" }}
-            _active={{ transform: "translateY(0)" }}
+            loadingText="Sending..."
           >
-            Submit Feedback
+            Send
           </Button>
         </ModalFooter>
       </ModalContent>
