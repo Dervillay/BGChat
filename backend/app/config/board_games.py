@@ -62,6 +62,19 @@ BOARD_GAMES = [
             }
         ]
     },
+    {
+        "name": "Sky Team",
+        "rulebooks": [
+            {
+                "name": "Landing Procedure",
+                "download_url": "https://www.scorpionmasque.com/sites/scorpionmasque.com/files/st_rules01_en_06jun2023.pdf",
+            },
+            {
+                "name": "Flight Log",
+                "download_url": "https://www.scorpionmasque.com/sites/scorpionmasque.com/files/st_rules02_en_06jun2023.pdf",
+            },
+        ]
+    },
 ]
 
 BOARD_GAMES_STRING_LIST = "\n".join([f"- {board_game['name']}" for board_game in BOARD_GAMES])
