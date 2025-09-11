@@ -6,6 +6,7 @@ import { Link } from './components/Link.ts';
 import { Tooltip } from './components/Tooltip.ts';
 import { ChatInput } from './components/ChatInput.ts';
 import { FeedbackModal } from './components/FeedbackModal.ts';
+import { UserMessage } from './components/UserMessage.ts';
 import { gradients } from './gradients.ts';
 
 export const theme = extendTheme({
@@ -54,5 +55,6 @@ export const theme = extendTheme({
         Tooltip,
         ChatInput,
         FeedbackModal,
+        UserMessage,
   },
 }); 

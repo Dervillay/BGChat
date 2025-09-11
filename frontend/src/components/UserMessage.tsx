@@ -1,29 +1,8 @@
 import React, { useState, ChangeEvent } from "react";
 import { Box, Text, IconButton, Input, Flex, InputGroup } from "@chakra-ui/react";
 import { FiEdit2, FiCheck, FiX } from "react-icons/fi";
+import { theme } from "../theme/index.ts";
 
-const commonButtonProps = {
-    variant: "ghost",
-    color: "gray.500",
-    _hover: { color: "gray.700" },
-    _dark: {
-        color: "#a0a0a0",
-        _hover: { 
-            color: "#e0e0e0",
-            filter: "brightness(1.3)"
-        }
-    }
-};
-
-const messageStyle = {
-    maxW: { base: "85%", md: "70%" },
-    bg: "chakra-body-message-bg",
-    _dark: { bg: "chakra-body-message-bg" },
-    color: "chakra-body-message-text",
-    px: { base: 3, md: 5 },
-    py: { base: 2, md: 2.5 },
-    borderRadius: "1.5rem"
-};
 
 interface UserMessageProps {
     content: string;
@@ -76,34 +55,25 @@ export const UserMessage: React.FC<UserMessageProps> = ({ content, onEdit }) => 
 
     if (isEditing) {
         return (
-            <Box position="relative" display="flex" flexDirection="column" alignItems="flex-end" w="100%" role="group">
+            <Box {...theme.components.UserMessage.container}>
                 <Input
-                    as="textarea"
                     value={editedContent}
                     onChange={handleChange}
                     onKeyDown={handleKeyDown}
-                    fontSize="md"
-                    borderColor="transparent"
-                    _focus={{
-                        borderColor: "chakra-body-border-focus",
-                        boxShadow: "none"
-                    }}
-                    {...messageStyle}
+                    {...theme.components.UserMessage.editInput}
                 />
-                <Flex justify="flex-end" w="100%">
+                <Flex {...theme.components.UserMessage.buttonContainer}>
                     <IconButton
                         aria-label="Save edit"
                         icon={<FiCheck />}
                         onClick={handleSave}
-                        size="sm"
-                        {...commonButtonProps}
+                        {...theme.components.UserMessage.button}
                     />
                     <IconButton
                         aria-label="Cancel edit"
                         icon={<FiX />}
                         onClick={handleCancel}
-                        size="sm"
-                        {...commonButtonProps}
+                        {...theme.components.UserMessage.button}
                     />
                 </Flex>
             </Box>
@@ -111,19 +81,17 @@ export const UserMessage: React.FC<UserMessageProps> = ({ content, onEdit }) => 
     }
 
     return (
-        <Box position="relative" display="flex" flexDirection="column" alignItems="flex-end" w="100%" role="group">
-            <Box {...messageStyle}>
-                <Text fontSize="md">{content}</Text>
+        <Box {...theme.components.UserMessage.container}>
+            <Box {...theme.components.UserMessage.messageBox}>
+                <Text {...theme.components.UserMessage.messageText}>{content}</Text>
             </Box>
-            <Flex justify="flex-end" w="100%" h="1.5rem" mt={0}>
+            <Flex {...theme.components.UserMessage.buttonContainer}>
                 <IconButton
                     aria-label="Edit message"
                     icon={<FiEdit2 />}
                     onClick={handleEdit}
-                    opacity={{ base: 1, md: 0 }}
-                    _groupHover={{ opacity: 1 }}
-                    size="sm"
-                    {...commonButtonProps}
+                    {...theme.components.UserMessage.button}
+                    {...theme.components.UserMessage.requireHoverOnDesktop}
                 />
             </Flex>
         </Box>
