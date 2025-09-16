@@ -20,7 +20,6 @@ export const FeedbackLink: React.FC<FeedbackLinkProps> = ({ onClick }) => {
         Have feedback or want to add a new board game?{" "}
         <Link
             onClick={onClick}
-            textDecoration="underline"
         >
             Let us know
         </Link>
