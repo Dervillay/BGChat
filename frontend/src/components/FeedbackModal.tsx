@@ -32,7 +32,6 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
   onClose,
   selectedBoardGame,
 }) => {
-  const [feedbackType, setFeedbackType] = useState<string>("general");
   const [content, setContent] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,31 +71,27 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
         {
           method: "POST",
           body: JSON.stringify({
-            feedback_type: feedbackType,
             content: content.trim(),
             email: email.trim() || undefined,
-            board_game: selectedBoardGame || undefined,
           }),
         }
       ));
 
       toast({
-        title: "Feedback submitted!",
-        description: "Thank you for your feedback. If you provided an email, we'll aim to get back to you as soon as possible.",
+        title: "Thank you for your feedback!",
+        description: "If you provided an email, we'll aim to get back to you as soon as possible.",
         status: "success",
         duration: 5000,
         isClosable: true,
       });
 
-      // Reset form and close modal
-      setFeedbackType("general");
       setContent("");
       setEmail("");
       onClose();
     } catch (error: any) {
       toast({
         title: "Submission failed",
-        description: error.message || "Failed to submit feedback. Please try again.",
+        description: error.message || "Failed to submit feedback. Please try again later.",
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -108,7 +103,6 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
 
   const handleClose = () => {
     if (!isSubmitting) {
-      setFeedbackType("general");
       setContent("");
       setEmail("");
       onClose();
@@ -116,7 +110,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} isCentered size="md">
+    <Modal isOpen={isOpen} onClose={handleClose} isCentered>
       <ModalOverlay {...theme.components.FeedbackModal.baseStyle.overlay} />
       <ModalContent {...theme.components.FeedbackModal.baseStyle.content}>
         <ModalHeader {...theme.components.FeedbackModal.baseStyle.header}>
@@ -135,12 +129,12 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
           <VStack spacing={6} align="stretch">
             <FormControl isRequired>
               <FormLabel {...theme.components.FeedbackModal.baseStyle.formLabel}>
-                Your Feedback
+                Feedback
               </FormLabel>
               <Textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Tell us what you think, what we can improve, or what new board games you'd like to see..."
+                placeholder="Tell us your thoughts, how we can improve, or what new board games you'd like to see"
                 {...theme.components.FeedbackModal.baseStyle.textarea}
               />
               <Text {...theme.components.FeedbackModal.baseStyle.helperText}>
@@ -170,8 +164,6 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
 
         <ModalFooter justifyContent="flex-end">
           <Button
-            bgGradient={theme.gradients.cosmic}
-            color="white"
             onClick={handleSubmit}
             isLoading={isSubmitting}
             loadingText="Sending..."
