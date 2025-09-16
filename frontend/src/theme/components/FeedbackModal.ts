@@ -16,7 +16,7 @@ export const FeedbackModal = {
           zIndex: 0,
           borderRadius: '1rem',
           padding: '2px',
-          background: 'var(--chakra-colors-gradient-cosmic)',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           WebkitMask:
             'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
           WebkitMaskComposite: 'xor',
