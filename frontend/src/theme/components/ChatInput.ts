@@ -1,5 +1,3 @@
-import { FaBorderAll } from "react-icons/fa";
-
 export const ChatInput = {
   baseStyle: {
     container: {
