@@ -16,6 +16,7 @@ MAX_QUESTION_LENGTH = 1000
 MAX_BOARD_GAME_LENGTH = 100
 MAX_EMAIL_LENGTH = 100
 
+
 def _sanitize_string(value: str, max_length: int = None) -> str:
     """
     Sanitize string input by removing potentially dangerous characters.
@@ -63,6 +64,7 @@ def _validate_question(value: str) -> str:
         raise ValueError("Question contains invalid characters")
 
     return sanitized
+
 
 def _validate_email(value: str | None) -> str | None:
     """
