@@ -75,6 +75,15 @@ BOARD_GAMES = [
             },
         ]
     },
+    {
+        "name": "Spirit Island",
+        "rulebooks": [
+            {
+                "name": "Spirit Island Rulebook",
+                "download_url": "https://cdn.1j1ju.com/medias/87/39/54-spirit-island-rulebook.pdf",
+            }
+        ]
+    }
 ]
 
 BOARD_GAMES_STRING_LIST = "\n".join([f"- {board_game['name']}" for board_game in BOARD_GAMES])
