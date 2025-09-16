@@ -1,5 +1,6 @@
 import { FC } from "react";
 import { Select } from "chakra-react-select";
+import { theme } from "../theme/index.ts";
 
 interface BoardGameSelectProps {
 	selectedBoardGame: string;
@@ -27,87 +28,13 @@ export const BoardGameSelect: FC<BoardGameSelectProps> = ({
 			size="sm"
 			menuPlacement="top"
 			chakraStyles={{
-				control: (provided, state) => ({
-					...provided,
-					border: 'none',
-					boxShadow: 'none',
-					minWidth: selectedBoardGame ? 'fit-content' : '11.5rem',
-					maxWidth: "13rem",
-					paddingRight: '1.25rem',
-					color: 'chakra-body-text',
-					fontSize: 'md',
-					'&:hover': {
-						boxShadow: 'none',
-						border: '1px',
-						borderColor: 'chakra-body-border-focus',
-						cursor: 'pointer',
-					},
-					'&:focus-within': {
-						boxShadow: 'none',
-						border: '1px',
-						borderColor: 'chakra-body-border-focus',
-					},
-					...(state.isFocused && {
-						border: '1px',
-						borderColor: 'chakra-body-border-focus',
-					}),
-				}),
-				singleValue: (provided) => ({
-					...provided,
-					overflow: 'hidden',
-					textOverflow: 'ellipsis',
-					whiteSpace: 'nowrap',
-					maxWidth: '100%',
-				}),
-				dropdownIndicator: (provided) => ({
-					...provided,
-					color: 'chakra-body-text',
-					marginRight: '0',
-					position: 'absolute',
-				}),
-				menu: (provided) => ({
-					...provided,
-					minWidth: { base: '13rem', md: '18rem' },
-					borderRadius: '10px',
-					right: 0,
-					borderColor: 'chakra-body-border',
-				}),
-				menuList: (provided) => ({
-					...provided,
-					borderRadius: '10px',
-					padding: '0.3rem',
-					backgroundColor: 'chakra-body-bg',
-					maxHeight: '15rem',
-					overflowY: 'auto',
-					_dark: {
-						backgroundColor: 'chakra-body-message-bg',
-					}
-				}),
-				option: (provided, state) => ({
-					...provided,
-					fontWeight: 'normal',
-					backgroundColor: 'transparent',
-					color: 'chakra-body-text',
-					fontSize: 'md',
-					'&:hover': {
-						backgroundColor: 'chakra-body-message-bg',
-						borderRadius: '5px',
-					},
-					_dark: {
-						'&:hover': {
-							backgroundColor: 'chakra-body-border',
-						},
-					},
-					...(state.isSelected && {
-						color: 'chakra-body-text-highlight',
-					}),
-				}),
-				placeholder: (provided) => ({
-					...provided,
-					_dark: {
-						color: '#a0a0a0',
-					},
-				}),
+				control: (provided, state) => theme.components.BoardGameSelect.control(provided, state, selectedBoardGame),
+				singleValue: theme.components.BoardGameSelect.singleValue,
+				dropdownIndicator: theme.components.BoardGameSelect.dropdownIndicator,
+				menu: theme.components.BoardGameSelect.menu,
+				menuList: theme.components.BoardGameSelect.menuList,
+				option: theme.components.BoardGameSelect.option,
+				placeholder: theme.components.BoardGameSelect.placeholder,
 			}}
 		/>
 	);

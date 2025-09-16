@@ -7,6 +7,7 @@ import { Tooltip } from './components/Tooltip.ts';
 import { ChatInput } from './components/ChatInput.ts';
 import { FeedbackModal } from './components/FeedbackModal.ts';
 import { UserMessage } from './components/UserMessage.ts';
+import { BoardGameSelect } from './components/BoardGameSelect.ts';
 import { gradients } from './gradients.ts';
 
 export const theme = extendTheme({
@@ -56,5 +57,6 @@ export const theme = extendTheme({
         ChatInput,
         FeedbackModal,
         UserMessage,
+        BoardGameSelect,
   },
 }); 
