@@ -15,21 +15,16 @@ EMAIL_PATTERN = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
 MAX_QUESTION_LENGTH = 1000
 MAX_BOARD_GAME_LENGTH = 100
 MAX_EMAIL_LENGTH = 100
+MAX_CONTENT_LENGTH = 1000
 
 
-def _sanitize_string(value: str, max_length: int = None) -> str:
+def _sanitize_string(value: str) -> str:
     """
     Sanitize string input by removing potentially dangerous characters.
     """
     # Remove null bytes and control characters
     sanitized = ''.join(char for char in value if ord(char) >= 32)
-
-    # Trim whitespace
     sanitized = sanitized.strip()
-
-    # Check length
-    if max_length and len(sanitized) > max_length:
-        raise ValueError(f"String too long (max {max_length} characters)")
 
     return sanitized
 
@@ -39,10 +34,13 @@ def _validate_board_game(value: str) -> str:
     Validate board game name format and length.
     Raises ValueError if validation fails.
     """
-    sanitized = _sanitize_string(value, MAX_BOARD_GAME_LENGTH)
+    sanitized = _sanitize_string(value)
 
     if not sanitized:
         raise ValueError("Board game name cannot be empty")
+
+    if len(sanitized) > MAX_BOARD_GAME_LENGTH:
+        raise ValueError(f"Board game name too long (max {MAX_BOARD_GAME_LENGTH} characters)")
 
     if not BOARD_GAME_PATTERN.match(sanitized):
         raise ValueError("Board game name contains invalid characters")
@@ -55,10 +53,13 @@ def _validate_question(value: str) -> str:
     Validate question format and length.
     Raises ValueError if validation fails.
     """
-    sanitized = _sanitize_string(value, MAX_QUESTION_LENGTH)
+    sanitized = _sanitize_string(value)
 
     if not sanitized:
         raise ValueError("Question cannot be empty")
+
+    if len(sanitized) > MAX_QUESTION_LENGTH:
+        raise ValueError(f"Question too long (max {MAX_QUESTION_LENGTH} characters)")
 
     if not QUESTION_PATTERN.match(sanitized):
         raise ValueError("Question contains invalid characters")
@@ -71,13 +72,16 @@ def _validate_email(value: str | None) -> str | None:
     Validate email format.
     Raises ValueError if validation fails.
     """
-    sanitized = _sanitize_string(value, MAX_EMAIL_LENGTH)
+    if not value:
+        return None
 
-    if not sanitized:
-        raise ValueError("Email cannot be empty")
+    sanitized = _sanitize_string(value)
+
+    if len(sanitized) > MAX_EMAIL_LENGTH:
+        return None
 
     if not EMAIL_PATTERN.match(sanitized):
-        raise ValueError("Email doesn't match the expected format")
+        raise ValueError("Email format is invalid")
 
     return sanitized
 
@@ -146,12 +150,16 @@ def validate_json_body(**field_types: Type) -> Callable:
                         elif field == 'email':
                             data[field] = _validate_email(value)
                         else:
-                            data[field] = _sanitize_string(value)
+                            sanitized = _sanitize_string(value)
+                            if len(sanitized) > MAX_CONTENT_LENGTH:
+                                raise ValueError(f"Content too long (max {MAX_CONTENT_LENGTH} characters)")
+                            data[field] = sanitized
+            
                     except ValueError as e:
                         type_errors[field] = str(e)
 
             if type_errors:
-                return validation_error("Field validation failed", type_errors)
+                return validation_error(", ".join(type_errors.values()))
 
             return f(*args, **kwargs)
 

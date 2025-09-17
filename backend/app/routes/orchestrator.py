@@ -4,7 +4,6 @@ API routes for interacting with the board game rulebook chat orchestrator.
 import logging
 import os
 import json
-import sys
 
 from flask import (
     Blueprint,
@@ -227,7 +226,7 @@ def resource_not_found(e):
 
 @orchestrator_bp.errorhandler(405)
 def method_not_allowed(e):
-    return validation_error("Method not allowed", status_code=405)
+    return validation_error("Method not allowed")
 
 
 @orchestrator_bp.errorhandler(500)

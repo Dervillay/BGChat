@@ -15,10 +15,9 @@ def error_response(message: str, status_code: int = 400, details: Optional[Dict[
     return jsonify(response_data), status_code
 
 
-def validation_error(message: str, field_errors: Optional[Dict[str, str]] = None) -> Response:
+def validation_error(message: str = "Validation failed") -> Response:
     """Create a validation error response."""
-    details = {"field_errors": field_errors} if field_errors else None
-    return error_response(message, 400, details)
+    return error_response(message, 400)
 
 
 def authentication_error(message: str = "Authentication failed") -> Response:

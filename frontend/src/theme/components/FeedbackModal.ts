@@ -51,8 +51,16 @@ export const FeedbackModal = {
       resize: "vertical",
       borderColor: "chakra-body-border",
       _hover: { borderColor: "chakra-body-border-focus" },
-      _focus: { borderColor: "chakra-body-border-focus", boxShadow: "outline" },
-      _placeholder: { color: "chakra-body-text", opacity: 0.6 },
+      _focus: { 
+        outline: "none",
+        borderColor: "chakra-body-border-focus", 
+        boxShadow: "none" 
+      },
+      _invalid: {
+        borderColor: "red.500",
+        _hover: { borderColor: "red.500" },
+        _focus: { borderColor: "red.500", boxShadow: "none", outline: "none" },
+      },
     },
     helperText: {
       fontSize: "sm",
@@ -67,7 +75,16 @@ export const FeedbackModal = {
     input: {
       borderColor: "chakra-body-border",
       _hover: { borderColor: "chakra-body-border-focus" },
-      _focus: { borderColor: "chakra-body-border-focus", boxShadow: "outline" },
+      _focus: { 
+        outline: "none",
+        borderColor: "chakra-body-border-focus", 
+        boxShadow: "none" 
+      },
+      _invalid: {
+        borderColor: "red.500",
+        _hover: { borderColor: "red.500" },
+        _focus: { borderColor: "red.500", boxShadow: "none", outline: "none" },
+      },
     },
     footer: {
       justifyContent: "flex-end",

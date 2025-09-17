@@ -15,6 +15,7 @@ import {
   useToast,
   Text,
   IconButton,
+  FormHelperText,
 } from "@chakra-ui/react";
 import { FiX } from "react-icons/fi";
 import { theme } from "../theme/index.ts";
@@ -24,13 +25,11 @@ import { withError } from "../utils/withError.ts";
 interface FeedbackModalProps {
   isOpen: boolean;
   onClose: () => void;
-  selectedBoardGame?: string;
 }
 
 export const FeedbackModal: React.FC<FeedbackModalProps> = ({
   isOpen,
   onClose,
-  selectedBoardGame,
 }) => {
   const [content, setContent] = useState<string>("");
   const [email, setEmail] = useState<string>("");
@@ -42,28 +41,6 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
   });
 
   const handleSubmit = async () => {
-    if (!content.trim() || content.trim().length < 10) {
-      toast({
-        title: "Invalid feedback",
-        description: "Please provide feedback with at least 10 characters.",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
-      return;
-    }
-
-    if (email && !email.includes("@")) {
-      toast({
-        title: "Invalid email",
-        description: "Please provide a valid email address.",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       await withError(() => fetchWithAuth(
@@ -72,19 +49,17 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
           method: "POST",
           body: JSON.stringify({
             content: content.trim(),
-            email: email.trim() || undefined,
+            email: email.trim() || "",
           }),
         }
       ));
-
       toast({
-        title: "Thank you for your feedback!",
+        title: "Thanks for your feedback!",
         description: "If you provided an email, we'll aim to get back to you as soon as possible.",
         status: "success",
         duration: 5000,
         isClosable: true,
       });
-
       setContent("");
       setEmail("");
       onClose();
@@ -96,9 +71,8 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
         duration: 5000,
         isClosable: true,
       });
-    } finally {
-      setIsSubmitting(false);
     }
+    setIsSubmitting(false);
   };
 
   const handleClose = () => {
@@ -135,38 +109,41 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Tell us your thoughts, how we can improve, or what new board games you'd like to see"
+                minLength={10}
+                isRequired
+                isInvalid={content.length > 0 && content.length < 10}
                 {...theme.components.FeedbackModal.baseStyle.textarea}
               />
-              <Text {...theme.components.FeedbackModal.baseStyle.helperText}>
-                {content.length}/1000 characters (minimum 10)
-              </Text>
+              <FormHelperText>
+                {content.length}/1000 characters
+              </FormHelperText>
             </FormControl>
 
             <FormControl>
-              <FormLabel fontWeight="medium" color="chakra-body-text">
+              <FormLabel {...theme.components.FeedbackModal.baseStyle.formLabel}>
                 Email (Optional)
               </FormLabel>
-              <Text fontSize="sm" color="chakra-body-text" mb={4}>
-                Provide your email if you're happy to receive updates
-              </Text>
               <Input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="your.email@example.com"
-                borderColor="chakra-body-border"
-                _hover={{ borderColor: "chakra-body-border-focus" }}
-                _focus={{ borderColor: "chakra-body-border-focus", boxShadow: "outline" }}
+                isInvalid={email.length > 0 && !email.includes("@")}
+                {...theme.components.FeedbackModal.baseStyle.input}
               />
+              <FormHelperText>
+                Provide your email if you're happy to receive updates
+              </FormHelperText>
             </FormControl>
           </VStack>
         </ModalBody>
 
-        <ModalFooter justifyContent="flex-end">
+        <ModalFooter {...theme.components.FeedbackModal.baseStyle.footer}>
           <Button
             onClick={handleSubmit}
             isLoading={isSubmitting}
             loadingText="Sending..."
+            {...theme.components.FeedbackModal.baseStyle.submitButton}
           >
             Send
           </Button>
