@@ -390,21 +390,24 @@ class MongoDBClient:
         try:
             request_datetime_utc = self._get_current_datetime_utc()
             request_date = request_datetime_utc.strftime("%Y-%m-%d")
+            
+            update_query = {
+                "$setOnInsert": {
+                    "user_id": user_id,
+                },
+                "$push": {
+                    f"feedback.{request_date}": {
+                        "$each": [content],
+                    }
+                }
+            }
+            
+            if email is not None:
+                update_query["$set"] = {"email": email}
+            
             self.db.feedback.update_one(
                 {"user_id": user_id},
-                {
-                    "$setOnInsert": {
-                        "user_id": user_id,
-                    },
-                    "$set": {
-                        "email": email,
-                    },
-                    "$push": {
-                        f"feedback.{request_date}": {
-                            "$each": [content],
-                        }
-                    }
-                },
+                update_query,
                 upsert=True
             )
             logger.info("Feedback submitted successfully for user %s", user_id)
