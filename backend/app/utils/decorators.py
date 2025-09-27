@@ -78,10 +78,26 @@ def _validate_email(value: str | None) -> str | None:
     sanitized = _sanitize_string(value)
 
     if len(sanitized) > MAX_EMAIL_LENGTH:
-        return None
+        raise ValueError(f"Email too long (max {MAX_EMAIL_LENGTH} characters)")
 
     if not EMAIL_PATTERN.match(sanitized):
         raise ValueError("Email format is invalid")
+
+    return sanitized
+
+
+def _validate_content(value: str) -> str:
+    """
+    Validate content format and length.
+    Raises ValueError if validation fails.
+    """
+    sanitized = _sanitize_string(value)
+
+    if not sanitized:
+        raise ValueError("Content cannot be empty")
+    
+    if len(sanitized) > MAX_CONTENT_LENGTH:
+        raise ValueError(f"Content too long (max {MAX_CONTENT_LENGTH} characters)")
 
     return sanitized
 
@@ -141,7 +157,7 @@ def validate_json_body(**field_types: Type) -> Callable:
                 value = data[field]
                 if not isinstance(value, expected_type):
                     type_errors[field] = f"Must be of type {expected_type.__name__}, got {type(value).__name__}"
-                elif type(value) == str:
+                elif isinstance(value, str):
                     try:
                         if field == 'board_game':
                             data[field] = _validate_board_game(value)
@@ -150,10 +166,7 @@ def validate_json_body(**field_types: Type) -> Callable:
                         elif field == 'email':
                             data[field] = _validate_email(value)
                         else:
-                            sanitized = _sanitize_string(value)
-                            if len(sanitized) > MAX_CONTENT_LENGTH:
-                                raise ValueError(f"Content too long (max {MAX_CONTENT_LENGTH} characters)")
-                            data[field] = sanitized
+                            data[field] = _validate_content(value)
             
                     except ValueError as e:
                         type_errors[field] = str(e)

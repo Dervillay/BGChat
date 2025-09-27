@@ -16,6 +16,7 @@ import {
   Text,
   IconButton,
   FormHelperText,
+  FormErrorMessage,
 } from "@chakra-ui/react";
 import { FiX } from "react-icons/fi";
 import { theme } from "../theme/index.ts";
@@ -34,13 +35,25 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
   const [content, setContent] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+
   const fetchWithAuth = useFetchWithAuth();
-  const toast = useToast({
-    position: "top",
-  });
+  const toast = useToast({position: "top"});
+  
+  const isContentValid = (
+    content.trim().length >= 10 && content.trim().length <= 1000
+  );
+  const isEmailValid = (
+    email.trim().length === 0 || email.trim().includes("@")
+  );
 
   const handleSubmit = async () => {
+    setHasAttemptedSubmit(true);
+    
+    if (!isContentValid || !isEmailValid) {
+      return;
+    }
+    
     setIsSubmitting(true);
     try {
       await withError(() => fetchWithAuth(
@@ -62,6 +75,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
       });
       setContent("");
       setEmail("");
+      setHasAttemptedSubmit(false);
       onClose();
     } catch (error: any) {
       toast({
@@ -79,6 +93,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
     if (!isSubmitting) {
       setContent("");
       setEmail("");
+      setHasAttemptedSubmit(false);
       onClose();
     }
   };
@@ -101,39 +116,57 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
         
         <ModalBody>
           <VStack spacing={6} align="stretch">
-            <FormControl isRequired>
+            <FormControl isRequired isInvalid={hasAttemptedSubmit && !isContentValid}>
               <FormLabel {...theme.components.FeedbackModal.baseStyle.formLabel}>
                 Feedback
               </FormLabel>
               <Textarea
                 value={content}
-                onChange={(e) => setContent(e.target.value)}
+                onChange={(e) => {
+                  setContent(e.target.value);
+                  if (hasAttemptedSubmit) setHasAttemptedSubmit(false);
+                }}
                 placeholder="Tell us your thoughts, how we can improve, or what new board games you'd like to see"
                 minLength={10}
                 isRequired
-                isInvalid={content.length > 0 && content.length < 10}
+                isInvalid={hasAttemptedSubmit && !isContentValid}
                 {...theme.components.FeedbackModal.baseStyle.textarea}
               />
-              <FormHelperText>
-                {content.length}/1000 characters
-              </FormHelperText>
-            </FormControl>
+              {!hasAttemptedSubmit || isContentValid ?
+                <FormHelperText>
+                  {content.length}/1000 characters
+                </FormHelperText>
+              :
+                <FormErrorMessage>
+                    Feedback must be between 10 and 1000 characters
+                </FormErrorMessage>
+              }
+              </FormControl>
 
-            <FormControl>
+            <FormControl isInvalid={hasAttemptedSubmit && !isEmailValid}>
               <FormLabel {...theme.components.FeedbackModal.baseStyle.formLabel}>
                 Email (Optional)
               </FormLabel>
               <Input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (hasAttemptedSubmit) setHasAttemptedSubmit(false);
+                }}
                 placeholder="your.email@example.com"
-                isInvalid={email.length > 0 && !email.includes("@")}
+                isInvalid={hasAttemptedSubmit && !isEmailValid}
                 {...theme.components.FeedbackModal.baseStyle.input}
               />
-              <FormHelperText>
-                Provide your email if you're happy to receive updates
-              </FormHelperText>
+              {!hasAttemptedSubmit || isEmailValid ?
+                <FormHelperText>
+                  Provide your email if you're happy to receive updates
+                </FormHelperText>
+              :
+                <FormErrorMessage>
+                  Please enter a valid email address
+                </FormErrorMessage>
+              }
             </FormControl>
           </VStack>
         </ModalBody>
