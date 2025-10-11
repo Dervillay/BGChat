@@ -20,10 +20,16 @@ import { withError } from "../utils/withError.ts";
 import { useFetchWithAuth } from "../utils/fetchWithAuth.ts";
 import { usePDFViewer } from "../contexts/PDFViewerContext.tsx";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = `${process.env.PUBLIC_URL || ''}/pdf.worker.min.js`;
-
 export const PDFViewerModal: React.FC = () => {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `${process.env.PUBLIC_URL || ''}/pdf.worker.min.js`;
+
     const { isOpen, url, title, pageNumber, closeViewer } = usePDFViewer();
+    const fetchWithAuth = useFetchWithAuth();
+    const isIOSDevice = (): boolean => {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) // iPad on iOS 13+
+    };
+
     const [blobUrl, setBlobUrl] = useState<string>();
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -32,12 +38,11 @@ export const PDFViewerModal: React.FC = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(0);
     const [scale, setScale] = useState(1.0);
-    const [useNativeViewer, setUseNativeViewer] = useState(true);
+    const [useNativeViewer, setUseNativeViewer] = useState(!isIOSDevice()); // Disable native viewer on iOS
     const [nativeViewerFailed, setNativeViewerFailed] = useState(false);
     const modalContentRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const objectRef = useRef<HTMLObjectElement>(null);
-    const fetchWithAuth = useFetchWithAuth();
 
     useEffect(() => {
         if (!url) return;
@@ -61,8 +66,8 @@ export const PDFViewerModal: React.FC = () => {
                 const newBlobUrl = window.URL.createObjectURL(blob);
                 setBlobUrl(newBlobUrl);
 
-                // Fall back to using PDF.js if native PDF viewer can't be used
-                if (!useNativeViewer || nativeViewerFailed) {
+                // Use PDF.js if native PDF viewer can't be used or using an iOS device
+                if (!useNativeViewer || nativeViewerFailed || isIOSDevice()) {
                     const loadingTask = pdfjsLib.getDocument({ 
                         data: arrayBuffer,
                         cMapUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/cmaps/`,
@@ -353,8 +358,8 @@ export const PDFViewerModal: React.FC = () => {
                             </Flex>
                         ) : blobUrl ? (
                             <>
-                                {/* Native PDF Viewer */}
-                                {useNativeViewer && !nativeViewerFailed ? (
+                                {/* Native PDF Viewer - disabled on iOS */}
+                                {useNativeViewer && !nativeViewerFailed && !isIOSDevice() ? (
                                     <object
                                         ref={objectRef}
                                         data={pageNumber ? `${blobUrl}#page=${pageNumber}` : blobUrl}
