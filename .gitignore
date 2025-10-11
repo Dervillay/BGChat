@@ -4,4 +4,7 @@ backend/app/database.json
 backend/myenv
 frontend/node_modules
 frontend/build
+frontend/public/web
+frontend/public/build
+frontend/public/LICENSE
 */.env*
