@@ -83,6 +83,15 @@ BOARD_GAMES = [
                 "download_url": "https://cdn.1j1ju.com/medias/87/39/54-spirit-island-rulebook.pdf",
             }
         ]
+    },
+    {
+        "name": "Race for the Galaxy",
+        "rulebooks": [
+            {
+                "name": "Race for the Galaxy Rulebook",
+                "download_url": "https://cdn.1j1ju.com/medias/6a/44/a4-race-for-the-galaxy-rulebook.pdf",
+            }
+        ]
     }
 ]
 
