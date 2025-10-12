@@ -153,7 +153,7 @@ export const PDFViewerModal: React.FC = () => {
                         position: 'absolute',
                         inset: 0,
                         zIndex: 0,
-                        borderRadius: { base: '0', md: isFullscreen ? '0' : '1rem' },
+                        borderRadius: { base: '0', md: isFullscreen ? '0' : '0.3rem' },
                         padding: '2px',
                         background: theme.gradients.cosmic,
                         WebkitMask:
