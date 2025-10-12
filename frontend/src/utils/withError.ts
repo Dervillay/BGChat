@@ -1,3 +1,5 @@
+import { HttpError } from './HttpError';
+
 export async function withError<T>(
     fn: () => Promise<T>
   ): Promise<T> {
@@ -9,11 +11,13 @@ export async function withError<T>(
             errorBody = await response.json();
         } catch {
             errorBody = { message: response.statusText };
-        } throw {
-            status: response.status,
-            message: errorBody.error || errorBody.message || response.statusText,
-            body: errorBody,
-        };
+        } 
+        
+        throw new HttpError(
+            errorBody.error || errorBody.message || response.statusText,
+            response.status,
+            errorBody
+        );
     }
   
     return response;

@@ -76,7 +76,8 @@ export const PDFViewerModal: React.FC = () => {
                 setIsLoading(false);
             }
         })();
-    }, [url, useNativeViewer, nativeViewerFailed]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [url, useNativeViewer, nativeViewerFailed, blobUrl]);
 
     useEffect(() => {
         document.addEventListener("fullscreenchange", handleFullscreenChange);

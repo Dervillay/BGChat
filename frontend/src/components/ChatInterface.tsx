@@ -38,6 +38,7 @@ const ChatInterface = () => {
 
 	useEffect(() => {
 		handleGetKnownBoardGames();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	useEffect(() => {
@@ -200,10 +201,11 @@ const ChatInterface = () => {
 								setIsThinking(false);
 							}
 							currentContent += data.chunk;
+							const newContent = currentContent;
 							setMessages((prev) => [
 								...prev.slice(0, -1),
 								{ 
-									content: currentContent,
+									content: newContent,
 									role: "assistant"
 								}
 							]);
@@ -312,7 +314,6 @@ const ChatInterface = () => {
 			<FeedbackModal
 				isOpen={isFeedbackModalOpen}
 				onClose={handleCloseFeedbackModal}
-				selectedBoardGame={selectedBoardGame}
 			/>
 		</Flex>
 	);

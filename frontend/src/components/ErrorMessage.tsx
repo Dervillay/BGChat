@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Box, Text, Container, Flex, Icon, IconButton } from "@chakra-ui/react";
+import { Box, Text, Container, Flex, IconButton } from "@chakra-ui/react";
 import { keyframes } from "@emotion/react";
-import { FiAlertCircle, FiX } from "react-icons/fi";
+import { FiX } from "react-icons/fi";
 import { theme } from "../theme/index.ts";
 
 const fadeIn = keyframes`

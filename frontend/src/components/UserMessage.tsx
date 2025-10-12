@@ -1,5 +1,5 @@
 import React, { useState, ChangeEvent } from "react";
-import { Box, Text, IconButton, Input, Flex, InputGroup } from "@chakra-ui/react";
+import { Box, Text, IconButton, Input, Flex } from "@chakra-ui/react";
 import { FiEdit2, FiCheck, FiX } from "react-icons/fi";
 import { theme } from "../theme/index.ts";
 
