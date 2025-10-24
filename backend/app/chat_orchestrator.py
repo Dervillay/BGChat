@@ -87,14 +87,16 @@ class ChatOrchestrator:
         stream: bool,
     ):
         try:
-            response = self._openai_client.chat.completions.create(
+            response = self._openai_client.responses.create(
                 model=self._chat_model_name,
-                messages=messages,
-                stream=stream
+                input=messages,
+                stream=stream,
+                store=False,
             )
             if stream:
                 return response
-            return response.choices[0].message.content
+
+            return response.output.content[0].text
 
         except Exception as e:
             self._handle_openai_error(e, "chat completion")
@@ -304,31 +306,32 @@ class ChatOrchestrator:
         citation_buffer = ""
         in_citation = False
 
-        # Buffer chunks when we hit a citation, then parse the citation and yield the parsed text
-        for chunk in stream:
-            content = chunk.choices[0].delta.content
+        # Buffer the stream when we hit a citation so we can parse it before returning
+        for event in stream:
+            if event.type == "response.output_text.delta":
+                content = event.delta
+  
+                if content is not None:
+                    if CITATION_REGEX_PATTERN[0] in content:
+                        in_citation = True
+                        citation_buffer += content
+                        continue
 
-            if content is not None:
-                if CITATION_REGEX_PATTERN[0] in content:
-                    in_citation = True
-                    citation_buffer += content
-                    continue
+                    elif CITATION_REGEX_PATTERN[-1] in content:
+                        in_citation = False
+                        citation_buffer += content
+                        parsed = self._parse_citations(board_game, citation_buffer)
+                        citation_buffer = ""
+                        full_response += parsed
+                        yield parsed
 
-                elif CITATION_REGEX_PATTERN[-1] in content:
-                    in_citation = False
-                    citation_buffer += content
-                    parsed = self._parse_citations(board_game, citation_buffer)
-                    citation_buffer = ""
-                    full_response += parsed
-                    yield parsed
+                    elif in_citation:
+                        citation_buffer += content
+                        continue
 
-                elif in_citation:
-                    citation_buffer += content
-                    continue
-
-                else:
-                    full_response += content
-                    yield content
+                    else:
+                        full_response += content
+                        yield content
 
         assistant_message = {
             "content": full_response,
