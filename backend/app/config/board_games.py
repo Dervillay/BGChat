@@ -41,7 +41,15 @@ BOARD_GAMES = [
             {
                 "name": "Rules",
                 "download_url": "https://d19y2ttatozxjp.cloudfront.net/pdfs/DUNE_IMPERIUM_Rules_2020_10_26.pdf",
-            }
+            },
+            {
+                "name": "Dune Imperium - Rise of Ix",
+                "download_url": "https://cdn.1j1ju.com/medias/f1/d5/28-dune-imperium-rise-of-ix-rulebook.pdf"
+            },
+            {
+                "name": "Dune Imperium - Immortality",
+                "download_url": "https://cdn.1j1ju.com/medias/aa/6e/73-dune-imperium-immortality-rulebook.pdf"
+            },
         ]
     },
     {
