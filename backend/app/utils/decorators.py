@@ -8,9 +8,6 @@ from app.utils.auth import get_token_from_auth_header, get_user_id_from_auth_hea
 from app.utils.responses import validation_error, authentication_error, authorization_error
 
 
-# Input validation patterns
-BOARD_GAME_PATTERN = re.compile(r'^[a-zA-Z0-9\s\-_&%$*#:]+$')
-QUESTION_PATTERN = re.compile(r'^[a-zA-Z0-9\s\-_.,!?()&%$*#:]+$')
 EMAIL_PATTERN = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
 MAX_QUESTION_LENGTH = 1000
 MAX_BOARD_GAME_LENGTH = 100
@@ -42,9 +39,6 @@ def _validate_board_game(value: str) -> str:
     if len(sanitized) > MAX_BOARD_GAME_LENGTH:
         raise ValueError(f"Board game name too long (max {MAX_BOARD_GAME_LENGTH} characters)")
 
-    if not BOARD_GAME_PATTERN.match(sanitized):
-        raise ValueError("Board game name contains invalid characters")
-
     return sanitized
 
 
@@ -60,9 +54,6 @@ def _validate_question(value: str) -> str:
 
     if len(sanitized) > MAX_QUESTION_LENGTH:
         raise ValueError(f"Question too long (max {MAX_QUESTION_LENGTH} characters)")
-
-    if not QUESTION_PATTERN.match(sanitized):
-        raise ValueError("Question contains invalid characters")
 
     return sanitized
 
