@@ -100,7 +100,20 @@ BOARD_GAMES = [
                 "download_url": "https://cdn.1j1ju.com/medias/6a/44/a4-race-for-the-galaxy-rulebook.pdf",
             }
         ]
-    }
+    },
+    {
+        "name": "Twilight Imperium (4th Edition)",
+        "rulebooks": [
+            {
+                "name": "Rules Reference",
+                "download_url": "https://images-cdn.fantasyflightgames.com/filer_public/c2/69/c269b9e2-8d9a-420b-a807-2b164dd54977/ti-k0289_rules_referencecompressed.pdf"
+            },
+            {
+                "name": "Learn to Play",
+                "download_url": "https://images-cdn.fantasyflightgames.com/filer_public/f3/c6/f3c66512-8e19-4f30-a0d4-d7d75701fd37/ti-k0289_learn_to_playcompressed.pdf"
+            },
+        ]
+    },
 ]
 
 BOARD_GAMES_STRING_LIST = "\n".join([f"- {board_game['name']}" for board_game in BOARD_GAMES])
