@@ -2,7 +2,7 @@ import React from "react";
 import ReactMarkdown from "react-markdown";
 import { Text, Box, Container, Flex } from "@chakra-ui/react";
 import ChakraUIRenderer from "chakra-ui-markdown-renderer";
-import { RulebookLink } from "./RulebookLink.tsx";
+import { CitationLink } from "./CitationLink.tsx";
 import { theme } from "../theme/index.ts";
 
 interface AssistantMessageProps {
@@ -22,9 +22,9 @@ export const AssistantMessage: React.FC<AssistantMessageProps> = ({ content }) =
 			</Text>
 		),
 		a: (props: { href?: string; children: React.ReactNode }) => (
-			<RulebookLink href={props.href} text={props.children?.toString()}>
+			<CitationLink href={props.href} text={props.children?.toString()}>
 				{props.children}
-			</RulebookLink>
+			</CitationLink>
 		),
 		blockquote: (props: { children: React.ReactNode }) => (
 			<Box 
@@ -52,7 +52,11 @@ export const AssistantMessage: React.FC<AssistantMessageProps> = ({ content }) =
 	const processMarkdown = (text: string) => {
 		const markdownLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
 		const processedText = text.replace(markdownLinkRegex, (match, displayText, link) => {
-			return `[${displayText}](${process.env.REACT_APP_BACKEND_URL}/pdfs/${link})`;
+			if (!link.startsWith("http")) {
+				return `[${displayText}](${process.env.REACT_APP_BACKEND_URL}/pdfs/${link})`;
+			}
+
+			return `[${displayText}](${link})`;
 		});
 
 		return processedText;

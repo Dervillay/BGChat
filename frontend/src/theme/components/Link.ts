@@ -7,7 +7,7 @@ export const Link = {
     textDecoration: "none",
   },
   variants: {
-    rulebookLink: {
+    citationLink: {
       backgroundImage: gradients.cosmic,
       backgroundSize: "300% 300%",
       backgroundPosition: "0% 50%",

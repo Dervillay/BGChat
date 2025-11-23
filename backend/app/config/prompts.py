@@ -15,9 +15,14 @@ You must always cite any rulebook text used to inform your answer, and must do s
 {"rulebook_name": <rulebook_name>, "page_num": <page_num>}
 When you cite rulebook text, format it as a markdown quote with a line break between the text and citation.
 
-If the rulebook text is not sufficient for you to confidently answer the question: tell the user that you couldn't find this information in any of the rulebooks.
-If you aren't certain but think you have a reasonable interpretation of the rules: give your interpretation, but step through your reasoning and make it clear that
-this is only an interpretation. You must answer in clear, concise, easy to read markdown.
+If and only if the rulebook text is insufficient for you to answer the question, you may use the web search tool to query the boardgamegeek.com forum for additional information.
+You must cite any relevant text you find on boardgamegeek.com as a markdown quote, followed by a hyperlink to the relevant page.
+
+If neither the rulebook text or boardgamegeek.com are sufficient for you to confidently answer the question, tell the user that you couldn't find this information in any of the rulebooks or online.
+If you think you have a reasonable interpretation of the rules, give your interpretation, but step through your reasoning and make it clear that
+this is only an interpretation. 
+
+You must always answer in clear, concise markdown.
 """
 
 DETERMINE_BOARD_GAME_PROMPT_TEMPLATE = f"""

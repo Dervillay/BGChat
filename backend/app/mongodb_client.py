@@ -303,7 +303,8 @@ class MongoDBClient:
         user_id: str,
         model_name: str,
         input_tokens: int,
-        output_tokens: int,
+        output_tokens: int = 0,
+        web_searches: int = 0,
     ) -> None:
         """
         Increment today's token usage for a given user.
@@ -316,6 +317,16 @@ class MongoDBClient:
             request_datetime_utc = self._get_current_datetime_utc()
             todays_date = request_datetime_utc.strftime("%Y-%m-%d")
 
+            fields_to_increment = {
+                f"token_usage.{todays_date}.{model_name}.input_tokens": input_tokens,
+            }
+
+            if output_tokens > 0:
+                fields_to_increment[f"token_usage.{todays_date}.{model_name}.output_tokens"] = output_tokens
+
+            if web_searches > 0:
+                fields_to_increment[f"token_usage.{todays_date}.{model_name}.web_searches"] = web_searches
+
             self.db.user_data.update_one(
                 {"user_id": user_id},
                 {
@@ -324,12 +335,9 @@ class MongoDBClient:
                         "created_at": request_datetime_utc,
                     },
                     "$set": {
-                        "last_active": request_datetime_utc
+                        "last_active": request_datetime_utc,
                     },
-                    "$inc": {
-                        f"token_usage.{todays_date}.{model_name}.input_tokens": input_tokens,
-                        f"token_usage.{todays_date}.{model_name}.output_tokens": output_tokens,
-                    }
+                    "$inc": fields_to_increment,
                 },
                 upsert=True
             )

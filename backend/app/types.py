@@ -15,3 +15,4 @@ class TokenUsage(TypedDict):
     """Type definition for token usage for a single model."""
     input_tokens: int
     output_tokens: int
+    web_searches: int

@@ -3,18 +3,19 @@ import { Link } from "@chakra-ui/react";
 import { theme } from "../theme/index.ts";
 import { usePDFViewer } from "../contexts/PDFViewerContext.tsx";
 
-interface RulebookLinkProps {
+interface CitationLinkProps {
 	href?: string;
 	text?: string;
 	children: React.ReactNode;
 }
 
-export const RulebookLink: React.FC<RulebookLinkProps> = ({ href, text, children }) => {
+export const CitationLink: React.FC<CitationLinkProps> = ({ href, text, children }) => {
 	const linkRef = useRef<HTMLAnchorElement>(null);
 	const { openViewer } = usePDFViewer();
 	const title = text?.split(",").at(0);
 	const pageMatch = href?.match(/#page=(\d+)$/);
 	const pageNumber = pageMatch ? pageMatch[1] : undefined;
+	const isExternalLink = !href?.includes('/pdfs/')
 
 	useEffect(() => {
 		const link = linkRef.current;
@@ -47,8 +48,8 @@ export const RulebookLink: React.FC<RulebookLinkProps> = ({ href, text, children
 	}, []);
 
 	const handleOnClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-		e.preventDefault();
-		if (href) {
+		if (!isExternalLink && href) {
+			e.preventDefault();
 			openViewer(href, title ?? "Rulebook", pageNumber);
 		}
 	};
@@ -58,9 +59,11 @@ export const RulebookLink: React.FC<RulebookLinkProps> = ({ href, text, children
 			ref={linkRef} 
 			href={href} 
 			onClick={handleOnClick} 
-			isExternal 
-			variant="rulebookLink"
-			aria-label={`Open ${title ?? 'rulebook'} in viewer`}
+			isExternal={isExternalLink}
+			target={isExternalLink ? "_blank" : undefined}
+			rel={isExternalLink ? "noopener noreferrer" : undefined}
+			variant="citationLink"
+			aria-label={isExternalLink ? `Open webpage in new tab` : `Open ${title ?? 'rulebook'} in viewer`}
 		>
 			{children} ↗
 		</Link>

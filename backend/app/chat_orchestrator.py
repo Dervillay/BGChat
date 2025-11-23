@@ -81,22 +81,40 @@ class ChatOrchestrator:
 
         return len(encoding)
 
+    def _get_output_message_from_response(
+        self,
+        response: openai.types.responses.Response,
+    ):
+        try:
+            output_message = next(
+                item for item in response.output
+                if isinstance(item, openai.types.responses.ResponseOutputMessage)
+            )
+            return output_message.content[0].text
+
+        except StopIteration as e:
+            raise ValueError(f"No output message found in response: {response}") from e
+
     def _call_openai_model(
         self,
         messages: list[Message],
         stream: bool,
+        allow_web_search: bool = False,
     ):
         try:
             response = self._openai_client.responses.create(
                 model=self._chat_model_name,
                 input=messages,
                 stream=stream,
+                tools=[{
+                    "type": "web_search",
+                }] if allow_web_search else [],
                 store=False,
             )
             if stream:
                 return response
 
-            return response.output.content[0].text
+            return self._get_output_message_from_response(response)
 
         except Exception as e:
             self._handle_openai_error(e, "chat completion")
@@ -179,13 +197,24 @@ class ChatOrchestrator:
                 * model_usage["input_tokens"]
                 / 1_000_000
             )
-            output_token_cost = (
-                model_pricing["one_million_output_tokens"]
-                * model_usage["output_tokens"]
-                / 1_000_000
-            )
 
-            total_cost += input_token_cost + output_token_cost
+            output_token_cost = 0
+            if "output_tokens" in model_usage:
+                output_token_cost = (
+                    model_pricing["one_million_output_tokens"]
+                    * model_usage["output_tokens"]
+                    / 1_000_000
+                )
+
+            web_search_cost = 0
+            if "web_searches" in model_usage:
+                web_search_cost = (
+                    model_pricing["one_thousand_web_searches"]
+                    * model_usage["web_searches"]
+                    / 1_000
+                )
+
+            total_cost += input_token_cost + output_token_cost + web_search_cost
 
         return total_cost
 
@@ -262,7 +291,6 @@ class ChatOrchestrator:
             user_id=user_id,
             model_name=self._embedding_model_name,
             input_tokens=token_count,
-            output_tokens=0,
         )
 
         # Get N most relevant pages of rulebooks for the selected board game
@@ -299,39 +327,49 @@ class ChatOrchestrator:
 
         stream = self._call_openai_model(
             messages=message_history + [user_message],
-            stream=True
+            stream=True,
+            allow_web_search=True,
         )
 
         full_response = ""
         citation_buffer = ""
         in_citation = False
+        web_search_count = 0
 
         # Buffer the stream when we hit a citation so we can parse it before returning
         for event in stream:
             if event.type == "response.output_text.delta":
                 content = event.delta
-  
+
                 if content is not None:
-                    if CITATION_REGEX_PATTERN[0] in content:
+                    # Check if we're entering a citation
+                    if CITATION_REGEX_PATTERN[0] in content and not in_citation:
                         in_citation = True
-                        citation_buffer += content
+                        citation_buffer = content
                         continue
 
-                    elif CITATION_REGEX_PATTERN[-1] in content:
+                    # Check if we're exiting a citation
+                    elif CITATION_REGEX_PATTERN[-1] in content and in_citation:
                         in_citation = False
                         citation_buffer += content
                         parsed = self._parse_citations(board_game, citation_buffer)
+
                         citation_buffer = ""
                         full_response += parsed
                         yield parsed
 
+                    # We're in the middle of a citation
                     elif in_citation:
                         citation_buffer += content
                         continue
 
+                    # Regular content
                     else:
                         full_response += content
                         yield content
+            
+            elif event.type == "response.web_search_call.completed":
+                web_search_count += 1
 
         assistant_message = {
             "content": full_response,
@@ -349,6 +387,7 @@ class ChatOrchestrator:
             model_name=self._chat_model_name,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
+            web_searches=web_search_count,
         )
 
     def submit_feedback(
