@@ -3,13 +3,15 @@ import ReactMarkdown from "react-markdown";
 import { Text, Box, Container, Flex } from "@chakra-ui/react";
 import ChakraUIRenderer from "chakra-ui-markdown-renderer";
 import { CitationLink } from "./CitationLink.tsx";
-import { theme } from "../theme/index.ts";
+import { useCurrentGradient } from "../hooks/useCurrentGradient.ts";
 
 interface AssistantMessageProps {
 	content: string;
 }
 
 export const AssistantMessage: React.FC<AssistantMessageProps> = ({ content }) => {
+	const currentGradient = useCurrentGradient();
+	
 	const markdown = {
 		p: (props: { children: React.ReactNode }) => (
 			<Text 
@@ -41,7 +43,7 @@ export const AssistantMessage: React.FC<AssistantMessageProps> = ({ content }) =
 					bottom: 0,
 					height: "100%",
 					width: "3px",
-					background: theme.gradients.cosmic,
+					background: currentGradient,
 				}}
 			>
 				{props.children}

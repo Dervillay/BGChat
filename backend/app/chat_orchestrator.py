@@ -402,6 +402,12 @@ class ChatOrchestrator:
             email=email,
         )
 
+    def get_user_theme(self, user_id: str) -> int | None:
+        return self._mongodb_client.get_user_theme(user_id)
+
+    def set_user_theme(self, user_id: str, theme: int) -> None:
+        self._mongodb_client.set_user_theme(user_id, theme)
+
     def user_has_exceeded_daily_token_limit(
         self,
         user_id: str,

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Box, Text, Container, Flex, IconButton } from "@chakra-ui/react";
 import { keyframes } from "@emotion/react";
 import { FiX } from "react-icons/fi";
-import { theme } from "../theme/index.ts";
+import { useCurrentGradient } from "../hooks/useCurrentGradient.ts";
 
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(-10px); }
@@ -23,6 +23,7 @@ interface ErrorMessageProps {
 
 export const ErrorMessage: React.FC<ErrorMessageProps> = ({ content, onClose }) => {
     const [title, setTitle] = useState(errorTitles[0]);
+    const currentGradient = useCurrentGradient();
 
     useEffect(() => {
         const randomIndex = Math.floor(Math.random() * errorTitles.length);
@@ -47,7 +48,7 @@ export const ErrorMessage: React.FC<ErrorMessageProps> = ({ content, onClose }) 
                         inset: 0,
                         borderRadius: "lg",
                         padding: "1px",
-                        background: theme.gradients.cosmic,
+                        background: currentGradient,
                         opacity: 0.5,
                         WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
                         WebkitMaskComposite: "xor",
@@ -61,7 +62,7 @@ export const ErrorMessage: React.FC<ErrorMessageProps> = ({ content, onClose }) 
                         left={0}
                         right={0}
                         h="4px"
-                        bgGradient={theme.gradients.cosmic}
+                        bgGradient={currentGradient}
                         borderTopRadius="lg"
                     />
                     {onClose && (
@@ -87,7 +88,7 @@ export const ErrorMessage: React.FC<ErrorMessageProps> = ({ content, onClose }) 
                     )}
                     <Flex alignItems="center" mb={3}>
                         <Text 
-                            bgGradient={theme.gradients.cosmic}
+                            bgGradient={currentGradient}
                             bgClip="text"
                             fontWeight="semibold"
                             fontSize="sm"

@@ -68,7 +68,7 @@ export const BoardGameSelect = {
     color: 'chakra-body-text',
     fontSize: 'md',
     '&:hover': {
-      backgroundColor: 'chakra-body-message-bg',
+      backgroundColor: 'gray.100',
       borderRadius: '5px',
     },
     _dark: {

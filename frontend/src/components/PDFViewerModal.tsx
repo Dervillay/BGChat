@@ -13,7 +13,7 @@ import {
     Button,
 } from "@chakra-ui/react";
 import { FiX, FiMaximize2, FiMinimize2 } from "react-icons/fi";
-import { theme } from "../theme/index.ts";
+import { useCurrentGradient } from "../hooks/useCurrentGradient.ts";
 import { withError } from "../utils/withError.ts";
 import { useFetchWithAuth } from "../utils/fetchWithAuth.ts";
 import { usePDFViewer } from "../contexts/PDFViewerContext.tsx";
@@ -21,6 +21,7 @@ import { usePDFViewer } from "../contexts/PDFViewerContext.tsx";
 export const PDFViewerModal: React.FC = () => {
     const { isOpen, url, title, pageNumber, closeViewer } = usePDFViewer();
     const fetchWithAuth = useFetchWithAuth();
+    const currentGradient = useCurrentGradient();
     const isIOSDevice = (): boolean => {
         return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) // iPad on iOS 13+
@@ -155,7 +156,7 @@ export const PDFViewerModal: React.FC = () => {
                         zIndex: 0,
                         borderRadius: { base: '0', md: isFullscreen ? '0' : '0.3rem' },
                         padding: '2px',
-                        background: theme.gradients.cosmic,
+                        background: currentGradient,
                         WebkitMask:
                             'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
                         WebkitMaskComposite: 'xor',

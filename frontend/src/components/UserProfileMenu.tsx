@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
 	Menu,
 	MenuButton,
@@ -8,9 +9,14 @@ import {
 	Box,
 	Divider,
 	Link,
+	HStack,
+	Collapse,
 } from "@chakra-ui/react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { FiLogOut, FiGithub, FiHeart, FiMessageSquare } from "react-icons/fi";
+import { PiPaintBrush } from "react-icons/pi";
+import { gradients } from "../theme/gradients";
+import { useTheme } from "../contexts/ThemeContext";
 
 interface UserProfileMenuProps {
 	onOpenFeedbackModal: () => void;
@@ -19,6 +25,8 @@ interface UserProfileMenuProps {
 
 export const UserProfileMenu = ({ onOpenFeedbackModal, isUsingMobile }: UserProfileMenuProps) => {
 	const { user, logout } = useAuth0();
+	const { themeId, setTheme } = useTheme();
+	const [isThemeExpanded, setIsThemeExpanded] = useState(false);
 
 	const menuItemStyle = {
 		fontWeight: "normal",
@@ -40,8 +48,12 @@ export const UserProfileMenu = ({ onOpenFeedbackModal, isUsingMobile }: UserProf
 		}
 	};
 
+	const handleThemeSelect = (themeId: number) => {
+		setTheme(themeId);
+	};
+
 	return (
-		<Menu>
+		<Menu onClose={() => setIsThemeExpanded(false)}>
 			<MenuButton
 				_hover={{
 					borderRadius: "full"
@@ -73,15 +85,51 @@ export const UserProfileMenu = ({ onOpenFeedbackModal, isUsingMobile }: UserProf
 					borderColor: "#404040"
 				}}
 			>
+			<Box px={3} py={2}>
+				<Text fontSize="xs" color="gray.500" _dark={{ color: "#808080" }}>
+					Logged in as
+				</Text>
+				<Text fontSize="sm" color="gray.600" _dark={{ color: "#a0a0a0" }}>
+					{user?.email}
+				</Text>
+			</Box>
+			<Divider my={1} borderColor="gray.200" _dark={{ borderColor: "#404040" }}/>
+			<MenuItem 
+				onClick={() => setIsThemeExpanded(!isThemeExpanded)}
+				closeOnSelect={false}
+				{...menuItemStyle}
+				icon={<PiPaintBrush />}
+			>
+				Theme
+			</MenuItem>
+			<Collapse in={isThemeExpanded} animateOpacity>
 				<Box px={3} py={2}>
-					<Text fontSize="sm" color="gray.600" _dark={{ color: "#a0a0a0" }}>
-						{user?.email}
-					</Text>
+					<HStack spacing={2} justify="flex-start">
+						{gradients.map((gradient, index) => (
+							<Box
+								key={index}
+								w="1.5rem"
+								h="1.5rem"
+								borderRadius="full"
+								bg={gradient}
+								cursor="pointer"
+								transition="all 0.2s"
+								boxShadow={themeId === index ? "0 0 0 2px #1a1a1a" : "none"}
+								_dark={{
+									boxShadow: themeId === index ? "0 0 0 2px white" : "none",
+								}}
+								_hover={{
+									transform: "scale(1.15)",
+								}}
+								onClick={() => handleThemeSelect(index)}
+							/>
+						))}
+					</HStack>
 				</Box>
-				<Divider my={1} borderColor="gray.200" _dark={{ borderColor: "#404040" }}/>
-				<MenuItem 
-					as={Link}
-					href="https://github.com/Dervillay/BGChat"
+			</Collapse>
+			<MenuItem 
+				as={Link}
+				href="https://github.com/Dervillay/BGChat"
 					isExternal
 					{...menuItemStyle}
 					_hover={{

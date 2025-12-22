@@ -22,9 +22,9 @@ export const BoardGameSelect: FC<BoardGameSelectProps> = ({
 		<Select
 			options={options}
 			isMulti={false}
-			value={selectedBoardGame ? { value: selectedBoardGame, label: selectedBoardGame } : undefined}
+			value={selectedBoardGame ? { value: selectedBoardGame, label: selectedBoardGame } : null}
 			onChange={(selectedBoardGame) => selectedBoardGame && onSelectBoardGame(selectedBoardGame.value)}
-			placeholder={selectedBoardGame ? undefined : "Select a board game"}
+			placeholder="Select a board game"
 			size="sm"
 			menuPlacement="top"
 			chakraStyles={{

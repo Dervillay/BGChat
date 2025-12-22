@@ -22,6 +22,7 @@ import { FiX } from "react-icons/fi";
 import { theme } from "../theme/index.ts";
 import { useFetchWithAuth } from "../utils/fetchWithAuth.ts";
 import { withError } from "../utils/withError.ts";
+import { useCurrentGradient } from "../hooks/useCurrentGradient.ts";
 
 interface FeedbackModalProps {
   isOpen: boolean;
@@ -39,6 +40,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
 
   const fetchWithAuth = useFetchWithAuth();
   const toast = useToast({position: "top"});
+  const currentGradient = useCurrentGradient();
   
   const isContentValid = (
     content.trim().length >= 10 && content.trim().length <= 1000
@@ -101,7 +103,15 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={handleClose} isCentered>
       <ModalOverlay {...theme.components.FeedbackModal.baseStyle.overlay} />
-      <ModalContent {...theme.components.FeedbackModal.baseStyle.content}>
+      <ModalContent 
+        {...theme.components.FeedbackModal.baseStyle.content}
+        sx={{
+          '::before': {
+            ...theme.components.FeedbackModal.baseStyle.borderPseudoElement,
+            background: currentGradient,
+          },
+        }}
+      >
         <ModalHeader {...theme.components.FeedbackModal.baseStyle.header}>
           <Text {...theme.components.FeedbackModal.baseStyle.headerText}>
             Share Your Feedback

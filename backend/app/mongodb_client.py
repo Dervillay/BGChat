@@ -382,6 +382,53 @@ class MongoDBClient:
             logger.error("Error retrieving board games list: %s", str(e))
             raise
 
+    def get_user_theme(self, user_id: str) -> int | None:
+        """
+        Get the user's saved theme preference.
+        Returns None if no theme is saved.
+        """
+        self._ensure_connection()
+        try:
+            result = self.db.user_data.find_one(
+                {"user_id": user_id},
+                {"theme": 1, "_id": 0}
+            )
+            
+            if result is None:
+                return None
+            
+            return result.get("theme")
+        except Exception as e:
+            logger.error("Error retrieving theme for user '%s': %s", user_id, str(e))
+            raise
+
+    def set_user_theme(self, user_id: str, theme: int) -> None:
+        """
+        Save the user's selected theme.
+        """
+        self._ensure_connection()
+        try:
+            request_datetime_utc = self._get_current_datetime_utc()
+            
+            self.db.user_data.update_one(
+                {"user_id": user_id},
+                {
+                    "$setOnInsert": {
+                        "user_id": user_id,
+                        "created_at": request_datetime_utc,
+                    },
+                    "$set": {
+                        "theme": theme,
+                        "last_active": request_datetime_utc,
+                    }
+                },
+                upsert=True
+            )
+            logger.info("Theme '%s' saved for user %s", theme, user_id)
+        except Exception as e:
+            logger.error("Error saving theme for user '%s': %s", user_id, str(e))
+            raise
+
     def store_feedback(
         self,
         user_id: str,

@@ -6,24 +6,21 @@ export const FeedbackModal = {
     },
     content: {
       bg: "chakra-body-bg",
-      borderRadius: "xl",
+      borderRadius: "1rem",
       mx: 4,
-      sx: {
-        '::before': {
-          content: '""',
-          position: 'absolute',
-          inset: 0,
-          zIndex: 0,
-          borderRadius: '1rem',
-          padding: '2px',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          WebkitMask:
-            'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-          WebkitMaskComposite: 'xor',
-          maskComposite: 'exclude',
-          pointerEvents: 'none',
-        },
-      },
+    },
+    borderPseudoElement: {
+      content: '""',
+      position: 'absolute',
+      inset: 0,
+      zIndex: 0,
+      borderRadius: '1rem',
+      padding: '2px',
+      WebkitMask:
+        'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+      WebkitMaskComposite: 'xor',
+      maskComposite: 'exclude',
+      pointerEvents: 'none',
     },
     header: {
       display: "flex",
@@ -90,8 +87,18 @@ export const FeedbackModal = {
       justifyContent: "flex-end",
     },
     submitButton: {
-      bgGradient: "gradient.cosmic",
-      color: "white",
+      bg: "gray.100",
+      color: "gray.700",
+      _dark: {
+        bg: "#2a2a2a",
+        color: "#a0a0a0",
+      },
+      _hover: {
+        bg: "gray.200",
+        _dark: {
+          bg: "#3a3a3a",
+        },
+      },
     },
   },
 };

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Text, Flex, useBreakpointValue } from "@chakra-ui/react";
 import { ChatInput } from "./ChatInput.tsx";
-import { theme } from "../theme/index.ts";
+import { useCurrentGradient } from "../hooks/useCurrentGradient.ts";
 import { useFetchWithAuth } from "../utils/fetchWithAuth.ts";
 import { withError } from "../utils/withError.ts";
 import { MessageQueue } from "../utils/messageQueue.ts";
@@ -29,6 +29,7 @@ const ChatInterface = () => {
 	const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
 	
 	const fetchWithAuth = useFetchWithAuth();
+	const currentGradient = useCurrentGradient();
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const scrollableContainerRef = useRef<HTMLDivElement>(null);
 	const isUsingMobile = useBreakpointValue({ base: true, md: false });
@@ -256,6 +257,12 @@ const ChatInterface = () => {
 		setIsFeedbackModalOpen(false);
 	};
 
+	const handleLogoClick = () => {
+		setSelectedBoardGame("");
+		setMessages([]);
+		setHasInteracted(false);
+	};
+
 	return (
 		<Flex 
 			direction="column" 
@@ -267,13 +274,14 @@ const ChatInterface = () => {
 			mx="auto"
 			overflow="hidden"
 		>
-			<Header 
-				onOpenFeedbackModal={handleOpenFeedbackModal}
-				isUsingMobile={isUsingMobile}
-			/>
+		<Header 
+			onOpenFeedbackModal={handleOpenFeedbackModal}
+			isUsingMobile={isUsingMobile}
+			onLogoClick={handleLogoClick}
+		/>
 			{!hasInteracted ? (
 				<Text
-					bgGradient={theme.gradients.cosmic}
+					bgGradient={currentGradient}
 					bgClip="text" 
 					fontSize="5xl" 
 					fontWeight="regular"

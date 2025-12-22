@@ -218,6 +218,33 @@ def submit_feedback():
         return internal_error("Failed to submit feedback")
 
 
+@orchestrator_bp.route("/user-theme", methods=["GET"])
+@validate_auth_token
+def get_user_theme():
+    try:
+        theme = current_app.orchestrator.get_user_theme(request.user_id)
+        return success_response(data=theme)
+    except Exception as e:
+        logger.error("Error getting user theme: %s", str(e))
+        return internal_error("Failed to get user theme")
+
+
+@orchestrator_bp.route("/user-theme", methods=["POST"])
+@validate_json_body(theme=int)
+@validate_auth_token
+def set_user_theme():
+    try:
+        data = request.get_json()
+        theme = data["theme"]
+
+        current_app.orchestrator.set_user_theme(request.user_id, theme)
+
+        return success_response()
+    except Exception as e:
+        logger.error("Error setting user theme: %s", str(e))
+        return internal_error("Failed to set user theme")
+
+
 # Global error handlers
 @orchestrator_bp.errorhandler(404)
 def resource_not_found(e):

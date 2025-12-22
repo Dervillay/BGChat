@@ -2,14 +2,17 @@ import React from "react";
 import { Box, Text, Flex } from "@chakra-ui/react";
 import { DarkModeToggle } from "./DarkModeToggle.tsx";
 import { UserProfileMenu } from "./UserProfileMenu.tsx";
-import { theme } from "../theme/index.ts";
+import { useCurrentGradient } from "../hooks/useCurrentGradient.ts";
 
 interface HeaderProps {
 	onOpenFeedbackModal: () => void;
 	isUsingMobile: boolean | undefined;
+	onLogoClick: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenFeedbackModal, isUsingMobile }) => {
+export const Header: React.FC<HeaderProps> = ({ onOpenFeedbackModal, isUsingMobile, onLogoClick }) => {
+	const currentGradient = useCurrentGradient();
+	
 	return (
 		<Box
 			position="fixed"
@@ -50,14 +53,20 @@ export const Header: React.FC<HeaderProps> = ({ onOpenFeedbackModal, isUsingMobi
 				}
 			}}
 		>
-			<Text 
-				bgGradient={theme.gradients.cosmic} 
-				bgClip="text" 
-				fontSize={{ base: "2xl", md: "3xl" }} 
-				fontWeight="regular"
-			>
-				BGChat
-			</Text>
+		<Text 
+			bgGradient={currentGradient} 
+			bgClip="text" 
+			fontSize={{ base: "2xl", md: "3xl" }} 
+			fontWeight="regular"
+			cursor="pointer"
+			onClick={onLogoClick}
+			_hover={{
+				opacity: 0.8,
+			}}
+			transition="opacity 0.2s"
+		>
+			BGChat
+		</Text>
 			<Flex align="center" gap={2}>
 				<DarkModeToggle />
 				<UserProfileMenu 

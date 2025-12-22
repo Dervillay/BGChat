@@ -55,6 +55,7 @@ export const UserMessage = {
   buttonContainer: {
     justify: "flex-end",
     w: "100%",
+    mb: -3,
   },
   button: {
     variant: "ghost",
