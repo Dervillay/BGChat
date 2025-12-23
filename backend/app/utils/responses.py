@@ -1,5 +1,5 @@
 from typing import Any, Dict, Optional
-from flask import jsonify, Response
+from flask import jsonify, Response, current_app
 
 
 def success_response(data: Any = None, status_code: int = 200) -> Response:
@@ -9,6 +9,20 @@ def success_response(data: Any = None, status_code: int = 200) -> Response:
 
 def error_response(message: str, status_code: int = 400, details: Optional[Dict[str, Any]] = None) -> Response:
     """Create a standardized error response."""
+    # Sanitize error messages in production
+    if current_app.config.get('FLASK_ENV') == 'production':
+        if status_code >= 500:
+            message = "Internal server error"
+        elif status_code == 404:
+            message = "Resource not found"
+        elif status_code == 401:
+            message = "Authentication failed"
+        elif status_code == 403:
+            message = "Authorization failed"
+        elif status_code == 429:
+            message = "Rate limit exceeded"
+        details = None
+
     response_data = {"error": message}
     if details:
         response_data.update(details)

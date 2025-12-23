@@ -54,8 +54,18 @@ export const AssistantMessage: React.FC<AssistantMessageProps> = ({ content }) =
 	const processMarkdown = (text: string) => {
 		const markdownLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
 		const processedText = text.replace(markdownLinkRegex, (match, displayText, link) => {
-			if (!link.startsWith("http")) {
+			if (!link.startsWith("https://")) {
 				return `[${displayText}](${process.env.REACT_APP_BACKEND_URL}/pdfs/${link})`;
+			}
+
+			// If link isn't using HTTPS, just return the display text
+			try {
+				const url = new URL(link);
+				if (url.protocol !== "https:") {
+					return displayText;
+				}
+			} catch {
+				return displayText;
 			}
 
 			return `[${displayText}](${link})`;

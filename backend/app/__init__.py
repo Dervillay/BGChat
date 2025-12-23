@@ -2,6 +2,8 @@ import os
 
 from flask import Flask, request
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 from app.chat_orchestrator import ChatOrchestrator
 from app.routes.orchestrator import orchestrator_bp
@@ -55,7 +57,7 @@ def create_app():
     if flask_env == 'development':
         allowed_origins.append('http://localhost:3000')
         allowed_origins.append('http://127.0.0.1:3000')
-
+    
     CORS(
         app,
         origins=allowed_origins,
@@ -64,8 +66,17 @@ def create_app():
         methods=["GET", "POST"],
     )
 
+    limiter = Limiter(
+        app=app,
+        key_func=get_remote_address,
+        default_limits=["100 per hour"],
+        storage_uri="memory://",
+        strategy="fixed-window"
+    )
+
     app.config.from_object(loaded_config)
     app.orchestrator = ChatOrchestrator(config=loaded_config)
+    app.limiter = limiter
     app.register_blueprint(orchestrator_bp)
     app.after_request(add_security_headers)
 

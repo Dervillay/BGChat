@@ -1,5 +1,4 @@
 import json
-import ast
 import re
 import logging
 
@@ -139,8 +138,20 @@ class ChatOrchestrator:
     ):
         def add_link_to_citation(match):
             citation_str = match.group(0)
-            citation_dict = ast.literal_eval(citation_str)
-
+            json_str = citation_str.replace("'", '"')
+            citation_dict = json.loads(json_str)
+            
+            if not isinstance(citation_dict, dict):
+                raise ValueError("Citation must be a dictionary")
+            if "rulebook_name" not in citation_dict or "page_num" not in citation_dict:
+                raise ValueError("Citation missing required fields")
+            if not isinstance(citation_dict["rulebook_name"], str):
+                raise ValueError("rulebook_name must be a string")
+            if not isinstance(citation_dict["page_num"], (int, str)):
+                raise ValueError("page_num must be an integer or string")
+            if not citation_dict["rulebook_name"].strip():
+                raise ValueError("rulebook_name cannot be empty")
+            
             display_text = f"{citation_dict['rulebook_name']}, Page {citation_dict['page_num']}"
             link = self._construct_rulebook_link(board_game, citation_dict)
 
