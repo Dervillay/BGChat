@@ -58,7 +58,7 @@ export const AssistantMessage: React.FC<AssistantMessageProps> = ({ content }) =
 				return `[${displayText}](${process.env.REACT_APP_BACKEND_URL}/pdfs/${link})`;
 			}
 
-			// If link isn't using HTTPS, just return the display text
+			// If link isn't using HTTPS, return only the display text
 			try {
 				const url = new URL(link);
 				if (url.protocol !== "https:") {
