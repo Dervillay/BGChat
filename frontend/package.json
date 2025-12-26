@@ -15,7 +15,7 @@
 		"@emotion/styled": "^11.14.0",
 		"chakra-react-select": "^5.0.4",
 		"chakra-ui-markdown-renderer": "^4.1.0",
-		"framer-motion": "^11.15.0",
+		"framer-motion": "^12.23.26",
 		"pdfjs-dist": "^5.4.296",
 		"react": "^19.0.0",
 		"react-dom": "^19.2.3",
