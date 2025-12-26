@@ -10,6 +10,10 @@ updates:
     commit-message:
       prefix: "npm"
       include: "scope"
+    groups:
+      npm-dependencies:
+        patterns:
+          - "*"
   - package-ecosystem: "pip"
     directory: "/backend"
     schedule:
@@ -20,3 +24,7 @@ updates:
     commit-message:
       prefix: "pip"
       include: "scope"
+    groups:
+      pip-dependencies:
+        patterns:
+          - "*"
