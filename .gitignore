@@ -8,3 +8,4 @@ frontend/public/web
 frontend/public/build
 frontend/public/LICENSE
 */.env*
+!*/.env.example

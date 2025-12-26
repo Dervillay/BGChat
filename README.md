@@ -1,36 +1,25 @@
-# BGChat
+## BGChat
 
-BGChat is an AI-powered tool that helps users understand board game rules and situations by analyzing rulebook PDFs and providing contextual answers to questions.
+BGChat saves you time hunting through board game rulebooks when you want to look up rules and settle disputes. To support its answers, it'll cite the rulebooks to you and give you handy links to the relevant pages so you can check for yourself.
 
-**[Check it out here](https://bg-chat.com)** 🎲
+**[Try it out here!](https://bg-chat.com)** 🎲
 
-## Support the Project
+### Key features
+- **AI-Powered Q&A**: Uses AI to answer board game questions
+- **Semantic Search**: Finds relevant rulebook sections using embeddings
+- **Rulebook PDFs**: Cites and provides access to rulebook PDFs
+- **User Authentication**: Auth0 integration
+- **Per-User Persistence**: Saves chat history and user settings
+- **Token Management**: Daily usage limits and tracking
 
-If BGChat helps you settle board game disputes, consider supporting its development.
-Your support helps keep BGChat free for all members of the board game community.
+### Support the project
+
+If BGChat has ever helped you settle board game disputes, consider supporting its development.
+BGChat is free to use for eveyone, and your support helps to keep it that way.
 
 [![Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/dervillay)
 
-
-## 🔧 Key Features
-
-- **AI-Powered Q&A**: Uses GPT-4 to answer board game questions
-- **Semantic Search**: Finds relevant rulebook sections using embeddings
-- **Streaming Responses**: Real-time AI responses
-- **PDF Integration**: Direct access to rulebook PDFs
-- **User Authentication**: Secure Auth0 integration
-- **Message History**: Persistent chat history per user
-- **Token Management**: Daily usage limits and tracking
-
-## 🏗️ Architecture Overview
-
-- **Frontend**: React 19 with TypeScript, Chakra UI, deployed on Vercel
-- **Backend**: Flask 3.1 API with Python 3.12, deployed on Railway
-- **Database**: MongoDB Atlas
-- **Authentication**: Auth0
-- **AI**: OpenAI API
-
-## 🚀 Quick Start
+## Developer setup
 
 ### Prerequisites
 - Node.js 18+ and npm
@@ -39,7 +28,7 @@ Your support helps keep BGChat free for all members of the board game community.
 - Auth0 account
 - OpenAI API key
 
-### Development Setup
+### Setup
 
 1. **Clone the repository**
 ```bash
@@ -63,37 +52,20 @@ npm install
 
 4. **Environment Configuration**
 
-Create `.env.development` in the `backend/` directory:
-```env
-FLASK_ENV=development
-FLASK_DEBUG=True
-FLASK_APP=run.py
+Copy the example environment files and fill in your actual values:
 
-# MongoDB
-MONGODB_HOST=your-dev-mongodb-host
-MONGODB_USERNAME=your-dev-username
-MONGODB_PASSWORD=your-dev-password
-MONGODB_DB_NAME=you-dev-db-name
-
-# OpenAI
-OPENAI_API_KEY=your-openai-api-key
-
-# Auth0
-AUTH0_DOMAIN=your-dev-auth0-domain
-AUTH0_AUDIENCE=your-dev-audience
-ALGORITHM=RS256
-
-# Security
-SECRET_KEY=dev-secret-key-change-in-production
+**Backend:**
+```bash
+cd backend
+cp .env.example .env.development
+# Edit .env.development with your actual values
 ```
 
-Create `.env.development` in the `frontend/` directory:
-```env
-REACT_APP_ENVIRONMENT=development
-REACT_APP_API_URL=http://localhost:5000
-REACT_APP_AUTH0_DOMAIN=your-dev-auth0-domain
-REACT_APP_AUTH0_CLIENT_ID=your-dev-client-id
-REACT_APP_AUTH0_AUDIENCE=your-dev-audience
+**Frontend:**
+```bash
+cd frontend
+cp .env.example .env.development
+# Edit .env with your actual values
 ```
 
 5. **Start Development Servers**
@@ -101,14 +73,15 @@ REACT_APP_AUTH0_AUDIENCE=your-dev-audience
 ./start-dev.sh
 ```
 
-## 🤝 Contributing
+## Contributing
 
+Contributions are welcome! Just:
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
 4. Test thoroughly
 5. Submit a pull request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
