@@ -114,6 +114,15 @@ BOARD_GAMES = [
             },
         ]
     },
+    {
+        "name": "Arcs",
+        "rulebooks": [
+            {
+                "name": "Arcs Base Rulebook",
+                "download_url": "https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Arcs_Base_Rulebook.pdf",
+            }
+        ]
+    },
 ]
 
 BOARD_GAMES_STRING_LIST = "\n".join([f"- {board_game['name']}" for board_game in BOARD_GAMES])
