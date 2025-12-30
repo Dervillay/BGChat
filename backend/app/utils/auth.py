@@ -7,7 +7,23 @@ import jwt
 import requests
 from flask import request, current_app
 
-from app.config.constants import DEFAULT_TIMEOUT_SECONDS
+from app.config.constants import (
+    DEFAULT_TIMEOUT_SECONDS,
+    ERROR_USER_ID_CANNOT_BE_EMPTY,
+    ERROR_USER_ID_TOO_LONG,
+    ERROR_INVALID_USER_ID_FORMAT,
+    ERROR_AUTHORIZATION_HEADER_EXPECTED_BUT_NOT_FOUND,
+    ERROR_AUTHORIZATION_HEADER_MUST_START_WITH_BEARER,
+    ERROR_TOKEN_NOT_FOUND,
+    ERROR_AUTHORIZATION_HEADER_MUST_BE_BEARER_TOKEN,
+    ERROR_TOKEN_DOES_NOT_CONTAIN_USER_ID,
+    ERROR_INVALID_USER_ID,
+    ERROR_INVALID_HEADER_NO_KID,
+    ERROR_UNABLE_TO_FIND_APPROPRIATE_KEY,
+    ERROR_INVALID_TOKEN,
+    ERROR_AUTH0_CONFIGURATION_NOT_PROPERLY_SET_UP,
+    ERROR_ERROR_EXTRACTING_USER_ID,
+)
 
 
 _jwks_cache = {}
@@ -32,13 +48,13 @@ def _validate_user_id(user_id: str) -> None:
     Raises ValueError if validation fails.
     """
     if not user_id:
-        raise ValueError("User ID cannot be empty")
+        raise ValueError(ERROR_USER_ID_CANNOT_BE_EMPTY)
 
     if len(user_id) > MAX_USER_ID_LENGTH:
-        raise ValueError(f"User ID too long (max {MAX_USER_ID_LENGTH} characters)")
+        raise ValueError(f"{ERROR_USER_ID_TOO_LONG} (max {MAX_USER_ID_LENGTH} characters)")
 
     if not USER_ID_PATTERN.match(user_id):
-        raise ValueError("Invalid user ID format")
+        raise ValueError(ERROR_INVALID_USER_ID_FORMAT)
 
 
 def _get_cached_jwks(auth0_domain: str) -> dict | None:
@@ -51,8 +67,7 @@ def _get_cached_jwks(auth0_domain: str) -> dict | None:
             cached_data = _jwks_cache[auth0_domain]
             if time.time() - cached_data['timestamp'] < JWKS_CACHE_DURATION:
                 return cached_data['jwks']
-            else:
-                del _jwks_cache[auth0_domain]
+            del _jwks_cache[auth0_domain]
     return None
 
 
@@ -82,21 +97,21 @@ def get_user_id_from_auth_header() -> str:
         )
 
         if "sub" not in unverified_claims:
-            raise AuthenticationError("Token does not contain a user ID")
+            raise AuthenticationError(ERROR_TOKEN_DOES_NOT_CONTAIN_USER_ID)
 
         user_id = unverified_claims["sub"]
 
         try:
             _validate_user_id(user_id)
         except ValueError as e:
-            raise AuthenticationError(f"Invalid user ID: {str(e)}")
+            raise AuthenticationError(f"{ERROR_INVALID_USER_ID}: {str(e)}")
 
         return user_id
 
     except AuthenticationError:
         raise
     except Exception as e:
-        raise AuthenticationError(f"Error extracting user ID: {str(e)}")
+        raise AuthenticationError(f"{ERROR_ERROR_EXTRACTING_USER_ID}: {str(e)}")
 
 
 def get_token_from_auth_header() -> str:
@@ -107,16 +122,16 @@ def get_token_from_auth_header() -> str:
     auth_header = request.headers.get("Authorization", None)
 
     if not auth_header:
-        raise AuthenticationError("Authorization header expected but not found")
+        raise AuthenticationError(ERROR_AUTHORIZATION_HEADER_EXPECTED_BUT_NOT_FOUND)
 
     parts = auth_header.split()
 
     if parts[0].lower() != "bearer":
-        raise AuthenticationError("Authorization header must start with 'Bearer'")
+        raise AuthenticationError(ERROR_AUTHORIZATION_HEADER_MUST_START_WITH_BEARER)
     if len(parts) == 1:
-        raise AuthenticationError("Token not found")
+        raise AuthenticationError(ERROR_TOKEN_NOT_FOUND)
     if len(parts) > 2:
-        raise AuthenticationError("Authorization header must be Bearer token")
+        raise AuthenticationError(ERROR_AUTHORIZATION_HEADER_MUST_BE_BEARER_TOKEN)
 
     return parts[1]
 
@@ -131,7 +146,7 @@ def validate_jwt(token: str) -> None:
     algorithm = current_app.config.get('ALGORITHM', 'RS256')
 
     if not auth0_domain or not auth0_audience:
-        raise Exception("Auth0 configuration is not properly set up")
+        raise Exception(ERROR_AUTH0_CONFIGURATION_NOT_PROPERLY_SET_UP)
 
     jwks = _get_cached_jwks(auth0_domain)
 
@@ -145,7 +160,7 @@ def validate_jwt(token: str) -> None:
 
     unverified_header = jwt.get_unverified_header(token)
     if "kid" not in unverified_header:
-        raise AuthenticationError("Invalid header: No KID")
+        raise AuthenticationError(ERROR_INVALID_HEADER_NO_KID)
 
     rsa_key = {}
     for key in jwks["keys"]:
@@ -160,7 +175,7 @@ def validate_jwt(token: str) -> None:
             break
 
     if not rsa_key:
-        raise AuthenticationError("Unable to find appropriate key")
+        raise AuthenticationError(ERROR_UNABLE_TO_FIND_APPROPRIATE_KEY)
 
     try:
         jwt.decode(
@@ -171,4 +186,4 @@ def validate_jwt(token: str) -> None:
             issuer=f"https://{auth0_domain}/"
         )
     except Exception as e:
-        raise AuthenticationError(f"Invalid token: {str(e)}")
+        raise AuthenticationError(f"{ERROR_INVALID_TOKEN}: {str(e)}")

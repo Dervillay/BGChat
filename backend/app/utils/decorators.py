@@ -6,6 +6,16 @@ from flask import current_app, request
 
 from app.utils.auth import get_token_from_auth_header, get_user_id_from_auth_header, validate_jwt, AuthenticationError
 from app.utils.responses import validation_error, authentication_error, authorization_error
+from app.config.constants import (
+    ERROR_BOARD_GAME_NAME_CANNOT_BE_EMPTY,
+    ERROR_BOARD_GAME_NAME_TOO_LONG,
+    ERROR_QUESTION_CANNOT_BE_EMPTY,
+    ERROR_QUESTION_TOO_LONG,
+    ERROR_EMAIL_FORMAT_IS_INVALID,
+    ERROR_CONTENT_CANNOT_BE_EMPTY,
+    ERROR_CONTENT_TOO_LONG,
+    ERROR_TOO_LONG,
+)
 
 
 EMAIL_PATTERN = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
@@ -34,10 +44,10 @@ def _validate_board_game(value: str) -> str:
     sanitized = _sanitize_string(value)
 
     if not sanitized:
-        raise ValueError("Board game name cannot be empty")
+        raise ValueError(ERROR_BOARD_GAME_NAME_CANNOT_BE_EMPTY)
 
     if len(sanitized) > MAX_BOARD_GAME_LENGTH:
-        raise ValueError(f"Board game name too long (max {MAX_BOARD_GAME_LENGTH} characters)")
+        raise ValueError(f"{ERROR_BOARD_GAME_NAME_TOO_LONG} (max {MAX_BOARD_GAME_LENGTH} characters)")
 
     return sanitized
 
@@ -50,10 +60,10 @@ def _validate_question(value: str) -> str:
     sanitized = _sanitize_string(value)
 
     if not sanitized:
-        raise ValueError("Question cannot be empty")
+        raise ValueError(ERROR_QUESTION_CANNOT_BE_EMPTY)
 
     if len(sanitized) > MAX_QUESTION_LENGTH:
-        raise ValueError(f"Question too long (max {MAX_QUESTION_LENGTH} characters)")
+        raise ValueError(f"{ERROR_QUESTION_TOO_LONG} (max {MAX_QUESTION_LENGTH} characters)")
 
     return sanitized
 
@@ -69,10 +79,10 @@ def _validate_email(value: str | None) -> str | None:
     sanitized = _sanitize_string(value)
 
     if len(sanitized) > MAX_EMAIL_LENGTH:
-        raise ValueError(f"Email too long (max {MAX_EMAIL_LENGTH} characters)")
+        raise ValueError(f"Email {ERROR_TOO_LONG} (max {MAX_EMAIL_LENGTH} characters)")
 
     if not EMAIL_PATTERN.match(sanitized):
-        raise ValueError("Email format is invalid")
+        raise ValueError(ERROR_EMAIL_FORMAT_IS_INVALID)
 
     return sanitized
 
@@ -85,10 +95,10 @@ def _validate_content(value: str) -> str:
     sanitized = _sanitize_string(value)
 
     if not sanitized:
-        raise ValueError("Content cannot be empty")
+        raise ValueError(ERROR_CONTENT_CANNOT_BE_EMPTY)
     
     if len(sanitized) > MAX_CONTENT_LENGTH:
-        raise ValueError(f"Content too long (max {MAX_CONTENT_LENGTH} characters)")
+        raise ValueError(f"{ERROR_CONTENT_TOO_LONG} (max {MAX_CONTENT_LENGTH} characters)")
 
     return sanitized
 
@@ -185,8 +195,8 @@ def check_daily_token_limit(f):
                 return authorization_error("You have run out of free messages for today. Please come back again tomorrow.")
             return f(*args, **kwargs)
         except AuthenticationError as e:
-            return authorization_error(e.message)
+            return authentication_error(e.message)
         except Exception as e:
-            return authorization_error(f"Authentication error: {str(e)}")
+            return authentication_error(f"Authentication error: {str(e)}")
 
     return decorated

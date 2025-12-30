@@ -1,0 +1,7 @@
+# Testing dependencies
+pytest==8.3.4
+pytest-cov==6.0.0
+
+# Code quality
+flake8==7.1.1
+mypy==1.13.0

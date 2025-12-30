@@ -130,15 +130,12 @@ def ask_question():
 
         logger.info("Received question from user %s for %s", request.user_id, board_game)
 
+        iterator = current_app.orchestrator.ask_question(request.user_id, board_game, question)
+
         def generate():
-            try:
-                response = current_app.orchestrator.ask_question(request.user_id, board_game, question)
-                for chunk in response:
-                    yield f"data: {json.dumps({'chunk': chunk})}\n\n"
-                yield f"data: {json.dumps({'done': True})}\n\n"
-            except Exception as e:
-                logger.error("Error in streaming response: %s", str(e))
-                yield f"data: {json.dumps({'error': 'An error occurred while processing your question. Please try again later.'})}\n\n"
+            for chunk in iterator:
+                yield f"data: {json.dumps({'chunk': chunk})}\n\n"
+            yield f"data: {json.dumps({'done': True})}\n\n"
 
         response = Response(
             stream_with_context(generate()),

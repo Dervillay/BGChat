@@ -90,7 +90,19 @@ class ProductionConfig(Config):
         self.FLASK_DEBUG = False
 
 
+class TestingConfig(Config):
+    """Testing configuration."""
+
+    def __init__(self):
+        # Environment variables should be set by conftest.py
+        super().__init__()
+        self.FLASK_ENV = 'testing'
+        self.FLASK_DEBUG = False
+        self.TESTING = True
+
+
 config = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,
+    'testing': TestingConfig,
 }
