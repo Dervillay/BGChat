@@ -49,11 +49,6 @@ def not_found_error(message: str = "Resource not found") -> Response:
     return error_response(message, 404)
 
 
-def rate_limit_error(message: str = "Rate limit exceeded") -> Response:
-    """Create a rate limit error response."""
-    return error_response(message, 429)
-
-
 def internal_error(message: str = "Internal server error") -> Response:
     """Create an internal server error response."""
     return error_response(message, 500)
