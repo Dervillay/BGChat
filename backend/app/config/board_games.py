@@ -123,6 +123,19 @@ BOARD_GAMES = [
             }
         ]
     },
+    {
+        "name": "Wingspan",
+        "rulebooks": [
+            {
+                "name": "Wingspan",
+                "download_url": "https://www.szellemlovas.hu/szabalyok/fesztavEN.pdf",
+            },
+            {
+                "name": "Wingspan Appendix",
+                "download_url": "https://cdn.1j1ju.com/medias/c3/2d/f0-wingspan-appendix-rulebook.pdf",
+            }
+        ]
+    },
 ]
 
 BOARD_GAMES_STRING_LIST = "\n".join([f"- {board_game['name']}" for board_game in BOARD_GAMES])
