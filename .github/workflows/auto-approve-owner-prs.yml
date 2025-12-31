@@ -7,6 +7,8 @@ on:
 jobs:
   auto-approve:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     if: github.event.pull_request.user.login == github.repository_owner
     steps:
       - name: Auto-approve PR from repository owner
