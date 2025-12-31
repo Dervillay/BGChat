@@ -1,0 +1,53 @@
+name: Backend Tests
+
+on:
+  push:
+    branches: [ master, main ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-tests.yml'
+  pull_request:
+    branches: [ master, main ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-tests.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-dev.txt
+
+    - name: Run tests with coverage
+      run: |
+        pytest
+      env:
+        FLASK_ENV: testing
+        SECRET_KEY: test-secret-key-at-least-32-chars-long-for-ci
+        FRONTEND_URLS: http://localhost:3000
+        MONGODB_HOST: localhost
+        MONGODB_USERNAME: test_user
+        MONGODB_PASSWORD: test_password
+        MONGODB_DB_NAME: bgchat_test
+        OPENAI_API_KEY: sk-test-key-1234567890
+        AUTH0_DOMAIN: test.auth0.com
+        AUTH0_AUDIENCE: test-audience
+        ALGORITHM: HS256
