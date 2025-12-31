@@ -39,15 +39,3 @@ jobs:
     - name: Run tests with coverage
       run: |
         pytest
-      env:
-        FLASK_ENV: testing
-        SECRET_KEY: test-secret-key-at-least-32-chars-long-for-ci
-        FRONTEND_URLS: http://localhost:3000
-        MONGODB_HOST: localhost
-        MONGODB_USERNAME: test_user
-        MONGODB_PASSWORD: test_password
-        MONGODB_DB_NAME: bgchat_test
-        OPENAI_API_KEY: sk-test-key-1234567890
-        AUTH0_DOMAIN: test.auth0.com
-        AUTH0_AUDIENCE: test-audience
-        ALGORITHM: HS256
