@@ -18,6 +18,7 @@ BGChat saves you time flicking through board game rulebooks when you want to loo
 - **Semantic Search**: Finds relevant rulebook sections using embeddings
 - **AI-Powered Q&A**: Uses AI to answer questions using these sections
 - **Rulebook PDFs**: Cites and shows pages of rulebooks used to inform the answer
+- **Board Game Geek Integration**: Searches and finds answers on the BGG forum when rulebooks aren't clear
 - **User Authentication**: Auth0 integration for secure user account management and authentication
 - **User Settings**: Saves each user's chat history, token usage and settings between sessions
 - **Usage Limits**: Handles setting daily token usage limits
